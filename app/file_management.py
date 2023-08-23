@@ -1,5 +1,6 @@
 import os
 import streamlit as st
+from session_state_management import change_project
 
 def create_empty_if_not_exists(file_name):
     """
@@ -37,6 +38,10 @@ def write_file_contents(file_name, contents):
     Create empty file if not exists.
     '''
     create_empty_if_not_exists(file_name)
+    # Create folder if it does not exist
+    folder_name = os.path.dirname(file_name)
+    if not os.path.exists(folder_name):
+        os.makedirs(folder_name)
     with open(file_name, 'w') as f:
         f.write(contents)
     return None
@@ -47,7 +52,8 @@ def create_main_file_if_not_exists(project_main_file):
     Also, check if the folder has __init__.py
     """
     if not os.path.exists(project_main_file):
-        # Create the file with basic imports
+        # Create the file with basic tech stack.
+        # Do not multi-line this, it will cause indentation error
         import_statement = "import streamlit as st\nimport pandas as pd\nimport os\nfrom glob import glob\nimport altair as alt\n\n"
         with open(project_main_file, 'w') as f:
             f.write(import_statement)
@@ -59,18 +65,6 @@ def create_main_file_if_not_exists(project_main_file):
             f.write('')
     return None
 
-def change_project():
-    """
-    when the project is changed, clear the session state
-    of key variables.
-    """
-    if 'text_list' in st.session_state:
-        del st.session_state['text_list']
-    if 'project_file' in st.session_state:
-        del st.session_state['project_file']
-    if 'project_folder' in st.session_state:
-        del st.session_state['project_folder']
-    return None
 
 def get_project_file_folder():
     """
@@ -120,6 +114,7 @@ def get_project_file_folder():
 def create_new_project():
     """
     Creates a new project folder, main.py file, and __init__.py file.
+    TODO: Need to call this somewhere.
     """
     # Get the project name
     project_name = st.text_input("Enter the project name")
