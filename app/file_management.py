@@ -7,7 +7,7 @@ def create_empty_if_not_exists(file_name):
     Creates an empty file if it does not exist. If the folder containing the file does not exist, it creates the folder as well.
     
     Args:
-    - file_name (str): The name of the file to create.
+    - file_name (str): The name of the file to create with full relative path 
     
     Returns:
     - None
