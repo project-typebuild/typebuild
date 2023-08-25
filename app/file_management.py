@@ -163,42 +163,6 @@ def create_new_project():
     # st.session_state.project_main_file = project_main_file
     return None
 
-def create_new_view():
-
-    """
-    This function creates a new view file in the current project folder. The user should add name of the view and create the python file.
-    """
-
-    project_folder = st.session_state.project_folder
-    name_placeholder = st.empty()
-    button_placeholder = st.empty()
-    new_view_name = name_placeholder.text_input('Enter the name of the new view')
-    new_view_name = new_view_name.lower().replace(' ', '_')
-    if button_placeholder.button('Create'):
-        if len(new_view_name) == 0:
-            st.error('Enter a name for the new view')
-            st.stop()
-
-        # check if the view already exists
-        view_file = os.path.join(project_folder, f'{new_view_name}.py')
-        if os.path.exists(view_file):
-            st.error('View already exists, please rename')
-            st.stop()
-        # Create the new view file
-        view_file = os.path.join(project_folder, f'{new_view_name}.py')
-        st.warning(view_file)
-        if not os.path.exists(view_file):
-            with open(view_file, 'w') as f:
-                st.session_state.code = ''
-                f.write('')
-
-        with st.spinner('Creating new view...'):
-            time.sleep(2)    
-            name_placeholder.empty()
-            button_placeholder.empty()
-            st.experimental_rerun()
-
-    return None
 
 def get_project_df():
 
