@@ -67,6 +67,8 @@ def create_run_menu():
     selected_file = st.sidebar.selectbox('Menu', file_names, key='selected_file', on_change=change_view)
 
     if selected_file == 'Create new view':
+        # Show the df
+        st.dataframe(st.session_state.df)
         new_view_name = st.text_input('Enter the name of the new view', key='new_view_name')
         if not new_view_name:
             st.error('Enter a name for the new view')
@@ -81,7 +83,7 @@ def create_run_menu():
     
     # If the file does not exist, generate code for it
     if not os.path.exists(file_path):    
-        generate_code_from_user_requirements()
+        generate_code_from_user_requirements(st.session_state.df)
         if 'response' in st.session_state:
             # Get the code
             code = st.session_state.code

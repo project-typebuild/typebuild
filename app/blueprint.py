@@ -38,11 +38,11 @@ def generate_code_from_user_requirements(df=None):
     # Join the list items into a single string
     user_requirements = '\n'.join(user_requirements)
 
-    df = get_project_df()
-
     messages = get_prompt_to_code(user_requirements, df=df)
+    if st.checkbox("Show request"):
+        st.json(messages)
 
-    if st.button("Go GPT!"):
+    if st.button("Get code"):
         response = get_llm_output(messages)
         code = parse_code_from_response(response)[0]
         
