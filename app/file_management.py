@@ -131,8 +131,8 @@ def create_new_project():
     # Get the project name
     project_name = st.text_input("Enter the project name")
     if project_name == '':
-        # st.write('Enter a project name')
-        return None
+        st.warning('Enter a project name')
+        st.stop()
     # Lower case and replace spaces with underscores
     project_name = project_name.lower().replace(' ', '_')
     # Check if the project name already exists
