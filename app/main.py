@@ -2,8 +2,19 @@ import simple_auth
 import streamlit as st
 # Make it full width
 st.set_page_config(layout="wide")
-token = simple_auth.simple_auth()
+# token = simple_auth.simple_auth()
+token = 'ranu'
+st.session_state.token = token
 
 import session_state_management
 
 session_state_management.main()
+
+from file_management import get_project_file_folder, get_project_df
+from dynamic_functions import create_run_menu
+
+
+# Create a menu to run the app
+get_project_file_folder()
+get_project_df()
+create_run_menu()

@@ -5,6 +5,7 @@
 
 # Folders within projects
 */projects/*
+*/users/*
 
 # Remove workspace files
 .vscode/
