@@ -103,8 +103,8 @@ def append_function_to_file(func_str, file_path):
     Append the function to the file called user_functions.py
     """
     # Add necessary decorator to the function
-    decorator = "@run_before_and_after(load_state, save_state)\n"
-
+    # decorator = "@run_before_and_after(load_state, save_state)\n"
+    decorator = '\n'
     # Remove import statements
     func_str = '\n'.join([line for line in func_str.split('\n') if not line.startswith('import')]).strip()
 
