@@ -27,22 +27,7 @@ In your collection of functions, you have the following functions, ready to use.
 
 AVAILABLE FUNCTIONS:
 
-[ st.stop() - A streamlit function to stop the execution under the line
-    
-def simple_auth():
-    '''
-    If you are using this function, you should add the import statement:
-    `from simple_auth import simple_auth`
-    This tries to authenticate first with session state variable,
-    next with a cookie and if both fails, it asks for the user to login. 
-
-    It also creates a logout button.
-    '''
-    # Code
-    
-    return token  
-
-    ]
+[ st.stop() - A streamlit function to stop the execution under the line ]
     
 {df_string}
 
@@ -53,13 +38,18 @@ The Requirements are:
 
 THINGS TO REMEMBER:
 - The functions you are generating will be used in a larger scheme of things. so be responsible in generating functions
+- If the user asks for a login page, sign up page. Ignore it, you are not responsible for that. There is a separate team for that.
 - If a sample data is provided, use it to write better functions. You should be careful with the data types and column names
+- If the user asks for a table, you should always use st.dataframe to display the table
 - If a sample data is provided, then assume the data is stored in a streamlit session state variable called st.session_state.df
 - You need to return the full code of the functions you are generating
 - Do not write unnecessary print, st.write and success, info and warning messages in the functions.
 - Do not return the available functions in the response. Your response should include only the newly generated functions
 - You need to create one function for each feature in the app
 - You need to have a main function that calls all the other functions
+- Dont add the code 
+    if __name__ == '__main__':
+        main()
     
 based on the above requirements, write concise code and don't forget to write the detailed docstrings, including the args, return etc
 """
@@ -122,6 +112,8 @@ def get_prompt_to_modify(change_requested, user_requirements, all_function_descr
     - You need to return the full code of the functions you are modifying
     - You need to identify what other subfunction the main function is calling. 
     - Return all the modified function(s) inside the delimiters ``` (three backticks)
+    - You need to return the full code of the functions you are generating or modifying
+    - If the user asks for a table, you should always use st.dataframe to display the table
     - Your task is to update the USER REQUIREMENTS to include the recent changes. You should focus on modifying only the REQUIREMENTS that are directly related to the requested modifications.
     - To clarify, if the modification request pertains to something like changing the color of the plot, you should adjust the particular requirement that is affected, rather than making changes to the entire list of requirements.    - Return the modified user requirements inside the delimiters ||| (three pipes)
     - You need to modify the docstrings of the functions you are modifying.
