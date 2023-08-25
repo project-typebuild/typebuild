@@ -18,3 +18,7 @@ from dynamic_functions import create_run_menu
 get_project_file_folder()
 get_project_df()
 create_run_menu()
+
+if 'last_request' in st.session_state:
+    if st.sidebar.checkbox("Show latest request"):
+        st.write(st.session_state.last_request)
