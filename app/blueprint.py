@@ -1,3 +1,5 @@
+import os
+import time
 import pandas as pd
 import streamlit as st
 from prompts import get_prompt_to_code, get_prompt_to_modify
@@ -13,6 +15,7 @@ openai.api_key = st.secrets.openai.key
 
 # Create a menu to run the app
 # create_run_menu()
+
 
 def generate_code_from_user_requirements(df=None):
 
@@ -40,18 +43,16 @@ def generate_code_from_user_requirements(df=None):
 
     if st.button("Go GPT!"):
         response = get_llm_output(messages)
+        code = parse_code_from_response(response)[0]
+        
         st.session_state.response = response
         st.session_state.user_requirements = user_requirements
         st.session_state.messages = messages
-        st.session_state.code = parse_code_from_response(response)[0]
+        st.session_state.code = '\n\n'.join(parse_code_from_response(response))
+    
+    return None
 
-    if 'response' in st.session_state:
-            # Parse the code from the response
-        if st.sidebar.checkbox('Show code'):
-            code = st.session_state.code
-            st.code(code, language='python')
-            st.code(st.session_state.response, language='python')
-
+def modify_code(df=None):
     if st.sidebar.checkbox('Modify function', key='modify checkbox'):
         change_requested = st.text_area("What changes do you want to make to the function?")
         if change_requested:

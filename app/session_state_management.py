@@ -24,6 +24,17 @@ def change_project():
         del st.session_state['project_folder']
     return None
 
+def change_view():
+    """
+    When the view is changed, clear the session state
+    of key variables.
+    """
+    key_vars = ['code', 'response', 'user_requirements', 'messages']
+    for key in key_vars:
+        if key in st.session_state:
+            del st.session_state[key]
+    return None
+
 def main():
     add_default_session_states()
     return None

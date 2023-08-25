@@ -10,9 +10,10 @@ import re
 import importlib.util
 import inspect
 import datetime
-from file_management import create_new_project, create_new_view
+from file_management import create_new_project
 import time
 from blueprint import generate_code_from_user_requirements
+from session_state_management import change_view
 
 def import_functions(module_path, function_names):
     """
@@ -63,40 +64,56 @@ def create_run_menu():
     file_names.append('Create new view')
 
     # Create a selectbox to select the file
-    selected_file = st.sidebar.selectbox('Menu', file_names)
+    selected_file = st.sidebar.selectbox('Menu', file_names, key='selected_file', on_change=change_view)
 
     if selected_file == 'Create new view':
-        create_new_view()
+        new_view_name = st.text_input('Enter the name of the new view', key='new_view_name')
+        if not new_view_name:
+            st.error('Enter a name for the new view')
+            st.stop()
+        selected_file = new_view_name.lower().replace(' ', '_')
 
-    else:
-        # Add .py extension
-        selected_file = selected_file + '.py'
+    # Add .py extension
+    selected_file = selected_file + '.py'
 
-        # Create a path to the selected file
-        file_path = os.path.join(dir, selected_file)
-        
-        # Check if the python file is empty. read the file and check if it is empty
-
-        with open(file_path, 'r') as f:
-            file_content = f.read()
-        if len(file_content.split()) == 0:
-            generate_code_from_user_requirements()
+    # Create a path to the selected file
+    file_path = os.path.join(dir, selected_file)
+    
+    # If the file does not exist, generate code for it
+    if not os.path.exists(file_path):    
+        generate_code_from_user_requirements()
+        if 'response' in st.session_state:
+            # Get the code
             code = st.session_state.code
             # Add the function to the file
-            append_function_to_file(code, file_path=file_path)
+            create_new_file(code, file_path=file_path)
+            # Add the requirements to a text file with the same name
+            requirements_file_path = file_path.replace('.py', '.txt')
+            with open(requirements_file_path, 'w') as f:
+                f.write(st.session_state.user_requirements)
+        else:
             st.stop()
 
-        else:
-            # Import the module
-            my_functions = import_functions(file_path, ['main'])
-            if my_functions:
-                # Run the main function
-                my_functions['main']()
-
+    else:
+        # Import the module
+        my_functions = import_functions(file_path, ['main'])
+        if my_functions:
+            # Run the main function
+            my_functions['main']()
 
     return None
 
+def create_new_file(func_str, file_path):
+    """
+    Create a new file with the given string
+    """
+    # Add the key imports
+    import_statement = "import streamlit as st\nimport pandas as pd\nimport os\nfrom glob import glob\nimport altair as alt\n\n"
+    func_str = import_statement + func_str
 
+    with open(file_path, 'w') as f:
+        f.write(func_str)
+    return None
 
 def append_function_to_file(func_str, file_path):
     """
