@@ -16,7 +16,9 @@ from function_management import create_run_menu
 
 # Create a menu to run the app
 get_project_file_folder()
-get_project_df()
+if 'df' not in st.session_state:
+    get_project_df()
+
 create_run_menu()
 
 if 'last_request' in st.session_state:
