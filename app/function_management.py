@@ -12,9 +12,10 @@ import re
 import importlib.util
 import inspect
 import datetime
-from file_management import create_new_file_with_imports, create_new_project
+from file_management import create_new_file_with_imports
+from project_management import create_new_project
 import time
-from blueprint import generate_code_from_user_requirements
+from blueprint_code import generate_code_from_user_requirements
 from session_state_management import change_view
 
 def import_functions(module_path, function_names):

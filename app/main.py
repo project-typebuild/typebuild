@@ -10,8 +10,8 @@ import session_state_management
 
 session_state_management.main()
 
-from file_management import get_project_file_folder, get_project_df
-from dynamic_functions import create_run_menu
+from project_management import get_project_file_folder, get_project_df
+from function_management import create_run_menu
 
 
 # Create a menu to run the app

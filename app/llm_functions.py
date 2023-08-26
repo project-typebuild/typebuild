@@ -216,12 +216,36 @@ def parse_function_from_response():
 
 def parse_code_from_response(response):
 
+    """
+    Returns the code from the response from LLM.
+    In the prompt to code, we have asked the LLM to return the code inside triple backticks.
+
+    Args:
+    - response (str): The response from LLM
+
+    Returns:
+    - matches (list): A list of strings with the code
+
+    """
+
     pattern = r"```python([\s\S]*?)```"
     matches = re.findall(pattern, response)
     return matches
 
 def parse_modified_user_requirements_from_response(response):
     
+    """
+    Returns the modified user requirements from the response from LLM. 
+    In the prompt to modify, we have asked the LLM to return the modified user requirements inside triple pipe delimiters.
+
+    Args:
+    - response (str): The response from LLM
+
+    Returns:
+    - matches (list): A list of strings with the modified user requirements
+
+    """
+
     pattern = r"\|\|\|([\s\S]*?)\|\|\|"
     matches = re.findall(pattern, response)
     

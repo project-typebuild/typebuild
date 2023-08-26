@@ -15,9 +15,8 @@ import time
 import pandas as pd
 import streamlit as st
 from prompts import get_prompt_to_code, get_prompt_to_modify
-from llm_functions import get_llm_output
-from parse_llm_response import parse_code_from_response, parse_modified_user_requirements_from_response
-from file_management import file_upload_and_save, get_project_df
+from llm_functions import get_llm_output, parse_code_from_response, parse_modified_user_requirements_from_response
+from project_management import file_upload_and_save, get_project_df
 from glob import glob
 import session_state_management
 session_state_management.main()
