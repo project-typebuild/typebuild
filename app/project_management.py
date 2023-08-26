@@ -120,6 +120,28 @@ def get_project_df():
     else:
         st.session_state.df = None
 
+    return None
+
+def get_project_user_requirements():
+    """
+
+    This function gets the project user requirements from the project folder.
+
+    """
+
+    files = glob(f'{st.session_state.file_path}/*.txt')
+
+    if files:
+        with open(files[0], 'r') as f:
+            user_requirements = f.read()
+        st.session_state.user_requirements = user_requirements
+    else:
+        st.session_state.user_requirements = None
+        st.error('No user requirements found. Please upload a text file with user requirements.')
+
+    return None
+
+
 def file_upload_and_save():
     """
     This function allows the user to upload a file and save it to the current folder. 

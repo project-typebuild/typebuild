@@ -70,12 +70,14 @@ def generate_code_from_user_requirements(df=None):
     
     return None
 
-def modify_code(df=None):
+def modify_code(user_requirements, all_function_descriptions,df=None):
 
     """
     The function that modifies code based on user requirements.
 
     Args:
+    - user_requirements: initial user requirements. 
+    - all_function_descriptions: descriptions of all the functions available
     - df: A pandas dataframe with sample data (optional, default None)
 
     Returns:
@@ -83,57 +85,15 @@ def modify_code(df=None):
 
     """
 
-    if st.sidebar.checkbox('Modify function', key='modify checkbox'):
-        change_requested = st.text_area("What changes do you want to make to the function?")
+    if st.sidebar.checkbox('Modify function', key=f'modify_checkbox_{st.session_state.ss_num}'):
+        st.warning('Please request a change to the app by typing in the box below.')
+        change_requested = st.chat_input("What changes do you want to make to the function?")
         if change_requested:
             messages_modify = get_prompt_to_modify(change_requested=change_requested, user_requirements=user_requirements, df=df, all_function_descriptions=all_function_descriptions)
             st.session_state.messages_modify = messages_modify
-         
-            all_function_descriptions = [{'function_name': 'authenticate_user',
-            'mandatory_args': [],
-            'args_with_info': {},
-            'optional_args': [],
-            'function_docstring': '\n    Function to authenticate the user using a token.\n    '},
-            {'function_name': 'display_data',
-            'mandatory_args': ['df', 'state', 'district', 'block'],
-            'args_with_info': {},
-            'optional_args': [],
-            'function_docstring': '\n    Function to display the data for the selected location.\n\n    Args:\n    df: pandas DataFrame containing the data\n    state: Selected state\n    district: Selected district\n    block: Selected block\n    '},
-            {'function_name': 'load_data',
-            'mandatory_args': [],
-            'args_with_info': {},
-            'optional_args': [],
-            'function_docstring': None},
-            {'function_name': 'plot_data',
-            'mandatory_args': ['df', 'state', 'district', 'block'],
-            'args_with_info': {},
-            'optional_args': [],
-            'function_docstring': '\n    Function to plot the data for the selected location.\n\n    Args:\n    df: pandas DataFrame containing the data\n    state: Selected state\n    district: Selected district\n    block: Selected block\n    '},
-            {'function_name': 'select_location',
-            'mandatory_args': ['df'],
-            'args_with_info': {},
-            'optional_args': [],
-            'function_docstring': '\n    Function to select the location for which to view the data.\n\n    Args:\n    df: pandas DataFrame containing the data\n\n    Returns:\n    selected_state, selected_district, selected_block: Selected state, district, and block\n    '},
-            {'function_name': 'set_page_title',
-            'mandatory_args': [],
-            'args_with_info': {},
-            'optional_args': [],
-            'function_docstring': '\n    Function to set the title of the Streamlit app.\n    '},
-            {'function_name': 'set_preferences',
-            'mandatory_args': [],
-            'args_with_info': {},
-            'optional_args': [],
-            'function_docstring': '\n    Function to set the user preferences for language and view.\n    '},
-            {'function_name': 'simple_auth',
-            'mandatory_args': [],
-            'args_with_info': {},
-            'optional_args': [],
-            'function_docstring': '\n    This tries to authenticate first with session state variable,\n    next with a cookie and if both fails, it asks for the user to login. \n\n    It also creates a logout button.\n    '}]
-
-        # if st.button("GO MODIFY", key='modify button'):
             response = get_llm_output(messages_modify)
             st.session_state.response = response
-            modified_code = parse_code_from_response(response)[0]
+            modified_code = '\n\n'.join(parse_code_from_response(response))
             modified_user_requirements = parse_modified_user_requirements_from_response(response)[0]
             st.session_state.modified_code = modified_code
             st.session_state.modified_user_requirements = modified_user_requirements

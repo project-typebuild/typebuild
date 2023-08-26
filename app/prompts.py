@@ -86,7 +86,6 @@ def get_prompt_to_modify(change_requested, user_requirements, all_function_descr
 
     """
 
-
     if df is not None:
         df_sample = df.head(5).to_markdown()
         df_string = f"""SAMPLE DATA:
@@ -116,6 +115,7 @@ def get_prompt_to_modify(change_requested, user_requirements, all_function_descr
     - You have a project where all the code is written, the user has requested for a modification.
     - You need to identify what functions to modify
     - You need to return the full code of the functions you are modifying
+    - If the user asks for a table, you should always use st.dataframe to display the table
     - You need to identify what other subfunction the main function is calling. 
     - Return all the modified function(s) inside the delimiters ``` (three backticks)
     - You need to return the full code of the functions you are generating or modifying
