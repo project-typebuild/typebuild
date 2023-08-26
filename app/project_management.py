@@ -171,5 +171,44 @@ def file_upload_and_save():
 
             # Display a success message
             st.success(f"Processed data saved to '{file_name}' successfully!")
+
+        # Check if the uploaded file is a Parquet file
+        elif file_name.endswith('.parquet'):
+            # Load the Parquet file into a pandas DataFrame
+            df = pd.read_parquet(file_path)
+
+            # Do some data processing here...
+
+            # Save the processed data to a new Parquet file
+            df.to_parquet(file_path)
+
+            # Display a success message
+            st.success(f"Processed data saved to '{file_name}' successfully!")
+
+        # Check if the uploaded file is an Excel file
+        elif file_name.endswith('.xlsx'):
+            # Load the Excel file into a pandas DataFrame
+            df = pd.read_excel(file_path)
+
+            # Do some data processing here...
+
+            # Save the processed data to a new Excel file
+            df.to_excel(file_path)
+
+            # Display a success message
+            st.success(f"Processed data saved to '{file_name}' successfully!")
+
+        # Check if the uploaded file is a Pickle file
+        elif file_name.endswith('.pkl'):
+            # Load the Pickle file into a pandas DataFrame
+            df = pd.read_pickle(file_path)
+
+            # Do some data processing here...
+
+            # Save the processed data to a new Pickle file
+            df.to_pickle(file_path)
+
+            # Display a success message
+            st.success(f"Processed data saved to '{file_name}' successfully!")
         st.session_state['file_uploaded'] = True
     return None

@@ -76,6 +76,7 @@ def create_run_menu():
 
     if selected_file == 'Create new view':
         # Show the df
+        st.subheader('Sample Data')
         st.dataframe(st.session_state.df)
         new_view_name = st.text_input('Enter the name of the new view', key='new_view_name')
         if not new_view_name:

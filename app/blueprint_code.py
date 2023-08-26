@@ -31,7 +31,13 @@ openai.api_key = st.secrets.openai.key
 def generate_code_from_user_requirements(df=None):
 
     """
-    The function takes in a list of user requirements and generates code to meet those requirements.
+    The function that generates code from user requirements. 
+
+    Args:
+    - df: A pandas dataframe with sample data (optional, default None)
+
+    Returns:
+    - None
 
     """
 
@@ -65,6 +71,18 @@ def generate_code_from_user_requirements(df=None):
     return None
 
 def modify_code(df=None):
+
+    """
+    The function that modifies code based on user requirements.
+
+    Args:
+    - df: A pandas dataframe with sample data (optional, default None)
+
+    Returns:
+    - None
+
+    """
+
     if st.sidebar.checkbox('Modify function', key='modify checkbox'):
         change_requested = st.text_area("What changes do you want to make to the function?")
         if change_requested:
