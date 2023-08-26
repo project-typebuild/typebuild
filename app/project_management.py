@@ -167,7 +167,7 @@ def file_upload_and_save():
             # Do some data processing here...
 
             # Save the processed data to a new JSON file
-            df.to_json(file_path)
+            df.to_json(file_path, orient='records', lines=True)
 
             # Display a success message
             st.success(f"Processed data saved to '{file_name}' successfully!")
@@ -180,7 +180,7 @@ def file_upload_and_save():
             # Do some data processing here...
 
             # Save the processed data to a new Parquet file
-            df.to_parquet(file_path)
+            df.to_parquet(file_path, index=False)
 
             # Display a success message
             st.success(f"Processed data saved to '{file_name}' successfully!")
@@ -193,7 +193,7 @@ def file_upload_and_save():
             # Do some data processing here...
 
             # Save the processed data to a new Excel file
-            df.to_excel(file_path)
+            df.to_excel(file_path, index=False)
 
             # Display a success message
             st.success(f"Processed data saved to '{file_name}' successfully!")
@@ -206,7 +206,7 @@ def file_upload_and_save():
             # Do some data processing here...
 
             # Save the processed data to a new Pickle file
-            df.to_pickle(file_path)
+            df.to_pickle(file_path, index=False)
 
             # Display a success message
             st.success(f"Processed data saved to '{file_name}' successfully!")
