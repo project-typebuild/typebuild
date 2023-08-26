@@ -1,3 +1,8 @@
+"""
+Deals with file operations such as creating, updating, deleting
+loading, and saving files.  It does not do data operations,
+llm related stuff, or streamlit related stuff.
+"""
 import os
 import streamlit as st
 from session_state_management import change_project
@@ -49,6 +54,18 @@ def write_file_contents(file_name, contents):
         f.write(contents)
     return None
 
+def create_new_file_with_imports(func_str, file_path):
+    """
+    Create a new file with the given string
+    """
+    # Add the key imports
+    import_statement = "import streamlit as st\nimport pandas as pd\nimport os\nfrom glob import glob\nimport altair as alt\n\n"
+    func_str = import_statement + func_str
+
+    with open(file_path, 'w') as f:
+        f.write(func_str)
+    return None
+
 def create_main_file_if_not_exists(project_main_file):
     """
     If a project subfolder does not have a main.py file, create it.
@@ -69,119 +86,11 @@ def create_main_file_if_not_exists(project_main_file):
     return None
 
 
-def get_project_file_folder():
-    """
-    Returns the path to the project folder for the current user.
-    Projects are folders within the user's folder.
-    Project file is the path to the main.py file.
-    
-    Args:
-    - None
-    
-    Returns:
-    - project_file (str): The path to the project file.
-    """
-    token_name = st.session_state.token
-    user_folder = os.path.join('users', token_name)
-    # Get just the directory names, ignore the files
-    try:
-        project_names = [i for i in os.listdir(user_folder) if os.path.isdir(os.path.join(user_folder, i))]
-    except FileNotFoundError as e:
-        # Create the folder
-        os.makedirs(user_folder)
-        project_names = []
-
-    # Ignore pycache
-    project_names = [i for i in project_names if not 'pycache' in i]
-    # Add new create project option
-    project_names.append('Create new project')
-    # Make the first project the default
-
-    default_index = 0
-    selected_project = st.sidebar.selectbox(
-        "Select project", 
-        project_names, 
-        index=default_index,
-        key='selected_project',
-        on_change=change_project
-        )
-    if selected_project == 'Create new project':
-        create_new_project()
-        st.stop()
-        
-    project_folder = os.path.join(user_folder, selected_project)
-
-    # Save to session state
-    st.session_state.project_folder = project_folder
-
-    # # Get the project file path
-    # project_main_file = os.path.join(project_folder, 'main.py')
-    # # Create the file if it does not exist
-    # create_main_file_if_not_exists(project_main_file)
-    # # Save to session state
-    # st.session_state.project_main_file = project_main_file
-
-    return None
-
-def create_new_project():
-    """
-    Creates a new project folder, main.py file, and __init__.py file.
-    TODO: Need to call this somewhere.
-    """
-    # Get the project name
-    project_name = st.text_input("Enter the project name")
-    if project_name == '':
-        st.warning('Enter a project name')
-        st.stop()
-    # Lower case and replace spaces with underscores
-    project_name = project_name.lower().replace(' ', '_')
-    # Check if the project name already exists
-    token_name = st.session_state.token
-    user_folder = os.path.join('users', token_name)
-
-    # Create the user folder if it does not exist
-    if not os.path.exists(user_folder):
-        os.makedirs(user_folder)
-    
-    project_folder = os.path.join(user_folder, project_name)
-    if os.path.exists(project_folder):
-        st.write('Project already exists, please rename')
-        st.stop()
-
-    # Create the project folder
-    project_folder = os.path.join(user_folder, project_name)
-    if not os.path.exists(project_folder):
-        os.makedirs(project_folder)
-    
-    # Create the __init__.py file
-    init_file = os.path.join(project_folder, '__init__.py')
-    if not os.path.exists(init_file):
-        with open(init_file, 'w') as f:
-            f.write('')
-    # Save to session state
-    st.session_state.project_folder = project_folder
-    # st.session_state.project_main_file = project_main_file
-    return None
-
-
-def get_project_df():
-
-    """
-
-    This function gets the project dataframe from the project folder.
-
-    """
-
-    files = glob(f'{st.session_state.project_folder}/*.csv')
-
-    if files:
-        df = pd.read_csv(files[0])
-        st.session_state.df = df
-    else:
-        st.session_state.df = None
 
 def get_views():
-
+    """
+    TODO: Check that we are not using it and delete this function.
+    """
     project_folder = st.session_state.project_folder
     # Get all the python files in the project folder
     files = glob(f'{project_folder}/*.py')
@@ -198,54 +107,3 @@ def get_views():
     files = [i for i in files if not 'pycache' in i]
 
 
-def file_upload_and_save():
-
-    """
-    This function allows the user to upload a file and save it to the current folder. 
-    It also allows the user to process the data and save it to a new file.
-    You can upload a CSV or JSON file.
-
-    """
-
-    # Create a file uploader
-    uploaded_file = st.sidebar.file_uploader("Choose a CSV or a JSON file")
-
-    # Check if a file was uploaded
-    if uploaded_file is not None:
-        # Get the file name
-        file_name = uploaded_file.name
-
-        file_path = os.path.join(st.session_state.project_folder, file_name)
-        # Save the file
-        with open(file_path, "wb") as f:
-            f.write(uploaded_file.getbuffer())
-
-        # Display a success message
-        st.success(f"File '{file_name}' uploaded and saved successfully!")
-
-        # Check if the uploaded file is a CSV file
-        if file_name.endswith('.csv'):
-            # Load the CSV file into a pandas DataFrame
-            df = pd.read_csv(file_path)
-
-            # Do some data processing here...
-
-            # Save the processed data to a new CSV file
-            df.to_csv(file_path, index=False)
-
-            # Display a success message
-            st.success(f"Processed data saved to '{file_name}' successfully!")
-        
-        # Check if the uploaded file is a JSON file
-        elif file_name.endswith('.json'):
-            # Load the JSON file into a pandas DataFrame
-            df = pd.read_json(file_path)
-
-            # Do some data processing here...
-
-            # Save the processed data to a new JSON file
-            df.to_json(file_path)
-
-            # Display a success message
-            st.success(f"Processed data saved to '{file_name}' successfully!")
-        st.session_state['file_uploaded'] = True
