@@ -1,7 +1,9 @@
 """
-Creates a menu of functions available in the module
-and runs the selected function
+This file is used to manage functions and their descriptions:
+- Writing or modifying functions in a file
+- Importing functions and their descriptions and running them
 """
+
 import streamlit as st
 import altair as alt
 import pandas as pd
@@ -10,14 +12,17 @@ import re
 import importlib.util
 import inspect
 import datetime
-from file_management import create_new_project
+from file_management import create_new_file_with_imports, create_new_project
 import time
 from blueprint import generate_code_from_user_requirements
 from session_state_management import change_view
 
 def import_functions(module_path, function_names):
     """
-    Import functions from a module given the module path and a list of function names.
+    Import functions from a module given the module path 
+    and a list of function names.
+    Note: Currently, only functions called main are invoked
+    in each module, but we can pass more in the future.
 
     Parameters:
     module_path (str): The path to the module to import.
@@ -40,6 +45,7 @@ def import_functions(module_path, function_names):
             imported_functions[function_name] = getattr(module, function_name)
 
     return imported_functions
+
 
 def create_run_menu():
     """
@@ -64,7 +70,8 @@ def create_run_menu():
     file_names.append('Create new view')
 
     # Create a selectbox to select the file
-    selected_file = st.sidebar.selectbox('Menu', file_names, key='selected_file', on_change=change_view)
+    selected_file = st.sidebar.selectbox('Menu', file_names, key=f'selected_file_{st.session_state.ss_num}', on_change=change_view)
+    st.session_state.selected_file = selected_file
 
     if selected_file == 'Create new view':
         # Show the df
@@ -88,11 +95,17 @@ def create_run_menu():
             # Get the code
             code = st.session_state.code
             # Add the function to the file
-            create_new_file(code, file_path=file_path)
+            create_new_file_with_imports(code, file_path=file_path)
             # Add the requirements to a text file with the same name
             requirements_file_path = file_path.replace('.py', '.txt')
             with open(requirements_file_path, 'w') as f:
                 f.write(st.session_state.user_requirements)
+                    # Increase the session state number
+            st.session_state.ss_num += 1
+            # Set the menu to be the newly created file path without the .py extension
+            st.session_state[f"selected_file_{st.session_state.ss_num}"] = selected_file.replace('.py', '')
+
+            st.experimental_rerun()
         else:
             st.stop()
 
@@ -105,21 +118,16 @@ def create_run_menu():
 
     return None
 
-def create_new_file(func_str, file_path):
-    """
-    Create a new file with the given string
-    """
-    # Add the key imports
-    import_statement = "import streamlit as st\nimport pandas as pd\nimport os\nfrom glob import glob\nimport altair as alt\n\n"
-    func_str = import_statement + func_str
-
-    with open(file_path, 'w') as f:
-        f.write(func_str)
-    return None
 
 def append_function_to_file(func_str, file_path):
     """
     Append the function to the file called user_functions.py
+    Widget key names start with uc_ so that we can 
+    distinguish them from other session state keys.  This is useful 
+    in identifying all the active widgets.
+
+    TODO: Add a decorator to the function to save and load state.
+    
     """
     # Add necessary decorator to the function
     # decorator = "@run_before_and_after(load_state, save_state)\n"

@@ -4,6 +4,7 @@ def add_default_session_states():
     # Add a dict with session state variables
     ss_vars = {
         'messages': [],
+        'ss_num': 0,
         }
 
     for key in ss_vars:

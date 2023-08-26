@@ -1,3 +1,15 @@
+"""
+Blueprints consist of text and code.  
+This file deals with all aspects of code including:
+
+- Generating code from user requirements text
+- Modifying code based on requested changes
+- Maintaining relationship between code and blueprint text (so that if one is updated, we will know to update the other)
+- etc.
+
+blueprint_text.py only deals with creating, editing, and deleting text.  It does not deal with code.
+"""
+
 import os
 import time
 import pandas as pd

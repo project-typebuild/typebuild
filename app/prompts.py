@@ -1,3 +1,7 @@
+"""
+This file is used to generate all prompts to be sent to LLMs
+"""
+
 import pandas as pd
 import streamlit as st
 
