@@ -76,6 +76,7 @@ def create_run_menu():
 
     # Create a path to the selected file
     file_path = os.path.join(dir, selected_file)
+    st.sidebar.info(f'File path: {file_path}')
     st.session_state.file_path = file_path
 
     if selected_file == 'Create new view':
@@ -93,38 +94,40 @@ def create_run_menu():
         # Get all the function descriptions
         all_function_descriptions = get_all_function_descriptions(module_name=selected_file, file_path=st.session_state.file_path + '.py')
 
-        modify_code(user_requirements= st.session_state.user_requirements ,all_function_descriptions= all_function_descriptions,df=st.session_state.df)
-
     # Add .py extension
     selected_file = selected_file + '.py'
     file_path = file_path + '.py'    
-    # If the file does not exist, generate code for it
-    if not os.path.exists(file_path):    
-        generate_code_from_user_requirements(st.session_state.df)
-        if 'response' in st.session_state:
-            # Get the code
-            code = st.session_state.code
-            # Add the function to the file
-            create_new_file_with_imports(code, file_path=file_path)
-            # Add the requirements to a text file with the same name
-            requirements_file_path = file_path.replace('.py', '.txt')
-            with open(requirements_file_path, 'w') as f:
-                f.write(st.session_state.user_requirements)
-                    # Increase the session state number
-            st.session_state.ss_num += 1
-            # Set the menu to be the newly created file path without the .py extension
-            st.session_state[f"selected_file_{st.session_state.ss_num}"] = selected_file.replace('.py', '')
 
-            st.experimental_rerun()
-        else:
-            st.stop()
+    # If the file does not exist, generate code for it
+    if os.path.exists(file_path):
+        with st.expander('View and change instructions, if necessary'):
+            modify_code()
 
     else:
+        generate_code_from_user_requirements(st.session_state.df)
+    if 'response' in st.session_state:
+        # Get the code
+        code = st.session_state.code
+        # Add the function to the file
+        create_new_file_with_imports(code, file_path=file_path)
+        
+        st.session_state.ss_num += 1
+        # Set the menu to be the newly created file path without the .py extension
+        st.session_state[f"selected_file_{st.session_state.ss_num}"] = selected_file.replace('.py', '')
+        # Remove the response from the session state
+        del st.session_state.response
+        st.experimental_rerun()
+
+    # Now we are ready to run the file
+    if os.path.exists(file_path):    
         # Import the module
         my_functions = import_functions(file_path, ['main'])
         if my_functions:
             # Run the main function
             my_functions['main']()
+
+
+    
 
     return None
 

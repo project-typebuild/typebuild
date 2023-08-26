@@ -5,7 +5,7 @@ This file is used to generate all prompts to be sent to LLMs
 import pandas as pd
 import streamlit as st
 
-def get_prompt_to_code(user_requirements, df=None):
+def get_prompt_to_code(user_requirements, df=None, mod_requirements=None, current_code=None):
 
     """
     This function takes in the sample data and user requirements and creates the system instruction and prompt to code.
@@ -17,6 +17,22 @@ def get_prompt_to_code(user_requirements, df=None):
     - messages: A list of dictionaries with the system instruction and prompt to code
 
     """
+
+    current_code_string = ""
+    mod_requirements_string = ""
+    if mod_requirements:
+        mod_requirements_string = f"""
+        
+        YOU CREATED CODE BASED ON REQUIREMENTS GIVEN BELOW.  
+        NOW THE USER WANTS TO MAKE THIS CHANGE:
+        ```{mod_requirements}```
+        
+        """
+        current_code_string = f"""CURRENT CODE:
+        MAKE THE REQUIRED CHANGES TO THE CODE BELOW, LEAVING OTHER PARTS OF THE CODE UNCHANGED:
+        ```{current_code}```"""
+
+
     if df is not None:
         df_sample = df.head(5).to_markdown()
         df_string = f"""SAMPLE DATA:
@@ -35,11 +51,12 @@ AVAILABLE FUNCTIONS:
 [ st.stop() - A streamlit function to stop the execution under the line ]
     
 {df_string}
-
+{mod_requirements_string}
 The Requirements are:
 ```
 {user_requirements}
 ```
+{current_code_string}
 
 THINGS TO REMEMBER:
 - The functions you are generating will be used in a larger scheme of things. so be responsible in generating functions

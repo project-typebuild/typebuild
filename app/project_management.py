@@ -54,12 +54,9 @@ def get_project_file_folder():
     # Save to session state
     st.session_state.project_folder = project_folder
 
-    # # Get the project file path
-    # project_main_file = os.path.join(project_folder, 'main.py')
-    # # Create the file if it does not exist
-    # create_main_file_if_not_exists(project_main_file)
-    # # Save to session state
-    # st.session_state.project_main_file = project_main_file
+    # Allow user to upload files
+    if st.sidebar.checkbox("Upload files"):
+        file_upload_and_save()
 
     return None
 
@@ -121,26 +118,6 @@ def get_project_df():
         st.session_state.df = None
 
     return None
-
-def get_project_user_requirements():
-    """
-
-    This function gets the project user requirements from the project folder.
-
-    """
-
-    files = glob(f'{st.session_state.file_path}/*.txt')
-
-    if files:
-        with open(files[0], 'r') as f:
-            user_requirements = f.read()
-        st.session_state.user_requirements = user_requirements
-    else:
-        st.session_state.user_requirements = None
-        st.error('No user requirements found. Please upload a text file with user requirements.')
-
-    return None
-
 
 def file_upload_and_save():
     """
