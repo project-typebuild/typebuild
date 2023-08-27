@@ -15,7 +15,7 @@ import time
 import pandas as pd
 from blueprint_text import user_requirement_for_view
 import streamlit as st
-from prompts import get_prompt_to_code, get_prompt_to_modify
+from prompts import get_prompt_to_code
 from llm_functions import get_llm_output, parse_code_from_response, parse_modified_user_requirements_from_response
 from project_management import file_upload_and_save, get_project_df
 from glob import glob
@@ -127,3 +127,43 @@ def modify_code_old(user_requirements, all_function_descriptions,df=None):
     if 'modified_code' in st.session_state:
         st.info('Modified code')
         st.code(st.session_state.modified_code, language='python')
+    return None
+
+def select_view():
+    """
+    Let the user select the view
+    """
+    #----LET THE USER SELECT THE VIEW TO RUN----
+
+    # Get the file names from the directory
+    dir = st.session_state.project_folder
+    file_names = os.listdir(dir)
+    # Ignore files that start with __
+    file_names = [i for i in file_names if not i.startswith('__')]
+    # Read only files that end with .py
+    file_names = [i for i in file_names if i.endswith('.py')]
+    # Remove the .py extension
+    file_names = [i.replace('.py', '') for i in file_names]
+    file_names.append('Create new view')
+
+    # Create a selectbox to select the file
+    selected_file = st.sidebar.selectbox('Menu', file_names, key=f'selected_file_{st.session_state.ss_num}', on_change=session_state_management.change_view)
+
+    # Set the file path to the session state
+    file_path = os.path.join(dir, selected_file)
+    st.session_state.file_path = file_path
+
+    #--------GET A VIEW NAME FOR NEW VIEWS--------
+    if selected_file == 'Create new view':
+        # Show the df
+        st.subheader('Sample Data')
+        st.dataframe(st.session_state.df)
+        new_view_name = st.text_input('Enter the name of the new view', key='new_view_name')
+        if not new_view_name:
+            st.error('Enter a name for the new view')
+            st.stop()
+        selected_file = new_view_name.lower().replace(' ', '_')
+        # Save it to the session state
+        st.session_state.file_path = selected_file
+    
+    return None

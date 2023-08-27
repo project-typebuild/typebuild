@@ -5,7 +5,6 @@ llm related stuff, or streamlit related stuff.
 """
 import os
 import streamlit as st
-from session_state_management import change_project
 import pandas as pd
 import time
 from glob import glob

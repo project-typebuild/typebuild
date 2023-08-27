@@ -1,3 +1,5 @@
+from blueprint_code import select_view
+from blueprint_text import blueprint_builder
 import simple_auth
 import streamlit as st
 # Make it full width
@@ -17,11 +19,17 @@ from function_management import create_run_menu
 if st.sidebar.checkbox('Show session state'):
     st.write(st.session_state)
 
-# Create a menu to run the app
+# Get the project file and data
 get_project_file_folder()
 if 'df' not in st.session_state:
     get_project_df()
 
+# Select the view from the menu
+select_view()
+
+if st.sidebar.checkbox("Blueprint builder"):
+    blueprint_builder()
+    st.stop()
 create_run_menu()
 if 'last_request' in st.session_state:
     if st.sidebar.checkbox("Show latest request"):

@@ -5,9 +5,14 @@ and other aspects of understanding and manageing assets in the project folder
 
 from glob import glob
 import os
-from session_state_management import change_project
+import time
+from helpers import text_areas
+from llm_functions import get_llm_output
+from session_state_management import change_ss_for_project_change
 import streamlit as st
 import pandas as pd
+import prompts
+from streamlit_option_menu import option_menu
 
 def get_project_file_folder():
     """
@@ -43,7 +48,7 @@ def get_project_file_folder():
         project_names, 
         index=default_index,
         key='selected_project',
-        on_change=change_project
+        on_change=change_ss_for_project_change
         )
     if selected_project == 'Create new project':
         create_new_project()
@@ -53,12 +58,86 @@ def get_project_file_folder():
 
     # Save to session state
     st.session_state.project_folder = project_folder
+    if st.sidebar.checkbox("Manage project"):
+        manage_project()
+    return None
 
-    # Allow user to upload files
-    if st.sidebar.checkbox("Upload files"):
+def manage_project():
+    """
+    Allows the user to manage key aspects of the selected project:
+    - Manage data
+    - Set / edit project description
+    """
+    options = [
+        'Project description',
+        'Data Modelling',
+        'Upload data',
+    ]
+
+    selected_option = option_menu(
+        "Project settings",
+        options=options, 
+        orientation='horizontal',
+        )
+    
+    if selected_option == 'Upload data':
         file_upload_and_save()
 
+    if selected_option == 'Project description':
+        set_project_description()
+
+    if selected_option == 'Data Modelling':
+        st.header('Data Modelling')
+        st.stop()
+    
     return None
+
+def set_project_description():
+    """
+    This stores the user requirement for the given view,
+    based on the selected menu. 
+    """
+    file_path = st.session_state.project_folder + '/READ ME'
+    key = 'READ ME'
+    widget_label = 'Project description'
+    project_description = text_areas(file=file_path, key=key, widget_label=widget_label)
+    # Save to session state
+    st.session_state.project_description = project_description
+
+    project_description_chat()
+    st.stop()
+    return None
+
+
+def project_description_chat():
+    """
+    A chat on the project description.
+    That could be exported to the project description file.
+    """
+    # If there is no project description chat in the session state, create one
+    if 'project_description_chat' not in st.session_state:
+        st.session_state.project_description_chat = []
+    
+    chat_container = st.container()
+    prompt = st.chat_input("Enter your message", key='project_description_chat_input')
+    if prompt:
+        # Create the messages from the prompts file
+        prompts.blueprint_prompt_structure()
+        with st.spinner('Generating response...'):
+            res = get_llm_output(st.session_state.project_description_chat, model='gpt-3.5-turbo-16k')
+            # Add the response to the chat
+            st.session_state.project_description_chat.append({'role': 'assistant', 'content': res})
+    
+    # Display the user and assistant messages
+    with chat_container:
+        for msg in st.session_state.project_description_chat:
+            if msg['role'] in ['user', 'assistant']:
+                with st.chat_message(msg['role']):
+                    st.markdown(msg['content'])
+
+    return None
+
+
 
 def create_new_project():
     """
@@ -95,9 +174,13 @@ def create_new_project():
     if not os.path.exists(init_file):
         with open(init_file, 'w') as f:
             f.write('')
+        st.success("Created the project.  You are ready to use it.")
+        time.sleep(2)
     # Save to session state
     st.session_state.project_folder = project_folder
-    # st.session_state.project_main_file = project_main_file
+    # Increment session number
+    st.session_state.ss_num += 1
+
     return None
 
 
@@ -130,7 +213,7 @@ def file_upload_and_save():
     """
 
     # Create a file uploader
-    uploaded_file = st.sidebar.file_uploader("Choose a CSV or a JSON file")
+    uploaded_file = st.file_uploader("Choose a CSV or a JSON file")
 
     # Check if a file was uploaded
     if uploaded_file is not None:

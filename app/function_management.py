@@ -17,7 +17,6 @@ from file_management import create_new_file_with_imports
 from project_management import create_new_project
 import time
 from blueprint_code import generate_code_from_user_requirements, modify_code
-from session_state_management import change_view
 
 def import_functions(module_path, function_names):
     """
@@ -51,48 +50,15 @@ def import_functions(module_path, function_names):
 
 def create_run_menu():
     """
-    The user selects a view or creates a new view and can create or modify functions.
+    Create or modify functions for the selected view.
     When the function is ready it is run. 
     """
-    #----LET THE USER SELECT THE VIEW TO RUN----
-
-    # Get the file names from the directory
-    dir = st.session_state.project_folder
-    file_names = os.listdir(dir)
-    # Ignore files that start with __
-    file_names = [i for i in file_names if not i.startswith('__')]
-    # Read only files that end with .py
-    file_names = [i for i in file_names if i.endswith('.py')]
-    # Remove the .py extension
-    file_names = [i.replace('.py', '') for i in file_names]
-    file_names.append('Create new view')
-
-    # Create a selectbox to select the file
-    selected_file = st.sidebar.selectbox('Menu', file_names, key=f'selected_file_{st.session_state.ss_num}', on_change=change_view)
-
-    # Set the file path to the session state
-    file_path = os.path.join(dir, selected_file)
-    st.session_state.file_path = file_path
-
-    #--------GET A VIEW NAME FOR NEW VIEWS--------
-    if selected_file == 'Create new view':
-        # Show the df
-        st.subheader('Sample Data')
-        st.dataframe(st.session_state.df)
-        new_view_name = st.text_input('Enter the name of the new view', key='new_view_name')
-        if not new_view_name:
-            st.error('Enter a name for the new view')
-            st.stop()
-        selected_file = new_view_name.lower().replace(' ', '_')
-
-    # Add .py extension
-    selected_file = selected_file + '.py'
-    file_path = file_path + '.py'    
-
     #--------GET CODE FOR NEW AND EXISTING VIEWS--------
+    # Add .py extension
+    selected_file = st.session_state.file_path + '.py'
 
     # If the file does not exist, generate code for it
-    if os.path.exists(file_path):
+    if os.path.exists(selected_file):
         with st.expander('View and change instructions, if necessary'):
             modify_code()
 
@@ -104,7 +70,7 @@ def create_run_menu():
         # Get the code
         code = st.session_state.code
         # Add the function to the file
-        create_new_file_with_imports(code, file_path=file_path)
+        create_new_file_with_imports(code, file_path=selected_file)
         
         st.session_state.ss_num += 1
         # Set the menu to be the newly created file path without the .py extension
@@ -115,9 +81,9 @@ def create_run_menu():
 
     #-------RUN THE FILE-------
 
-    if os.path.exists(file_path):    
+    if os.path.exists(selected_file):    
         # Import the module
-        my_functions = import_functions(file_path, ['main'])
+        my_functions = import_functions(selected_file, ['main'])
         if my_functions:
             # Run the main function
             my_functions['main']()
