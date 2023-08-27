@@ -51,34 +51,30 @@ def import_functions(module_path, function_names):
 
 def create_run_menu():
     """
-    The given directory should contain a set of modules.
-    Create a selectbox based on the file names in the directory.
-    When a file is selected, import the module and run the main function.
+    The user selects a view or creates a new view and can create or modify functions.
+    When the function is ready it is run. 
     """
+    #----LET THE USER SELECT THE VIEW TO RUN----
+
     # Get the file names from the directory
     dir = st.session_state.project_folder
-
     file_names = os.listdir(dir)
-    
     # Ignore files that start with __
     file_names = [i for i in file_names if not i.startswith('__')]
-
     # Read only files that end with .py
     file_names = [i for i in file_names if i.endswith('.py')]
-
     # Remove the .py extension
     file_names = [i.replace('.py', '') for i in file_names]
-
     file_names.append('Create new view')
 
     # Create a selectbox to select the file
     selected_file = st.sidebar.selectbox('Menu', file_names, key=f'selected_file_{st.session_state.ss_num}', on_change=change_view)
 
-    # Create a path to the selected file
+    # Set the file path to the session state
     file_path = os.path.join(dir, selected_file)
-    st.sidebar.info(f'File path: {file_path}')
     st.session_state.file_path = file_path
 
+    #--------GET A VIEW NAME FOR NEW VIEWS--------
     if selected_file == 'Create new view':
         # Show the df
         st.subheader('Sample Data')
@@ -89,14 +85,11 @@ def create_run_menu():
             st.stop()
         selected_file = new_view_name.lower().replace(' ', '_')
 
-    # Show modify checkbox if its not create new view
-    else:        
-        # Get all the function descriptions
-        all_function_descriptions = get_all_function_descriptions(module_name=selected_file, file_path=st.session_state.file_path + '.py')
-
     # Add .py extension
     selected_file = selected_file + '.py'
     file_path = file_path + '.py'    
+
+    #--------GET CODE FOR NEW AND EXISTING VIEWS--------
 
     # If the file does not exist, generate code for it
     if os.path.exists(file_path):
@@ -105,6 +98,8 @@ def create_run_menu():
 
     else:
         generate_code_from_user_requirements(st.session_state.df)
+
+    #--------IF THERE IS A NEW RESPONSE, WRITE TO FILE--------    
     if 'response' in st.session_state:
         # Get the code
         code = st.session_state.code
@@ -118,17 +113,15 @@ def create_run_menu():
         del st.session_state.response
         st.experimental_rerun()
 
-    # Now we are ready to run the file
+    #-------RUN THE FILE-------
+
     if os.path.exists(file_path):    
         # Import the module
         my_functions = import_functions(file_path, ['main'])
         if my_functions:
             # Run the main function
             my_functions['main']()
-
-
     
-
     return None
 
 
