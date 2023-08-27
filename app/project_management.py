@@ -98,9 +98,9 @@ def set_project_description():
     This stores the user requirement for the given view,
     based on the selected menu. 
     """
-    file_path = st.session_state.project_folder + '/READ ME'
-    key = 'READ ME'
-    widget_label = 'Project description'
+    file_path = st.session_state.project_folder + '/project_settings/project_description.txt'
+    key = 'Project Description'
+    widget_label = 'Project Description'
     project_description = text_areas(file=file_path, key=key, widget_label=widget_label)
     # Save to session state
     st.session_state.project_description = project_description

@@ -19,7 +19,10 @@ def text_areas(file, key, widget_label):
     Given a file, load the text from the file and display it in a text area.
     On change, save the text to the file.
     """
-
+    # Get the directory and create it if it does not exist
+    directory = os.path.dirname(file)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
     # Load current value from file.  If not create empty file
     if not os.path.exists(file):
         with open(file, 'w') as f:
@@ -33,6 +36,7 @@ def text_areas(file, key, widget_label):
         key=key,
         html=True,
         )
+    
     if out != value:
         
         if st.button(f"Update {widget_label}", key=f"update_button_{key}"):
