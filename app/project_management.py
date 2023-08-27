@@ -74,11 +74,12 @@ def manage_project():
         'Upload data',
     ]
 
-    selected_option = option_menu(
-        "Project settings",
-        options=options, 
-        orientation='horizontal',
-        )
+    with st.sidebar:
+        selected_option = option_menu(
+            "Project settings",
+            options=options, 
+            key='project_settings',            
+            )
     
     if selected_option == 'Upload data':
         file_upload_and_save()
