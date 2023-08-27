@@ -12,6 +12,8 @@ def get_prompt_to_code(user_requirements, df=None, mod_requirements=None, curren
     # Args
     - user_requirements: A string with the user requirements
     - df_sample: A pandas dataframe with sample data
+    - mod_requirements: A string with the modification requirements
+    - current_code: A string with the current code
 
     # Returns
     - messages: A list of dictionaries with the system instruction and prompt to code
