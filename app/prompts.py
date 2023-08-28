@@ -70,7 +70,8 @@ THINGS TO REMEMBER:
 - The reason for providing dictionary of table names and sample rows is, you need to identify what table to use for the given user requirements.
 - Identify the table name and write a function to read the table from the database and store it in streamlit session state under the key <table_name>_df. For example, if the table name is 'users', then store the dataframe in st.session_state using the key 'users_df'
 - Once you have the dataframe, you can use it to write the functions that the user is asking for. 
-- If the user asks for a table, you should always use st.dataframe to display the table.
+- If the user asks for a table, you should always use the function 'display_editable_data' to display the table. This function will take care of displaying the table and also editing the table.
+- You can import the function 'display_editable_data' using the following import statement: ```from data_widgets import display_editable_data```
 - You need to return the full code of the functions you are generating.
 - Do not write unnecessary print, st.write and success, info and warning messages in the functions.
 - Do not return the available functions in the response. Your response should include only the newly generated functions

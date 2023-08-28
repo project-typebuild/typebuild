@@ -22,6 +22,12 @@ from glob import glob
 import session_state_management
 session_state_management.main()
 
+import sys
+sys.path.append('plugins')
+
+# Import the plugins
+from data_widgets import display_editable_data
+
 import openai
 openai.api_key = st.secrets.openai.key 
 

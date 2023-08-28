@@ -30,6 +30,8 @@ def get_project_database():
     """
 
     # Get the list of tables in the database
+    con = sqlite3.connect(f'{st.session_state.project_folder}/data.db')
+    st.session_state.con = con
     tables = pd.read_sql_query("SELECT name FROM sqlite_master WHERE type='table'", con=st.session_state.con)
     table_names = tables['name'].tolist()
     st.warning(f'The following tables are available in the database:{table_names}')
@@ -98,6 +100,7 @@ def manage_project():
         'Project description',
         'Data Modelling',
         'Upload data',
+        'Append data'
     ]
 
     with st.sidebar:
@@ -109,6 +112,9 @@ def manage_project():
     
     if selected_option == 'Upload data':
         file_upload_and_save()
+
+    if selected_option == 'Append data':
+        append_data_to_exisiting_file()
 
     if selected_option == 'Project description':
         set_project_description()
@@ -219,7 +225,7 @@ def get_project_df():
 
     """
 
-    files = glob(f'{st.session_state.project_folder}/*.csv')
+    files = glob(f'{st.session_state.project_folder}/data/*.csv')
     if files:
         df = pd.read_csv(files[0])
         st.session_state.df = df
@@ -250,10 +256,13 @@ def file_upload_and_save():
         # Get the file name
         file_name = uploaded_file.name
 
-        file_path = os.path.join(st.session_state.project_folder, file_name)
+        file_path = os.path.join(st.session_state.project_folder + '/data/', file_name)
+
+        # Create a temporary file path
+        tmp_file_path = os.path.join('/tmp/', file_name)
 
         # Save the file to the project folder
-        with open(file_path, 'wb') as f:
+        with open(tmp_file_path, 'wb') as f:
             f.write(uploaded_file.getbuffer())
 
         # Display a success message
@@ -262,25 +271,23 @@ def file_upload_and_save():
         # Check if the uploaded file is a CSV file
         if file_name.endswith('.csv'):
             # Load the CSV file into a pandas DataFrame
-            df = pd.read_csv(file_path)
-
-            # Do some data processing here...
-
-            # Save the processed data to a new CSV file
-            df.to_csv(file_path, index=False)
-
+            df = pd.read_csv(tmp_file_path)
+            
+            # Save the processed data to a new Parquet file
+            file_path = file_path.replace('.csv', '.parquet')
+            df.to_parquet(file_path, index=False)
+            
             # Display a success message
             st.success(f"Processed data saved to '{file_name}' successfully!")
         
         # Check if the uploaded file is a JSON file
         elif file_name.endswith('.json'):
             # Load the JSON file into a pandas DataFrame
-            df = pd.read_json(file_path)
+            df = pd.read_json(tmp_file_path)
 
-            # Do some data processing here...
-
-            # Save the processed data to a new JSON file
-            df.to_json(file_path, orient='records', lines=True)
+            # Save the processed data to a new Parquet file
+            file_path = file_path.replace('.json', '.parquet')
+            df.to_parquet(file_path, index=False)
 
             # Display a success message
             st.success(f"Processed data saved to '{file_name}' successfully!")
@@ -288,7 +295,7 @@ def file_upload_and_save():
         # Check if the uploaded file is a Parquet file
         elif file_name.endswith('.parquet'):
             # Load the Parquet file into a pandas DataFrame
-            df = pd.read_parquet(file_path)
+            df = pd.read_parquet(tmp_file_path)
 
             # Do some data processing here...
 
@@ -301,12 +308,11 @@ def file_upload_and_save():
         # Check if the uploaded file is an Excel file
         elif file_name.endswith('.xlsx'):
             # Load the Excel file into a pandas DataFrame
-            df = pd.read_excel(file_path)
+            df = pd.read_excel(tmp_file_path)
 
-            # Do some data processing here...
-
-            # Save the processed data to a new Excel file
-            df.to_excel(file_path, index=False)
+            # Save the processed data to a new Parquet file
+            file_path = file_path.replace('.xlsx', '.parquet')
+            df.to_parquet(file_path, index=False)
 
             # Display a success message
             st.success(f"Processed data saved to '{file_name}' successfully!")
@@ -314,14 +320,36 @@ def file_upload_and_save():
         # Check if the uploaded file is a Pickle file
         elif file_name.endswith('.pkl'):
             # Load the Pickle file into a pandas DataFrame
-            df = pd.read_pickle(file_path)
+            df = pd.read_pickle(tmp_file_path)
 
-            # Do some data processing here...
-
-            # Save the processed data to a new Pickle file
-            df.to_pickle(file_path, index=False)
+            # Save the processed data to a new Parquet file
+            file_path = file_path.replace('.pkl', '.parquet')
+            df.to_parquet(file_path, index=False)
 
             # Display a success message
             st.success(f"Processed data saved to '{file_name}' successfully!")
         st.session_state['file_uploaded'] = True
     return None
+
+def append_data_to_exisiting_file():
+
+    """
+    This function allows the user to append data to an existing file. 
+    It also allows the user to process the data and save it to a new file.
+    You can upload a CSV, JSON, PARQUET, EXCEL, or PICKLE file.
+
+    Once the file is uploaded, it is added to an existing parquet file.
+
+    """
+
+    file_path = os.path.join(st.session_state.project_folder + '/data/')
+
+    # Get the list of files in the project folder
+    files = glob(f'{file_path}/*.parquet')
+
+    # Ask the user to select a file to append data to
+    selected_file = st.selectbox("Select a file to append data to", files)
+
+    # Check if a file was selected
+
+

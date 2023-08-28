@@ -22,6 +22,7 @@ def date_or_string(df, column_name):
     Returns 'date' if the column contains dates, 'string' otherwise.
     """
     # convert the column to datetime format
+    df = df[[column_name]].copy()
     df[column_name] = pd.to_datetime(df[column_name], errors='coerce')
 
     # check if the column contains all null values
@@ -55,10 +56,9 @@ def get_data_config(df):
         if df[col].dtype == 'object':
             # Check if it's a date or string
             if date_or_string(df, col) == 'date':
+                df[col] = pd.to_datetime(df[col])
                 config[col] = st.column_config.DateColumn(col)
             else:
-                # Fill na with empty string
-                df[col] = df[col].fillna('')
                 # If cardinality is less than 20%, make it a select box
                 if df[col].nunique() / len(df) < 0.2:
                     options = df[col].unique().tolist()
@@ -156,11 +156,12 @@ def display_editable_data(df):
     """
     # Get configuration needed to display the data
     # in correct format and to create the right widgets to edit them
-    file_name = st.session_state['project_file']
+    # file_name = st.session_state['project_file']
     config = get_data_config(df)
+    
     # Display the data
     edited_df = st.data_editor(df, column_config=config, num_rows='dynamic')
 
     # Save the data to file if there are changes
-    update_data_to_file(df, edited_df, file_name)
+    # update_data_to_file(df, edited_df, file_name)
     return None   
