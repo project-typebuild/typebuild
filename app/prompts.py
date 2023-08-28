@@ -36,10 +36,10 @@ def get_prompt_to_code(user_requirements, df=None, mod_requirements=None, curren
 
 
     if df is not None:
-        df_sample = df.head(5).to_markdown()
         df_string = f"""SAMPLE DATA:
+        The following dictionary contains the sample data. The keys are the table names of a database and the values are the sample rows of a pandas dataframe.
         Use the column names and data types when you are writing the functions
-        ```{df_sample}```"""
+        ```{df}```"""
     else:    
         df_string = "NOTE: No sample data provided"
 
@@ -66,9 +66,12 @@ THINGS TO REMEMBER:
 - The functions you are generating will be used in a larger scheme of things. so be responsible in generating functions
 - If the user asks for a login page, sign up page. Ignore it, you are not responsible for that. There is a separate team for that.
 - If a sample data is provided, use it to write better functions. You should be careful with the data types and column names
-- If the user asks for a table, you should always use st.dataframe to display the table
-- The required data can be found in a variable called st.session_state.df.  Do not load data from file.
-- You need to return the full code of the functions you are generating
+- If a sample data is provided, then assume the data is stored in a sqlite3 database. The sample data is provided to you as a dictionary. The keys are the table names of a database and the values are the sample rows of a pandas dataframe. 
+- The reason for providing dictionary of table names and sample rows is, you need to identify what table to use for the given user requirements.
+- Identify the table name and write a function to read the table from the database and store it in streamlit session state under the key <table_name>_df. For example, if the table name is 'users', then store the dataframe in st.session_state using the key 'users_df'
+- Once you have the dataframe, you can use it to write the functions that the user is asking for. 
+- If the user asks for a table, you should always use st.dataframe to display the table.
+- You need to return the full code of the functions you are generating.
 - Do not write unnecessary print, st.write and success, info and warning messages in the functions.
 - Do not return the available functions in the response. Your response should include only the newly generated functions
 - You need to create one function for each feature in the app
