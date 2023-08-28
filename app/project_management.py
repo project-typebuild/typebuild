@@ -247,107 +247,47 @@ def get_project_df():
 
 def file_upload_and_save():
     """
-    This function allows the user to upload a file and save it to the current folder. 
-    It also allows the user to process the data and save it to a new file.
-    You can upload a CSV, JSON, PARQUET, EXCEL, or PICKLE file.
-
-    Once the file is uploaded, it is added to a sqlite database. the filename becomes the table name in the database.
-
-    TODO: Add support for other file types: Parquet, Excel, etc.
-
+    This function allows the user to upload a CSV or a parquet file, load it as a dataframe,
+    and provides a button to save the file as a parquet file with the same name.
     """
+    # Define the allowed file types
+    allowed_file_types = ['csv', 'parquet']
 
-    # Create a file uploader
-    uploaded_file = st.file_uploader("Choose a CSV or a JSON file")
+    # Ask the user to upload a file
+    uploaded_file = st.file_uploader("Upload a file", type=allowed_file_types)
 
-    # Check if a file was uploaded
+    # If a file was uploaded
     if uploaded_file is not None:
-        if st.button("Save file"):
-            file_name 
-        # Get the file name
+        # Get the file extension
+        file_extension = uploaded_file.name.split('.')[-1]
+
+        # Load the file as a dataframe
+        if file_extension == 'csv':
+            df = pd.read_csv(uploaded_file)
+        elif file_extension == 'parquet':
+            df = pd.read_parquet(uploaded_file)
+
+        # Show the dataframe
+        st.dataframe(df)
+
+        # Get the name of the uploaded file
         file_name = uploaded_file.name
+        # Remove the file extension
+        file_name = file_name.replace(f'.{file_extension}', '')
 
-        # Create the file path
-        data_folder = st.session_state.project_folder + '/data/'
-
-        # Create the folder if it does not exist
-        if not os.path.exists(data_folder):
-            os.makedirs(data_folder)
-
-        file_path = data_folder + file_name
-
-        # Create a temporary file path
-        tmp_file_path = '/tmp/' + file_name
-
-        # Save the file to the project folder
-        with open(tmp_file_path, 'wb') as f:
-            f.write(uploaded_file.getbuffer())
-
-        # Display a success message
-        st.success(f"File '{file_name}' uploaded and saved successfully!")
-
-        # Check if the uploaded file is a CSV file
-        if file_name.endswith('.csv'):
-            # Load the CSV file into a pandas DataFrame
-            df = pd.read_csv(tmp_file_path)
-            
-            # Save the processed data to a new Parquet file
-            file_path = file_path.replace('.csv', '.parquet')
+        # Create a button to save the file as a parquet file with the same name
+        if st.button('Save as Parquet'):
+            # Save the file to the data folder
+            file_path = st.session_state.project_folder + '/data/' + file_name + '.parquet'
+            # Create folder if it does not exist
+            folder_name = os.path.dirname(file_path)
+            if not os.path.exists(folder_name):
+                os.makedirs(folder_name)
             df.to_parquet(file_path, index=False)
-            
-            # Display a success message
-            st.success(f"Processed data saved to '{file_name}' successfully!")
-        
-        # Check if the uploaded file is a JSON file
-        elif file_name.endswith('.json'):
-            # Load the JSON file into a pandas DataFrame
-            df = pd.read_json(tmp_file_path)
-
-            # Save the processed data to a new Parquet file
-            file_path = file_path.replace('.json', '.parquet')
-            df.to_parquet(file_path, index=False)
-
-            # Display a success message
-            st.success(f"Processed data saved to '{file_name}' successfully!")
-
-        # Check if the uploaded file is a Parquet file
-        elif file_name.endswith('.parquet'):
-            # Load the Parquet file into a pandas DataFrame
-            df = pd.read_parquet(tmp_file_path)
-
-            # Do some data processing here...
-
-            # Save the processed data to a new Parquet file
-            df.to_parquet(file_path, index=False)
-
-            # Display a success message
-            st.success(f"Processed data saved to '{file_name}' successfully!")
-
-        # Check if the uploaded file is an Excel file
-        elif file_name.endswith('.xlsx'):
-            # Load the Excel file into a pandas DataFrame
-            df = pd.read_excel(tmp_file_path)
-
-            # Save the processed data to a new Parquet file
-            file_path = file_path.replace('.xlsx', '.parquet')
-            df.to_parquet(file_path, index=False)
-
-            # Display a success message
-            st.success(f"Processed data saved to '{file_name}' successfully!")
-
-        # Check if the uploaded file is a Pickle file
-        elif file_name.endswith('.pkl'):
-            # Load the Pickle file into a pandas DataFrame
-            df = pd.read_pickle(tmp_file_path)
-
-            # Save the processed data to a new Parquet file
-            file_path = file_path.replace('.pkl', '.parquet')
-            df.to_parquet(file_path, index=False)
-
-            # Display a success message
-            st.success(f"Processed data saved to '{file_name}' successfully!")
-        st.session_state['file_uploaded'] = True
+            st.success(f'File saved successfully')
+    st.stop()
     return None
+
 
 def append_data_to_exisiting_file():
 
