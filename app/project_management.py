@@ -14,8 +14,7 @@ import pandas as pd
 import prompts
 from streamlit_option_menu import option_menu
 import sqlite3
-con = sqlite3.connect(f'{st.session_state.project_folder}/data.db')
-st.session_state.con = con
+
 
 def get_project_database():
 
