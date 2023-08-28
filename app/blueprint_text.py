@@ -21,7 +21,11 @@ def user_requirement_for_view():
     """
     file_path = st.session_state.file_path + '.txt'
     key = st.session_state.file_path + '_key'
-    widget_label = 'User requirements for ' + st.session_state.file_path
+    extract_file_name = st.session_state.file_path \
+        .split('/')[-1] \
+        .replace('_', ' ') \
+        .upper()
+    widget_label = 'User requirements for ' + extract_file_name
     return text_areas(file=file_path, key=key, widget_label=widget_label)
 
 def blueprint_builder():

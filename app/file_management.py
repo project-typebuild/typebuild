@@ -61,6 +61,9 @@ def create_new_file_with_imports(func_str, file_path):
     import_statement = "import streamlit as st\nimport pandas as pd\nimport os\nfrom glob import glob\nimport altair as alt\n\n"
     func_str = import_statement + func_str
 
+    # Add .py if not already there
+    if not file_path.endswith('.py'):
+        file_path += '.py'
     with open(file_path, 'w') as f:
         f.write(func_str)
     return None

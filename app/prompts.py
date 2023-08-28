@@ -67,7 +67,7 @@ THINGS TO REMEMBER:
 - If the user asks for a login page, sign up page. Ignore it, you are not responsible for that. There is a separate team for that.
 - If a sample data is provided, use it to write better functions. You should be careful with the data types and column names
 - If the user asks for a table, you should always use st.dataframe to display the table
-- If a sample data is provided, then assume the data is stored in a streamlit session state variable called st.session_state.df
+- The required data can be found in a variable called st.session_state.df.  Do not load data from file.
 - You need to return the full code of the functions you are generating
 - Do not write unnecessary print, st.write and success, info and warning messages in the functions.
 - Do not return the available functions in the response. Your response should include only the newly generated functions

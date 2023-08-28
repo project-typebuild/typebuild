@@ -21,6 +21,8 @@ if st.sidebar.checkbox('Show session state'):
 
 # Get the project file and data
 get_project_file_folder()
+if st.session_state.df is None:
+    del st.session_state['df']
 if 'df' not in st.session_state:
     get_project_df()
 

@@ -73,8 +73,11 @@ def create_run_menu():
         create_new_file_with_imports(code, file_path=selected_file)
         
         st.session_state.ss_num += 1
-        # Set the menu to be the newly created file path without the .py extension
-        st.session_state[f"selected_file_{st.session_state.ss_num}"] = selected_file.replace('.py', '')
+        # Set the menu to be the newly created file name without the .py extension
+        _,file_name = os.path.split(selected_file)
+        file_name = file_name.replace('.py', '')
+        
+        st.session_state[f"selected_file_{st.session_state.ss_num}"] = file_name
         # Remove the response from the session state
         del st.session_state.response
         st.experimental_rerun()
