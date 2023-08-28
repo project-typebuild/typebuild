@@ -83,7 +83,7 @@ def get_project_file_folder():
         st.stop()
         
     project_folder = os.path.join(user_folder, selected_project)
-
+    
     # Save to session state
     st.session_state.project_folder = project_folder
     if st.sidebar.checkbox("Manage project"):
@@ -201,7 +201,18 @@ def create_new_project():
     project_folder = os.path.join(user_folder, project_name)
     if not os.path.exists(project_folder):
         os.makedirs(project_folder)
-    
+    data_folder = os.path.join(project_folder, 'data')
+    views_folder = os.path.join(project_folder, 'views')
+    project_settings_folder = os.path.join(project_folder, 'project_settings')
+
+    # Create these folders if they do not exist
+    if not os.path.exists(data_folder):
+        os.makedirs(data_folder)
+    if not os.path.exists(views_folder):
+        os.makedirs(views_folder)
+    if not os.path.exists(project_settings_folder):
+        os.makedirs(project_settings_folder)
+
     # Create the __init__.py file
     init_file = os.path.join(project_folder, '__init__.py')
     if not os.path.exists(init_file):
