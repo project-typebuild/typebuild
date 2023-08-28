@@ -13,6 +13,33 @@ import streamlit as st
 import pandas as pd
 import prompts
 from streamlit_option_menu import option_menu
+import sqlite3
+con = sqlite3.connect(f'{st.session_state.project_folder}/data.db')
+st.session_state.con = con
+
+def get_project_database():
+
+    """
+    This function establishes a connection to the project database. It will loop through the existing tables and create a dictionary of table_name and top two rows of the table. 
+
+    Args:
+    - None
+
+    Returns:
+    - table_dict (dict): A dictionary of table_name and top two rows of the table in markdown format.
+
+    """
+
+    # Get the list of tables in the database
+    tables = pd.read_sql_query("SELECT name FROM sqlite_master WHERE type='table'", con=st.session_state.con)
+    table_names = tables['name'].tolist()
+    st.warning(f'The following tables are available in the database:{table_names}')
+    # Create a dictionary of table_name and top two rows of the table
+    table_dict = {}
+    for table_name in table_names:
+        table_dict[table_name] = pd.read_sql_query(f"SELECT * FROM {table_name}", con).head(2).to_markdown()
+    return table_dict
+
 
 def get_project_file_folder():
     """
@@ -207,7 +234,9 @@ def file_upload_and_save():
     """
     This function allows the user to upload a file and save it to the current folder. 
     It also allows the user to process the data and save it to a new file.
-    You can upload a CSV or JSON file.
+    You can upload a CSV, JSON, PARQUET, EXCEL, or PICKLE file.
+
+    Once the file is uploaded, it is added to a sqlite database. the filename becomes the table name in the database.
 
     TODO: Add support for other file types: Parquet, Excel, etc.
 
@@ -218,12 +247,15 @@ def file_upload_and_save():
 
     # Check if a file was uploaded
     if uploaded_file is not None:
+        if st.button("Save file"):
+            file_name 
         # Get the file name
         file_name = uploaded_file.name
 
         file_path = os.path.join(st.session_state.project_folder, file_name)
-        # Save the file
-        with open(file_path, "wb") as f:
+
+        # Save the file to the project folder
+        with open(file_path, 'wb') as f:
             f.write(uploaded_file.getbuffer())
 
         # Display a success message
