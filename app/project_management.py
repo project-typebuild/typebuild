@@ -267,10 +267,17 @@ def file_upload_and_save():
         # Get the file name
         file_name = uploaded_file.name
 
-        file_path = os.path.join(st.session_state.project_folder + '/data/', file_name)
+        # Create the file path
+        data_folder = st.session_state.project_folder + '/data/'
+
+        # Create the folder if it does not exist
+        if not os.path.exists(data_folder):
+            os.makedirs(data_folder)
+
+        file_path = data_folder + file_name
 
         # Create a temporary file path
-        tmp_file_path = os.path.join('/tmp/', file_name)
+        tmp_file_path = '/tmp/' + file_name
 
         # Save the file to the project folder
         with open(tmp_file_path, 'wb') as f:
