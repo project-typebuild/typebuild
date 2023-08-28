@@ -136,8 +136,13 @@ def select_view():
     #----LET THE USER SELECT THE VIEW TO RUN----
 
     # Get the file names from the directory
-    dir = st.session_state.project_folder
+    dir = st.session_state.project_folder + '/views'
+    
+    # Create directory if it doesn't exist
+    if not os.path.exists(dir):
+        os.makedirs(dir)
     file_names = os.listdir(dir)
+    
     # Ignore files that start with __
     file_names = [i for i in file_names if not i.startswith('__')]
     # Read only files that end with .py
@@ -147,8 +152,12 @@ def select_view():
     file_names.append('Create new view')
 
     # Create a selectbox to select the file
-    selected_file = st.sidebar.selectbox('Menu', file_names, key=f'selected_file_{st.session_state.ss_num}', on_change=session_state_management.change_view)
-
+    selected_file = st.sidebar.selectbox(
+        label='Menu', 
+        options=file_names, 
+        key=f'selected_file_{st.session_state.ss_num}', 
+        on_change=session_state_management.change_view
+        )
     # Set the file path to the session state
     file_path = os.path.join(dir, selected_file)
     st.session_state.file_path = file_path
@@ -162,8 +171,10 @@ def select_view():
         if not new_view_name:
             st.error('Enter a name for the new view')
             st.stop()
-        selected_file = new_view_name.lower().replace(' ', '_')
+        selected_file = 'views/' + new_view_name.lower().replace(' ', '_')
+        file_path = os.path.join(dir, selected_file)
+        
         # Save it to the session state
-        st.session_state.file_path = selected_file
+        st.session_state.file_path = file_path
     
     return None
