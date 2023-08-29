@@ -5,13 +5,13 @@ This file is used to generate all prompts to be sent to LLMs
 import pandas as pd
 import streamlit as st
 
-def get_prompt_to_code(user_requirements, df=None, mod_requirements=None, current_code=None):
+def get_prompt_to_code(user_requirements, data_description=None, mod_requirements=None, current_code=None):
 
     """
     This function takes in the sample data and user requirements and creates the system instruction and prompt to code.
     # Args
     - user_requirements: A string with the user requirements
-    - df_sample: A pandas dataframe with sample data
+    - data_description: A dictionary with file names as keys and description of the data (including the column names) in each file as values
     - mod_requirements: A string with the modification requirements
     - current_code: A string with the current code
 
@@ -35,13 +35,13 @@ def get_prompt_to_code(user_requirements, df=None, mod_requirements=None, curren
         ```{current_code}```"""
 
 
-    if df is not None:
-        df_string = f"""SAMPLE DATA:
-        The following dictionary contains the sample data. The keys are the table names of a database and the values are the sample rows of a pandas dataframe.
+    if data_description is not None:
+        df_string = f"""DATA DESCRIPTION:
+        The following dictionary has the file names as keys and description of the data in each file as values:
         Use the column names and data types when you are writing the functions
-        ```{df}```"""
+        ```{data_description}```"""
     else:    
-        df_string = "NOTE: No sample data provided"
+        df_string = "NOTE: No data description is provided"
 
     system_instruction_to_code = f"""
 You are the python developer with an expertise in packages like streamlit, pandas, altair. 
