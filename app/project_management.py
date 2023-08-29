@@ -237,12 +237,18 @@ def get_project_df():
 
     """
 
-    files = glob(f'{st.session_state.project_folder}/data/*.csv')
-    if files:
-        df = pd.read_csv(files[0])
-        st.session_state.df = df
-    else:
-        st.session_state.df = None
+    files = glob(f'{st.session_state.project_folder}/data/*.parquet')
+
+    if len(files) > 0:
+        # Get the list of files in the project folder
+        files = glob(f'{st.session_state.project_folder}/data/*.parquet')
+        # Ask the user to select a file to append data to
+        selected_file = st.selectbox("Select a file to append data to", files)
+        # Load the file as a dataframe
+        df = pd.read_parquet(selected_file)
+        # Show the dataframe
+        st.dataframe(df)
+        return df
 
     return None
 
