@@ -51,16 +51,22 @@ def generate_code_from_user_requirements(df=None, mod_requirements=None, current
     # Define the prompt
     st.header("Your requirements")
     user_requirements = user_requirement_for_view()
-    if st.button("Generate code"):
-        get_code(df=df, user_requirements=user_requirements, mod_requirements=mod_requirements, current_code=current_code)
+    if st.button("Generate the view"):
+        get_code(user_requirements=user_requirements, mod_requirements=mod_requirements, current_code=current_code)
         st.experimental_rerun()
     return None
 
-def get_code(df=None, user_requirements="", mod_requirements=None, current_code=None):
+def get_code(user_requirements="", mod_requirements=None, current_code=None):
+
+    # Get data description
+    data_model_file = st.session_state.project_folder + '/data_model.txt'
+    with open(data_model_file, 'r') as f:
+        data_model = f.read()
+
 
     messages = get_prompt_to_code(
-        user_requirements, 
-        df=df,
+        user_requirements,
+        data_description=data_model,
         mod_requirements=mod_requirements,
         current_code=current_code,
         )
@@ -98,42 +104,10 @@ def modify_code():
     st.info("If requirements are correct but the output is not as expected, tell us what changes you want to make to the function.")
     change_requested = st.text_area("What changes do you want to make to the function?")
     if st.button("Modify"):
-        get_code(df=st.session_state.df, mod_requirements=change_requested, current_code=current_code)
+        get_code(mod_requirements=change_requested, current_code=current_code)
     return None
 
-def modify_code_old(user_requirements, all_function_descriptions,df=None):
 
-    """
-    The function that modifies code based on user requirements.
-
-    Args:
-    - user_requirements: initial user requirements. 
-    - all_function_descriptions: descriptions of all the functions available
-    - df: A pandas dataframe with sample data (optional, default None)
-
-    Returns:
-    - None
-
-    """
-
-    if st.sidebar.checkbox('Modify function', key=f'modify_checkbox_{st.session_state.ss_num}'):
-        
-        change_requested = st.sidebar.text_area("What changes do you want to make to the function?")
-        if st.sidebar.button("Make the change"):
-            messages_modify = get_prompt_to_modify(change_requested=change_requested, user_requirements=user_requirements, df=df, all_function_descriptions=all_function_descriptions)
-            st.session_state.messages_modify = messages_modify
-            response = get_llm_output(messages_modify)
-            st.session_state.response = response
-            modified_code = '\n\n'.join(parse_code_from_response(response))
-            modified_user_requirements = parse_modified_user_requirements_from_response(response)[0]
-            st.session_state.modified_code = modified_code
-            st.session_state.modified_user_requirements = modified_user_requirements
-            st.session_state.change_requested = change_requested
-
-    if 'modified_code' in st.session_state:
-        st.info('Modified code')
-        st.code(st.session_state.modified_code, language='python')
-    return None
 
 def select_view():
     """
@@ -170,15 +144,37 @@ def select_view():
 
     #--------GET A VIEW NAME FOR NEW VIEWS--------
     if selected_file == 'Create new view':
-
+        if st.checkbox("View sample data"):
+            show_sample_data()
         new_view_name = st.text_input('Enter the name of the new view', key='new_view_name')
         if not new_view_name:
             st.error('Enter a name for the new view')
             st.stop()
-        selected_file = 'views/' + new_view_name.lower().replace(' ', '_')
+        selected_file = new_view_name.lower().replace(' ', '_')
         file_path = os.path.join(dir, selected_file)
         
         # Save it to the session state
         st.session_state.file_path = file_path
     
     return None
+
+def show_sample_data():
+    """
+    This function allows the user to select multiple data files from a data folder and shows
+    a sample of 5 rows for each selected file.
+    """
+    # Define the data folder
+    data_folder = st.session_state.project_folder + '/data'
+
+    # Get a list of all data files in the data folder
+    data_files = [f for f in os.listdir(data_folder) if f.endswith('.parquet')]
+
+    # Allow the user to select multiple data files
+    selected_files = st.multiselect('Select data files', data_files)
+
+    # Show a sample of 5 rows for each selected file
+    for file in selected_files:
+        file_path = os.path.join(data_folder, file)
+        df = pd.read_parquet(file_path)
+        st.write(f'Sample data from {file}:')
+        st.dataframe(df.head(5))

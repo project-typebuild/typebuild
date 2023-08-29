@@ -1,6 +1,6 @@
 import streamlit as st
 import os
-from streamlit_quill import st_quill
+from streamlit_ace import st_ace
 
 def update_text_file(file, value):
     """
@@ -30,18 +30,20 @@ def text_areas(file, key, widget_label):
     with open(file, 'r') as f:
         value = f.read()
     
-    out = st_quill(
+    out = st_ace(
         value=value,
         placeholder="Write your requirements here...",
-        key=key,
-        html=True,
+        language="markdown",
+        theme="github",
+        show_gutter=True,
+        font_size=14,
+        wrap=True,
+        keybinding="vscode",
+        key=f"{key}_{st.session_state.project_folder}",
         )
     
     if out != value:
-        
-        if st.button(f"Update {widget_label}", key=f"update_button_{key}"):
-            update_text_file(file, value=out)
-            st.experimental_rerun()
+        update_text_file(file, value=out)
     # Add user requirements to session state
     st.session_state.user_requirements = out
     return out

@@ -22,18 +22,14 @@ if st.sidebar.checkbox('Show session state'):
 # Get the project file and data
 get_project_file_folder()
 
-if 'df' not in st.session_state:
-    get_project_df()
-
-if st.session_state.df is None:
-    del st.session_state['df']
+if st.sidebar.checkbox("Blueprint builder"):
+    blueprint_builder()
+    st.stop()
 
 # Select the view from the menu
 select_view()
 
-if st.sidebar.checkbox("Blueprint builder"):
-    blueprint_builder()
-    st.stop()
+
 create_run_menu()
 if 'last_request' in st.session_state:
     if st.sidebar.checkbox("Show latest request"):

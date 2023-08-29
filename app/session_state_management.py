@@ -33,6 +33,7 @@ def change_ss_for_project_change():
     for key in additional_vars:
         if key in st.session_state:
             del st.session_state[key]
+    st.session_state.project_description_chat = []
     return None
 
 

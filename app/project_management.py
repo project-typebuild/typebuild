@@ -76,18 +76,24 @@ def get_project_file_folder():
         "Select project", 
         project_names, 
         index=default_index,
-        key='selected_project',
+        key=f'selected_project_{st.session_state.ss_num}',
         on_change=change_ss_for_project_change
         )
+    manage_project_toggle = False
     if selected_project == 'Create new project':
         create_new_project()
-        st.stop()
         
+        st.stop()
+    
     project_folder = os.path.join(user_folder, selected_project)
     
+    # If the file called data_model.txt is missing, toggle the manage project button
+    if not os.path.exists(project_folder + 'data_model.txt'):
+        manage_project_toggle = True
+
     # Save to session state
     st.session_state.project_folder = project_folder
-    if st.sidebar.checkbox("Manage project"):
+    if st.sidebar.checkbox("Manage project", manage_project_toggle, key='manage_project'):
         manage_project()
     return None
 
@@ -193,13 +199,12 @@ def create_new_project():
     if not os.path.exists(user_folder):
         os.makedirs(user_folder)
     
-    project_folder = os.path.join(user_folder, project_name)
+    project_folder = st.session_state.project_folder
     if os.path.exists(project_folder):
         st.write('Project already exists, please rename')
         st.stop()
 
     # Create the project folder
-    project_folder = os.path.join(user_folder, project_name)
     if not os.path.exists(project_folder):
         os.makedirs(project_folder)
     data_folder = os.path.join(project_folder, 'data')
@@ -219,13 +224,15 @@ def create_new_project():
     if not os.path.exists(init_file):
         with open(init_file, 'w') as f:
             f.write('')
-        st.success("Created the project.  You are ready to use it.")
-        time.sleep(2)
-    # Save to session state
-    st.session_state.project_folder = project_folder
-    # Increment session number
-    st.session_state.ss_num += 1
+        st.success("Created the project.  Taking you to it now...")
+        # Save to session state
+        st.session_state.project_folder = project_folder
+        # Increment session number
+        st.session_state.ss_num += 1
+        st.session_state[f'selected_project_{st.session_state.ss_num}'] = project_name
 
+        time.sleep(2)
+        st.experimental_rerun()
     return None
 
 
@@ -292,6 +299,7 @@ def file_upload_and_save():
                 os.makedirs(folder_name)
             df.to_parquet(file_path, index=False)
             st.success(f'File saved successfully')
+            uploaded_file = None
     st.stop()
     return None
 
@@ -314,7 +322,41 @@ def append_data_to_exisiting_file():
 
     # Ask the user to select a file to append data to
     selected_file = st.selectbox("Select a file to append data to", files)
+    df1 = pd.read_parquet(selected_file)
+    # Upload a new file
+    uploaded_file = st.file_uploader("Upload a file", type=['csv', 'parquet'])
+    # If a file was uploaded, create a df2 dataframe
+    if uploaded_file is not None:
+        # Get the file extension
+        file_extension = uploaded_file.name.split('.')[-1]
 
-    # Check if a file was selected
+        # Load the file as a dataframe
+        if file_extension == 'csv':
+            df2 = pd.read_csv(uploaded_file)
+        elif file_extension == 'parquet':
+            df2 = pd.read_parquet(uploaded_file)
 
+        # Show the dataframe
+        st.dataframe(df2)
+
+        # If the columns are different, show the missing columns
+        df1_cols = set(df1.columns.tolist())
+        df2_cols = set(df2.columns.tolist())
+        if df1_cols != df2_cols:
+            missing_cols = df1_cols.difference(df2_cols)
+            st.warning(f'The following columns are missing in the uploaded file: {missing_cols}')
+        else:
+            st.info("The columns in the uploaded file match the columns in the existing file")
+
+
+        # Create a button to append the data to the existing file
+        if st.button('Append data'):
+            # Append the data
+            df = pd.concat([df1, df2])
+            # Save the file to the data folder
+            df.to_parquet(selected_file, index=False)
+            st.success(f'Data appended successfully')
+            uploaded_file = None
+    st.stop()
+    return None
 

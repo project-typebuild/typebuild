@@ -63,7 +63,7 @@ def create_run_menu():
             modify_code()
 
     else:
-        generate_code_from_user_requirements(st.session_state.df)
+        generate_code_from_user_requirements()
 
     #--------IF THERE IS A NEW RESPONSE, WRITE TO FILE--------    
     if 'response' in st.session_state:
