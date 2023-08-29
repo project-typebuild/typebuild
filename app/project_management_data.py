@@ -10,10 +10,10 @@ import pandas as pd
 import streamlit as st
 import os
 from llm_functions import get_llm_output
+from helpers import text_areas
 
 
-
-def get_column_info(df):
+def get_column_info_for_df(df):
     """
     Given a dataframe, return the column names and data types.
 
@@ -23,6 +23,7 @@ def get_column_info(df):
     Returns:
     str: A string containing the column names and data types, with one line per column.
     """
+
     # Read the parquet file using pandas
 
     # Get the column names and data types
@@ -49,7 +50,7 @@ def get_column_info(df):
 
     SAMPLE DATA:
     {sample_data}
-    
+
     Revised column information within triple backticks:
     """
     messages = [
@@ -58,7 +59,66 @@ def get_column_info(df):
     ]
     res = get_llm_output(messages)
 
+    return res
+
+def get_column_info():
+    """
+    Loop through all the data files and get the column info for each file.
+    """
+    project_folder = st.session_state.project_folder
+    data_files = os.listdir(project_folder + '/data')
+    data_files = [i for i in data_files if i.endswith('.parquet')]
+    column_info = {}
+    for file in data_files:
+        df = pd.read_parquet(project_folder + '/data/' + file)
+        column_info[file] = get_column_info_for_df(df)
+    
     # Add column info to the session state
-    st.session_state.column_info = res
+    st.session_state.column_info = column_info
+
     return None
 
+def get_data_model():
+    """
+    Save the data model to the project folder.
+    """
+    # Save the column info to the project folder
+    project_folder = st.session_state.project_folder
+    data_folder = project_folder + '/data'
+    
+    data_model_file = project_folder + '/data_model.txt'
+    text_areas(file=data_model_file, key='data_model', widget_label='data model')
+
+    generate_col_info = False
+    if not os.path.exists(data_model_file):
+        generate_col_info = True
+    
+    if st.button("Generate column info automatically"):
+        generate_col_info = True
+    
+
+    if 'column_info' not in st.session_state and generate_col_info:
+        get_column_info()
+    
+    # if generate_col_info:
+    if 'column_info' in st.session_state:
+        st.header('Column info')
+        buf = 'INFORMATION ABOUT THE PROJECT DATA FILE(S)'
+        for file in st.session_state.column_info:
+            # Add file path first
+            file_path = os.path.join(data_folder, file)
+            buf += f'\n\nFile path: {file_path}'
+            # Add column info
+            llm_res = st.session_state.column_info[file]
+            # Get the column info from triple backticks
+            info = llm_res.split('```')
+            if len(info) > 0:
+                info = info[1]
+                # Split lines and add bullets
+                info = '\n\n'.join(['- ' + line for line in info.split('\n') if line.strip() != ''])
+            buf += '\n\n' + info
+        copy_info = """You can copy the column info and paste it in the data model text area.  
+        Please verify the column info and make edits, if necessary."""
+        st.code(buf)
+
+    return None

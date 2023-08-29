@@ -29,7 +29,7 @@ def change_ss_for_project_change():
     of key variables that affect a project.
     """
     change_view()
-    additional_vars = ['df', 'project_file', 'project_folder']
+    additional_vars = ['df', 'project_file', 'project_folder', 'column_info']
     for key in additional_vars:
         if key in st.session_state:
             del st.session_state[key]

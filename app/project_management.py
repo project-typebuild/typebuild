@@ -8,6 +8,7 @@ import os
 import time
 from helpers import text_areas
 from llm_functions import get_llm_output
+from project_management_data import get_column_info, get_data_model
 from session_state_management import change_ss_for_project_change
 import streamlit as st
 import pandas as pd
@@ -98,9 +99,9 @@ def manage_project():
     """
     options = [
         'Project description',
-        'Data Modelling',
         'Upload data',
-        'Append data'
+        'Data Modelling',
+        'Append data (optional)'
     ]
 
     with st.sidebar:
@@ -113,14 +114,14 @@ def manage_project():
     if selected_option == 'Upload data':
         file_upload_and_save()
 
-    if selected_option == 'Append data':
+    if selected_option == 'Append data (optional)':
         append_data_to_exisiting_file()
 
     if selected_option == 'Project description':
         set_project_description()
 
     if selected_option == 'Data Modelling':
-        st.header('Data Modelling')
+        get_data_model()
         st.stop()
     
     return None
