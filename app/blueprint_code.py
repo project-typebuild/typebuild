@@ -51,6 +51,7 @@ def generate_code_from_user_requirements(df=None, mod_requirements=None, current
     # Define the prompt
     st.header("Your requirements")
     user_requirements = user_requirement_for_view()
+    
     if st.button("Generate the view"):
         get_code(user_requirements=user_requirements, mod_requirements=mod_requirements, current_code=current_code)
         st.experimental_rerun()

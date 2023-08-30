@@ -5,17 +5,45 @@ import os
 import re
 
 def get_llm_output(input, max_tokens=800, temperature=0, model='gpt-4'):
+
+    """
+    Given an input, get the output from the LLM.  Default is openai's gpt-4.
+
+    Args:
+    - input (list): A list of messages in the format                 
+                messages =[
+                {"role": "system", "content": system_instruction},
+                {"role": "user", "content": prompt}],
+
+                system_instruction is the instruction given to the system to generate the response using the prompt.
+                prompt is the input given by the user.
+
+    - model (str): The model to use.  Default is gpt-4.
+    - max_tokens (int): The maximum number of tokens to generate, default 800
+    - temperature (float): The temperature for the model. The higher the temperature, the more random the output
+
+    """
     if 'gpt' in model:
         res = get_gpt_output(messages=input, max_tokens=max_tokens, temperature=temperature, model=model)
     else:
         res = "Unknown model"
     return res
 
-def get_gpt_output(messages, model, max_tokens=800, temperature=0):
+def get_gpt_output(messages, model='gpt-4', max_tokens=800, temperature=0):
     """
-    Gets the output from GPT-3.5-turbo.  Needs system_instruction as input.
-    It derives the messages from the session state, so that the messgaes
-    can evolve.
+    Gets the output from GPT models. default is gpt-4. 
+
+    Args:
+    - messages (list): A list of messages in the format                 
+                messages =[
+                {"role": "system", "content": system_instruction},
+                {"role": "user", "content": prompt}],
+
+                system_instruction is the instruction given to the system to generate the response using the prompt.
+
+    - model (str): The model to use.  Default is gpt-4.
+    - max_tokens (int): The maximum number of tokens to generate, default 800
+    - temperature (float): The temperature for the model. The higher the temperature, the more random the output
     """
 
     response = openai.ChatCompletion.create(
@@ -57,13 +85,19 @@ def get_gpt_output_old(system_instruction, max_tokens=800, temperature=0):
             )
     return response.choices[0].message.content
 
-def get_gpt_output_static(prompt, system_instruction, max_tokens=200, temperature=0):
+def get_gpt_output_static(prompt, system_instruction, max_tokens=200, temperature=0, model='gpt-4'):
     """
-    Given the prompt and system_instruction, returns the output from GPT-3.5-turbo.
-    This is a static version, so it does not use the session state.
+    Given the prompt and system_instruction, returns the output from llm.
+
+    Args:
+    - prompt (str): The prompt by the user
+    - system_instruction (str): The system instruction for the given prompt
+    - max_tokens (int): The maximum number of tokens to generate, default 200
+    - temperature (float): The temperature for the model. The higher the temperature, the more random the output
+    - model (str): The model to use.  Default is gpt-4. Other options are gpt-3.5-turbo-16k and gpt-3.5-turbo
     """    
     response = openai.ChatCompletion.create(
-                model='gpt-3.5-turbo',
+                model=model,
                 messages =[
                 {"role": "system", "content": system_instruction},
                 {"role": "user", "content": prompt}],

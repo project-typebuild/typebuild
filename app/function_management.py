@@ -14,7 +14,7 @@ import importlib
 import inspect
 import datetime
 from file_management import create_new_file_with_imports
-from project_management import create_new_project
+from project_management import create_new_project, user_requirements_chat
 import time
 from blueprint_code import generate_code_from_user_requirements, modify_code
 
