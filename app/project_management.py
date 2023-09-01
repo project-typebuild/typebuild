@@ -305,47 +305,79 @@ def get_project_df():
 
     return None
 
+def upload_data_file(uploaded_file, file_extension):
+
+    # Load the file as a dataframe
+    if file_extension == 'csv':
+        df = pd.read_csv(uploaded_file)
+    elif file_extension == 'parquet':
+        df = pd.read_parquet(uploaded_file)
+
+    # Show the dataframe
+    st.dataframe(df)
+
+    # Get the name of the uploaded file
+    file_name = uploaded_file.name
+    # Remove the file extension
+    file_name = file_name.replace(f'.{file_extension}', '')
+
+    # Create a button to save the file as a parquet file with the same name
+    if st.button('Save as Parquet'):
+        # Save the file to the data folder
+        file_path = st.session_state.project_folder + '/data/' + file_name + '.parquet'
+        # Create folder if it does not exist
+        folder_name = os.path.dirname(file_path)
+        if not os.path.exists(folder_name):
+            os.makedirs(folder_name)
+        df.to_parquet(file_path, index=False)
+        st.success(f'File saved successfully')
+        uploaded_file = None
+
+    return None
+
+def upload_document_file(uploaded_file, file_extension):
+    """
+    This function allows the user to upload a document file and save it to the project folder.
+    """
+    # Get the name of the uploaded file
+    file_name = uploaded_file.name
+    # Remove the file extension
+    file_name = file_name.replace(f'.{file_extension}', '')
+    # Create a button to save the file as a parquet file with the same name
+    if st.button('Save Document'):
+        # Save the file to the data folder
+        file_path = st.session_state.project_folder + '/documents/' + file_name + '.' + file_extension
+        # Create folder if it does not exist
+        folder_name = os.path.dirname(file_path)
+        if not os.path.exists(folder_name):
+            os.makedirs(folder_name)
+        with open(file_path, 'wb') as f:
+            f.write(uploaded_file.getbuffer())
+        st.success(f'File saved successfully')
+        uploaded_file = None
+
+    return None
+
 def file_upload_and_save():
     """
     This function allows the user to upload a CSV or a parquet file, load it as a dataframe,
     and provides a button to save the file as a parquet file with the same name.
     """
     # Define the allowed file types
-    allowed_file_types = ['csv', 'parquet']
-
+    allowed_data_file_types = ['csv', 'parquet']
+    allowed_document_file_types = ['pdf', 'txt']
     # Ask the user to upload a file
-    uploaded_file = st.file_uploader("Upload a file", type=allowed_file_types)
+    uploaded_file = st.file_uploader("Upload a file", type=allowed_data_file_types + allowed_document_file_types)
 
     # If a file was uploaded
     if uploaded_file is not None:
         # Get the file extension
         file_extension = uploaded_file.name.split('.')[-1]
+        if file_extension in allowed_data_file_types:
+            upload_data_file(uploaded_file, file_extension)
+        elif file_extension in allowed_document_file_types:
+            upload_document_file(uploaded_file, file_extension)        
 
-        # Load the file as a dataframe
-        if file_extension == 'csv':
-            df = pd.read_csv(uploaded_file)
-        elif file_extension == 'parquet':
-            df = pd.read_parquet(uploaded_file)
-
-        # Show the dataframe
-        st.dataframe(df)
-
-        # Get the name of the uploaded file
-        file_name = uploaded_file.name
-        # Remove the file extension
-        file_name = file_name.replace(f'.{file_extension}', '')
-
-        # Create a button to save the file as a parquet file with the same name
-        if st.button('Save as Parquet'):
-            # Save the file to the data folder
-            file_path = st.session_state.project_folder + '/data/' + file_name + '.parquet'
-            # Create folder if it does not exist
-            folder_name = os.path.dirname(file_path)
-            if not os.path.exists(folder_name):
-                os.makedirs(folder_name)
-            df.to_parquet(file_path, index=False)
-            st.success(f'File saved successfully')
-            uploaded_file = None
     st.stop()
     return None
 
