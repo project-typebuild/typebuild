@@ -56,58 +56,6 @@ def get_gpt_output(messages, model='gpt-4', max_tokens=800, temperature=0):
     return response.choices[0].message.content
 
 
-def get_gpt_output_old(system_instruction, max_tokens=800, temperature=0):
-    """
-    Gets the output from GPT-3.5-turbo.  Needs system_instruction as input.
-    It derives the messages from the session state, so that the messgaes
-    can evolve.
-    """
-    messages = [
-        {"role": "system", "content": system_instruction}]
-
-    if st.session_state.messages:
-        messages.extend(st.session_state.messages)
-
-    # Get the total length of the message content
-    total_length = len(' '.join([m['content'] for m in messages]))
-    if total_length > 6000:
-        model = 'gpt-3.5-turbo-16k'
-    else:
-        model = 'gpt-3.5-turbo'
-    if st.session_state.use_gpt4:
-        model = 'gpt-4'
-    response = openai.ChatCompletion.create(
-                model=model,
-                messages = messages,
-                max_tokens=max_tokens,
-                temperature=temperature,
-                n=1
-            )
-    return response.choices[0].message.content
-
-def get_gpt_output_static(prompt, system_instruction, max_tokens=200, temperature=0, model='gpt-4'):
-    """
-    Given the prompt and system_instruction, returns the output from llm.
-
-    Args:
-    - prompt (str): The prompt by the user
-    - system_instruction (str): The system instruction for the given prompt
-    - max_tokens (int): The maximum number of tokens to generate, default 200
-    - temperature (float): The temperature for the model. The higher the temperature, the more random the output
-    - model (str): The model to use.  Default is gpt-4. Other options are gpt-3.5-turbo-16k and gpt-3.5-turbo
-    """    
-    response = openai.ChatCompletion.create(
-                model=model,
-                messages =[
-                {"role": "system", "content": system_instruction},
-                {"role": "user", "content": prompt}],
-                max_tokens=max_tokens,
-                temperature=temperature,
-                n=1
-            )
-    return response.choices[0].message.content
-
-
 
 #----------FUNCTIONS TO GENERATE PROMPTS----------------
 
