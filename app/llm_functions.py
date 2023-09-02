@@ -45,7 +45,7 @@ def get_gpt_output(messages, model='gpt-4', max_tokens=800, temperature=0):
     - max_tokens (int): The maximum number of tokens to generate, default 800
     - temperature (float): The temperature for the model. The higher the temperature, the more random the output
     """
-
+    st.session_state.last_request = messages
     response = openai.ChatCompletion.create(
                 model=model,
                 messages = messages,
@@ -72,6 +72,7 @@ def gpt_function_calling(messages, model='gpt-4', max_tokens=800, temperature=0,
     - max_tokens (int): The maximum number of tokens to generate, default 800
     - temperature (float): The temperature for the model. The higher the temperature, the more random the output
     """
+    st.session_state.last_request = messages
     if functions:
         response = openai.ChatCompletion.create(
                     model="gpt-4-0613",
@@ -81,8 +82,6 @@ def gpt_function_calling(messages, model='gpt-4', max_tokens=800, temperature=0,
                     n=1,
                     functions=functions,
                 )
-        # Save response to session state
-        st.session_state.function_response = response
     else:
         response = openai.ChatCompletion.create(
                     model="gpt-4",
@@ -91,8 +90,12 @@ def gpt_function_calling(messages, model='gpt-4', max_tokens=800, temperature=0,
                     temperature=temperature,
                     n=1,
                 )
-        
-    return response.choices[0].message.content
+    msg = response.choices[0].message
+    func_call = msg.get('function_call', None)
+    if func_call:
+        # Save to session state
+        st.session_state.function_call = func_call
+    return msg.get('content', None)
 
 
 

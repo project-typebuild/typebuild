@@ -71,4 +71,12 @@ def extract_python_code(text):
             snippets.append(code)
         elif in_code_block:
             code += line + '\n'
-    return snippets
+    
+    # Evaluate code snippets and return python objects
+    correct_code = []
+    for i, snippet in enumerate(snippets):
+        try:
+            correct_code.append(eval(snippet))
+        except:
+            pass
+    return correct_code

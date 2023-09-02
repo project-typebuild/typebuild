@@ -47,7 +47,6 @@ def generate_code_from_user_requirements(df=None, mod_requirements=None, current
 
     """
 
-
     # Define the prompt
     st.header("Your requirements")
     user_requirements = user_requirement_for_view()

@@ -17,7 +17,7 @@ def change_view():
     When the view is changed, clear the session state
     of key variables.
     """
-    key_vars = ['code', 'response', 'user_requirements', 'messages']
+    key_vars = ['code', 'code_str', 'response', 'user_requirements', 'messages']
     for key in key_vars:
         if key in st.session_state:
             del st.session_state[key]

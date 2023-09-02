@@ -120,7 +120,7 @@ def blueprint_prompt_structure(df=None, prompt=''):
     st.session_state.project_description_chat.append(msg)
     return None
 
-def blueprint_technical_requirements(functional_requirement, prompt, current_text, chat_key):
+def blueprint_technical_requirements(prompt, current_text, chat_key, func_str=None):
     """
     Prompt and system message to help user generate the technical requirements.
     """
@@ -131,12 +131,28 @@ def blueprint_technical_requirements(functional_requirement, prompt, current_tex
     current_text_string = ""
     if current_text:
         current_text_string = f"""
-        THIS IS WHAT I HAVE SO FAR:
+        THIS IS WHAT I HAVE SO FAR IN MY REQUIREMENTS FILE:
+        file_name: {st.session_state.file_path}.txt
         ```{current_text}```
         """
 
+    if func_str:
+        func_str = f"""
+        THIS IS THE CURRENT FUNCTION BASED ON THE REQUIREMENTS: 
+        {func_str}
+        """
+        st.sidebar.info("I got the code")
+
+    code_info = "If you need to access the current code base, you can call the function send_code_to_llm"
+    if 'code_str' in st.session_state:
+        code_info = f"""This is the current code:
+        ```{st.session_state.code_str}```"""
+    
+
     system_instruction = f"""You are helping me develop technical requirements for my project.
-    First, Start by offering to help and asking me what the functional requirement is.
+    Start by offering to help.
+
+    Confirm function requirement if you know it, if not ask me what the functional requirement is.
 
     Next, Help me create step-by-step instructions for my young developer so that they have every detail they need to code.
     Do not worry about basic technical details like libraries or loading data.  The developer knows that.
@@ -154,18 +170,33 @@ def blueprint_technical_requirements(functional_requirement, prompt, current_tex
     5.  Make sure the steps are in non-technical language, so that I understand.
     6.  Format the final instructions in markdown and give it to me in triple back ticks. 
 
+    The final instructions should be in the following format:
+    ```
+    FUNCTIONAL REQUIREMENT: <functional requirement>
+    TECHNICAL REQUIREMENTS:
+    <step by step instructions>
+    ```
+
     When the I am happy with the requirements, offer to save the requirements to a file.
+
+    {code_info}
     """
 
     prompt = f"""{prompt}"""
 
     chat = st.session_state[chat_key]
 
+
     # If the chat is empty, add the system message
     if len(chat) == 0:
         chat.append({'role': 'system', 'content': system_instruction})
-    # Add the user message
-    chat.append({'role': 'user', 'content': prompt})
+    else:
+        # Replace the system message, since it may have been updated
+        chat[0] = {'role': 'system', 'content': system_instruction}
+
+    # Add the user message, if there is one
+    if prompt:
+        chat.append({'role': 'user', 'content': prompt})
     return None
 
 def get_parameter_info(func_str):
@@ -182,6 +213,7 @@ def get_parameter_info(func_str):
 - options (A list of options, if the parameter accepts only certain values.  Empty list, if none)
 - required (True/False)
 
+If there are no parameters, return an empty list.
 Return this as a well formatted python list of dicts within ```triple back ticks```"""
 
     prompt = f"""EXTRACT INFORMATION ABOUT THE ARGS AND KWARGS FOR THIS FUNCTION:
@@ -191,3 +223,22 @@ Return this as a well formatted python list of dicts within ```triple back ticks
                 {"role": "system", "content": system_instruction},
                 {"role": "user", "content": prompt}]
     return messages
+
+def requirements_to_code(chat_key):
+    """
+    This function loads the prompt to create everything from
+    gathering requirements to generating code.
+
+    It looks at the session state for the context, and adds
+    that information to the system instruction.
+    """
+
+    system_instruction = """You are helping me in three stages of my software development process:
+    1.  Gathering functional requirements
+    2.  Gathering technical requirements
+    3.  Generating code based on the requirements
+
+    You cannot skip any of the stages.  You can go back and forth between stages as needed.
+
+    If you need to view the code, 
+"""
