@@ -56,6 +56,45 @@ def get_gpt_output(messages, model='gpt-4', max_tokens=800, temperature=0):
     return response.choices[0].message.content
 
 
+def gpt_function_calling(messages, model='gpt-4', max_tokens=800, temperature=0, functions=[]):
+    """
+    Gets the output from GPT models. default is gpt-4. 
+
+    Args:
+    - messages (list): A list of messages in the format                 
+                messages =[
+                {"role": "system", "content": system_instruction},
+                {"role": "user", "content": prompt}],
+
+                system_instruction is the instruction given to the system to generate the response using the prompt.
+
+    - model (str): The model to use.  Default is gpt-4.
+    - max_tokens (int): The maximum number of tokens to generate, default 800
+    - temperature (float): The temperature for the model. The higher the temperature, the more random the output
+    """
+    if functions:
+        response = openai.ChatCompletion.create(
+                    model="gpt-4-0613",
+                    messages = messages,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    n=1,
+                    functions=functions,
+                )
+        # Save response to session state
+        st.session_state.function_response = response
+    else:
+        response = openai.ChatCompletion.create(
+                    model="gpt-4",
+                    messages = messages,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    n=1,
+                )
+        
+    return response.choices[0].message.content
+
+
 
 #----------FUNCTIONS TO GENERATE PROMPTS----------------
 

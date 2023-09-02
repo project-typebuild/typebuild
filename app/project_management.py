@@ -88,8 +88,13 @@ def get_project_file_folder():
     project_folder = os.path.join(user_folder, selected_project)
     
     # If the file called data_model.txt is missing, toggle the manage project button
-    if not os.path.exists(project_folder + 'data_model.txt'):
+    data_model_file = project_folder + '/data_model.txt'
+    if not os.path.exists(data_model_file):
         manage_project_toggle = True
+    else:
+        # Add data description to session state
+        with open(data_model_file, 'r') as f:
+            st.session_state.data_description = f.read()
 
     # Save to session state
     st.session_state.project_folder = project_folder

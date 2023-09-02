@@ -12,7 +12,6 @@ def update_text_file(file, value):
     return None
 
 
-
 def text_areas(file, key, widget_label):
     """
     We have stored text that the user can edit.  
@@ -47,3 +46,29 @@ def text_areas(file, key, widget_label):
     # Add user requirements to session state
     st.session_state.user_requirements = out
     return out
+
+def extract_python_code(text):
+    """
+    Extracts Python code snippets from within triple backticks in the given text.
+    
+    Parameters:
+    -----------
+    text: str
+        The text to search for Python code snippets.
+    
+    Returns:
+    --------
+    A list of Python code snippets (strings).
+    """
+    snippets = []
+    in_code_block = False
+    for line in text.split('\n'):
+        if line.strip() == '```python':
+            in_code_block = True
+            code = ''
+        elif line.strip() == '```' and in_code_block:
+            in_code_block = False
+            snippets.append(code)
+        elif in_code_block:
+            code += line + '\n'
+    return snippets

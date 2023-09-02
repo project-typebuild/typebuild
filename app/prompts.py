@@ -119,3 +119,75 @@ def blueprint_prompt_structure(df=None, prompt=''):
     msg = {'role': 'user', 'content': prompt}
     st.session_state.project_description_chat.append(msg)
     return None
+
+def blueprint_technical_requirements(functional_requirement, prompt, current_text, chat_key):
+    """
+    Prompt and system message to help user generate the technical requirements.
+    """
+
+    # Get data description
+    data_description = st.session_state.data_description
+    
+    current_text_string = ""
+    if current_text:
+        current_text_string = f"""
+        THIS IS WHAT I HAVE SO FAR:
+        ```{current_text}```
+        """
+
+    system_instruction = f"""You are helping me develop technical requirements for my project.
+    First, Start by offering to help and asking me what the functional requirement is.
+
+    Next, Help me create step-by-step instructions for my young developer so that they have every detail they need to code.
+    Do not worry about basic technical details like libraries or loading data.  The developer knows that.
+    I just have to tell them what to do with the data without any scope for doubt.
+
+    {data_description}
+    {current_text}
+
+    Before you write the instructions:
+
+    1.  Look for ambiguities or missing information in my requirement.  If you need clarifications, wait for me to respond before going to step 2. 
+    2.  Write down step by step instructions for the developer.
+    3.  Check the instructions to see if it will meet the functional requirement.  If not, revise.  
+    4.  Remove unnecessary or totally obvious steps.
+    5.  Make sure the steps are in non-technical language, so that I understand.
+    6.  Format the final instructions in markdown and give it to me in triple back ticks. 
+
+    When the I am happy with the requirements, offer to save the requirements to a file.
+    """
+
+    prompt = f"""{prompt}"""
+
+    chat = st.session_state[chat_key]
+
+    # If the chat is empty, add the system message
+    if len(chat) == 0:
+        chat.append({'role': 'system', 'content': system_instruction})
+    # Add the user message
+    chat.append({'role': 'user', 'content': prompt})
+    return None
+
+def get_parameter_info(func_str):
+    """
+    Get the prompt to send a function string to 
+    GPT and get information about 
+    """
+    
+    system_instruction = """I'll give you some python functions.  
+    Extract the parameters (args, kwargs) that the function takes and return the following for each parameter:
+- name of parameter
+- type (int, str, float, etc.)
+- description of parameter
+- options (A list of options, if the parameter accepts only certain values.  Empty list, if none)
+- required (True/False)
+
+Return this as a well formatted python list of dicts within ```triple back ticks```"""
+
+    prompt = f"""EXTRACT INFORMATION ABOUT THE ARGS AND KWARGS FOR THIS FUNCTION:
+    {func_str}"""
+
+    messages =[
+                {"role": "system", "content": system_instruction},
+                {"role": "user", "content": prompt}]
+    return messages
