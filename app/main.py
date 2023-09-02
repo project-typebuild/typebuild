@@ -1,5 +1,4 @@
 from blueprint_code import select_view
-from blueprint_text import blueprint_builder
 import simple_auth
 import streamlit as st
 # Make it full width
@@ -22,9 +21,14 @@ if st.sidebar.checkbox('Show session state'):
 # Get the project file and data
 get_project_file_folder()
 
-if st.sidebar.checkbox("Blueprint builder"):
-    blueprint_builder()
-    st.stop()
+from function_calling_spec_maker import main as fcsm
+
+fcsm()
+
+st.stop()
+from requirements_with_chat import technical_requirements_chat
+# Print data model
+technical_requirements_chat(widget_label='Test requirement')
 
 # Select the view from the menu
 select_view()

@@ -28,12 +28,3 @@ def user_requirement_for_view():
     widget_label = 'User requirements for ' + extract_file_name
     return text_areas(file=file_path, key=key, widget_label=widget_label)
 
-def blueprint_builder():
-    """
-    An interactive experience to build a blueprint.
-    """
-    st.title('Blueprint Builder')
-    # Get the user requirements files
-    user_requirements = user_requirement_for_view()
-
-    return None
