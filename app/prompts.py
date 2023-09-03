@@ -143,7 +143,6 @@ def blueprint_technical_requirements(prompt, current_text, chat_key, func_str=No
         THIS IS THE CURRENT FUNCTION BASED ON THE REQUIREMENTS: 
         {func_str}
         """
-        st.sidebar.info("I got the code")
 
     code_info = "If you need to access the current code base, you can call the function send_code_to_llm"
     if 'code_str' in st.session_state:
@@ -251,9 +250,8 @@ def requirements_to_code(chat_key, current_text="", prompt="", func_str=None):
         THIS IS THE CURRENT FUNCTION BASED ON THE REQUIREMENTS: 
         {func_str}
         """
-        st.sidebar.info("I got the code")
     
-    system_instruction = """You are helping me in three stages of my software development process:
+    system_instruction = f"""You are helping me in three stages of my software development process:
     1.  Gathering functional requirements
     2.  Gathering technical requirements
     3.  Generating code based on the requirements
@@ -266,7 +264,7 @@ def requirements_to_code(chat_key, current_text="", prompt="", func_str=None):
     Work on one stage at a time.  When you move to a new stage call the shift_stage_function
     to get specific instructions for that stage.
     {data_description}
-    {current_text}"""
+    {current_text_string}"""
 
     # Get the current stage
     current_stage = 'functional'
@@ -286,6 +284,7 @@ def requirements_to_code(chat_key, current_text="", prompt="", func_str=None):
     else:
         st.error(f"Invalid stage, {current_stage}")
 
+    st.sidebar.info(f"Current stage: {current_stage}")
     prompt = f"""{prompt}"""
 
     chat = st.session_state[chat_key]

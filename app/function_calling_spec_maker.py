@@ -69,8 +69,6 @@ def create_function_dict(function):
         st.json(func_info)
 
 def extract_parameters(p, func_info):
-
-
     if not p:
         return func_info
     else:
@@ -81,8 +79,11 @@ def extract_parameters(p, func_info):
         required = []
         # Loop through the parameters and add to the function dict
         for i in p:
+            the_type = i['type']
+            if the_type == 'str':
+                the_type = 'string'
             params[i['name']] = {
-                "type": i['type'],
+                "type": the_type,
                 "description": i['description']
             }
             if i['required']:

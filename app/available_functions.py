@@ -60,7 +60,7 @@ def funcs_available():
                 "type": "object",
                 "properties": {
                 "stage_name": {
-                    "type": "str",
+                    "type": "string",
                     "description": "The name of the stage. Possible values are: 'functional', 'technical', 'code'.",
                     "enum": [
                     "functional",
