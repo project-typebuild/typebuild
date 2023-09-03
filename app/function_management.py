@@ -82,8 +82,11 @@ def create_run_menu():
         del st.session_state.response
         st.experimental_rerun()
 
-    #-------RUN THE FILE-------
-
+def run_code_in_view_file():
+    """
+    Runs the code in the selected view file.
+    """
+    selected_file = st.session_state.file_path + '.py'
     if os.path.exists(selected_file):    
         # Import the module
         my_functions = import_functions(selected_file, ['main'])

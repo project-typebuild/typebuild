@@ -91,7 +91,7 @@ def extract_parameters(p, func_info):
             if i['options']:
                 params[i['name']]['enum'] = i['options']
 
-        func_info['parameters'] = params
+        func_info['parameters'] = {"type": "object", "properties": params}
         func_info['required'] = required
     return func_info
 

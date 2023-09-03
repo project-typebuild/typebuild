@@ -7,61 +7,7 @@ from llm_functions import get_gpt_output, get_llm_output, gpt_function_calling
 import streamlit as st
 import prompts
 from helpers import text_areas
-
-def funcs_available():
-    """
-    Returns a list of functions available for the user to call.
-    """
-    f = [
-        {
-            "name": "save_requirements_to_file",
-            "description": "Saves the user requirements to a file, given the file name and the content.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "file_name": {
-                        "type": "string",
-                        "description": "The name of the file to save the requirements to."
-                        },
-                    "content": {
-                        "type": "string",
-                        "description": "The content to save to the file."
-                        },
-                    },
-                
-                "required": ["file_name", "content"]
-
-            }
-
-        },
-        {
-            "name": "save_code_to_file",
-            "description": "Saves the based on the user requirement to the file.  \nFile name and path is taken from the selected view, and so only \nthe file content is needed.\n\nParameters:\n-----------\ncode_str: str\n    The code based on user requirements to save to the file.\nReturns:\n--------\nSuccess message: str",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "code_str": {
-                        "type": "string",
-                        "description": "The code based on user requirements to save to the file."
-                    }
-            }},
-            "required": ["code_str"]
-            },
-        {
-            "name": "send_code_to_llm",
-            "description": "Call this to explain or modify the current code.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "dummy_arg": {
-                        "type": "string",
-                        "description": "A dummy argument to make the function signature"
-                    }
-            }},
-            "required": []
-        }
-    ]
-    return f
+from available_functions import funcs_available
 
 
 def technical_requirements_chat(widget_label):
@@ -77,7 +23,8 @@ def technical_requirements_chat(widget_label):
     --------
     None
     """
-    st.header("Technical requirements")
+    st.subheader("Create, update or understand")
+    st.info("Use the chat below to create, update or understand the technical requirements and the code of this view.")
     # Get view file
     txt_file_path = st.session_state.file_path + '.txt'
     # If the file exists, read it
@@ -105,10 +52,10 @@ def technical_requirements_chat(widget_label):
 
     # Create the chat    
     chat_container = st.container()
-    prompt = st.chat_input("Discuss requirements here", key=f'chat_input_{widget_label}')
+    prompt = st.chat_input("Type here for help", key=f'chat_input_{widget_label}')
     if prompt:
         # Create the messages from the prompts file
-        prompts.blueprint_technical_requirements(
+        prompts.requirements_to_code(
             prompt=prompt,
             current_text=current_text,
             chat_key=chat_key,
@@ -266,3 +213,19 @@ def send_code_to_llm(dummy_arg: str):
     st.session_state.code_str = code_str
 
     return None
+
+def set_the_stage(stage_name):
+    """
+    Sets the name of the stage to the session state so that the LLM
+    can get appropriate instructions.
+
+    Parameters:
+    -----------
+    stage_name: str
+        The name of the stage.  Possible values are: 'functional', 'technical', 'code'.
+    Returns:
+    --------
+    Success message: str
+    """
+    st.session_state.stage_name = stage_name
+    return f"Set the stage to {stage_name}"

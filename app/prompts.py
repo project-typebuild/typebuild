@@ -2,7 +2,9 @@
 This file is used to generate all prompts to be sent to LLMs
 """
 
+import os
 import pandas as pd
+from helpers import get_approved_libraries
 import streamlit as st
 
 def get_prompt_to_code(user_requirements, data_description=None, mod_requirements=None, current_code=None):
@@ -224,7 +226,7 @@ Return this as a well formatted python list of dicts within ```triple back ticks
                 {"role": "user", "content": prompt}]
     return messages
 
-def requirements_to_code(chat_key):
+def requirements_to_code(chat_key, current_text="", prompt="", func_str=None):
     """
     This function loads the prompt to create everything from
     gathering requirements to generating code.
@@ -233,12 +235,143 @@ def requirements_to_code(chat_key):
     that information to the system instruction.
     """
 
+    # Get data description
+    data_description = st.session_state.data_description
+    
+    current_text_string = ""
+    if current_text:
+        current_text_string = f"""
+        THIS IS WHAT I HAVE SO FAR IN MY REQUIREMENTS FILE:
+        file_name: {st.session_state.file_path}.txt
+        ```{current_text}```
+        """
+
+    if func_str:
+        func_str = f"""
+        THIS IS THE CURRENT FUNCTION BASED ON THE REQUIREMENTS: 
+        {func_str}
+        """
+        st.sidebar.info("I got the code")
+    
     system_instruction = """You are helping me in three stages of my software development process:
     1.  Gathering functional requirements
     2.  Gathering technical requirements
     3.  Generating code based on the requirements
 
-    You cannot skip any of the stages.  You can go back and forth between stages as needed.
+    You have to go through the stages in the order given above.  You cannot skip a stage.
+    You can go back to a previous stage to make changes.
+    If a change is made to one stage, we have to ensure that the changes are reflected in the other stages.
+    Anytime a change is made, confirm it with me and then write it to file.
 
-    If you need to view the code, 
-"""
+    Work on one stage at a time.  When you move to a new stage call the shift_stage_function
+    to get specific instructions for that stage.
+    {data_description}
+    {current_text}"""
+
+    # Get the current stage
+    current_stage = 'functional'
+    if 'current_stage' in st.session_state:
+        current_stage = st.session_state.current_stage
+    
+    # Load the instructions for the current stage
+    if current_stage == 'functional':
+        # Nothing defined yet
+        pass    
+    elif current_stage == 'technical':
+        system_instruction += "WE ARE CURRENTLY IN THE TECHNICAL REQUIREMENTS STAGE\n\n" + get_technical_requirements_instructions()
+
+    elif current_stage == 'code':
+        system_instruction += "WE ARE CURRENTLY IN THE CODE GENERATION STAGE\n\n" + get_code_instructions()
+
+    else:
+        st.error(f"Invalid stage, {current_stage}")
+
+    prompt = f"""{prompt}"""
+
+    chat = st.session_state[chat_key]
+
+    # If the chat is empty, add the system message
+    if len(chat) == 0:
+        chat.append({'role': 'system', 'content': system_instruction})
+    else:
+        # Replace the system message, since it may have been updated
+        chat[0] = {'role': 'system', 'content': system_instruction}
+
+    # Add the user message, if there is one
+    if prompt:
+        chat.append({'role': 'user', 'content': prompt})
+    return None
+
+def get_technical_requirements_instructions():
+    return f"""You are helping me develop technical requirements for my project.
+    Start by offering to help.
+
+    Confirm function requirement if you know it, if not ask me what the functional requirement is.
+
+    Next, Help me create step-by-step instructions for my young developer so that they have every detail they need to code.
+    Do not worry about basic technical details like libraries or loading data.  The developer knows that.
+    I just have to tell them what to do with the data without any scope for doubt.
+
+    Before you write the instructions:
+
+    1.  Look for ambiguities or missing information in my requirement.  If you need clarifications, wait for me to respond before going to step 2. 
+    2.  Write down step by step instructions for the developer.
+    3.  Check the instructions to see if it will meet the functional requirement.  If not, revise.  
+    4.  Remove unnecessary or totally obvious steps.
+    5.  Make sure the steps are in non-technical language, so that I understand.
+    6.  Format the final instructions in markdown and give it to me in triple back ticks. 
+
+    The final instructions should be in the following format:
+    ```
+    FUNCTIONAL REQUIREMENT: <functional requirement>
+    TECHNICAL REQUIREMENTS:
+    <step by step instructions>
+    ```
+
+    When the I am happy with the requirements, offer to save the requirements to a file.
+    """
+def get_code_instructions():
+
+    # Get current code from file
+    py_file = st.session_state.file_path + '.py'
+    if not os.path.exists(py_file):
+        current_code = """THIS IS THE CURRENT CODE.  FIX ERRORS OR MAKE CHANGES AS DESIRED.
+        MAKE ONLY THE REQUESTED CHANGES, LEAVING OTHER PARTS OF THE CODE UNCHANGED.
+        """
+        with open(py_file, 'r') as f:
+            current_code = f.read()
+    else:
+        current_code = "NO CODE HAS BEEN CREATED FOR THESE REQUIREMENTS YET"
+    
+
+    system_instruction_to_code = f"""
+    You are the python developer with an expertise in packages like streamlit, pandas, altair. 
+    Because of your expertise, a domain expert contacted you to create a streamlit app for them. 
+    After your meeting with the domain expert, you have noted down their requirements. 
+
+    In your collection of functions, you have the following functions, ready to use. 
+
+    AVAILABLE FUNCTIONS:
+
+    [ st.stop() - A streamlit function to stop the execution under the line ]
+        
+    {current_code}
+    approved_libraries = HERE ARE THE APPROVED LIBRARIES: {get_approved_libraries()}
+    
+    THINGS TO REMEMBER:
+    - Do not create login or signup, even if requested.
+    - Pay careful attention to the data description, especially to column types and names.
+    - Try to use only the approved libraries.  If you need to use other libraries, check with me first.
+    - You have been given one or more data files.  Load the files needed for this requirement and create a dataframe.
+    - Use the loaded the dataframe to fulfill the requirements. 
+    - Use st.dataframe to display tablular data.  You can use the function display_editable_data to display and edit the data.  You can import the function 'display_editable_data' using the following import statement: ```from data_widgets import display_editable_data```
+    - Do not write unnecessary print, st.write and success, info and warning messages in the functions.
+    - Create one function per feature, passing necessary data so that data is not loaded again and again.
+    - Create a function called "main" that calls all the other functions in the order they are needed.
+    - Do not call the main function.  It will be called by the system.
+        
+    Write concise code based on the instructions above.  Document it with detailed docstrings, and comments.
+    When the code is ready, call the save_code_to_file function to save the code to a file.
+    """
+
+    return system_instruction_to_code

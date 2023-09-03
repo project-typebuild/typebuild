@@ -80,3 +80,6 @@ def extract_python_code(text):
         except:
             pass
     return correct_code
+
+def get_approved_libraries():
+    return "import streamlit as st\nimport pandas as pd\nimport numpy as np\nimport matplotlib.pyplot as plt\nimport seaborn as sns\nfrom glob import glob\nimport datetime"
