@@ -53,10 +53,11 @@ def get_gpt_output(messages, model='gpt-4', max_tokens=800, temperature=0):
                 temperature=temperature,
                 n=1
             )
+    st.session_state.last_response = response.choices[0].message
     return response.choices[0].message.content
 
 
-def gpt_function_calling(messages, model='gpt-4', max_tokens=800, temperature=0, functions=[]):
+def gpt_function_calling(messages, model='gpt-4-0613', max_tokens=5000, temperature=0, functions=[]):
     """
     Gets the output from GPT models. default is gpt-4. 
 
@@ -91,10 +92,12 @@ def gpt_function_calling(messages, model='gpt-4', max_tokens=800, temperature=0,
                     n=1,
                 )
     msg = response.choices[0].message
+    st.session_state.last_response = response.choices[0].message
     func_call = msg.get('function_call', None)
     if func_call:
         # Save to session state
         st.session_state.function_call = func_call
+        st.session_state.last_function_call = func_call
     return msg.get('content', None)
 
 
