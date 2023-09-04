@@ -2,7 +2,9 @@
 Generating functional and technical requirements 
 with the help of LLMs
 """
+import json
 import os
+import time
 from llm_functions import get_gpt_output, get_llm_output, gpt_function_calling
 import streamlit as st
 import prompts
@@ -43,9 +45,11 @@ def technical_requirements_chat(widget_label):
     else:
         current_code = ""
 
+
     # Generate key from file name, after removing directory and extension
     chat_key = "chat_" + st.session_state.file_path.split('/')[-1].split('.')[0]
     st.session_state.chat_key = chat_key
+
     # If there is no project description chat in the session state, create one
     if chat_key not in st.session_state:
         st.session_state[chat_key] = []
@@ -53,6 +57,15 @@ def technical_requirements_chat(widget_label):
     # Create the chat    
     chat_container = st.container()
     prompt = st.chat_input("Type here for help", key=f'chat_input_{widget_label}')
+    if 'current_stage' in st.session_state:
+        st.info(st.session_state.current_stage)
+    
+    # If there is an error in rendering code,
+    # fix it.  No need to wait for user prompt.
+    if 'error' in st.session_state:
+        fix_error_in_code()
+        del st.session_state['error']
+    
     if prompt:
         # Create the messages from the prompts file
         prompts.requirements_to_code(
@@ -73,8 +86,8 @@ def technical_requirements_chat(widget_label):
     # the function response to the chat.  Send the message
     # to the llm to get the next response
     if call_status == "Done":
-        with st.spinner("Getting second response...."):
-            prompts.blueprint_technical_requirements(
+        with st.spinner("Got some extra information.  Working on it..."):
+            prompts.requirements_to_code(
                 prompt=None,
                 current_text=current_text,
                 chat_key=chat_key,
@@ -127,44 +140,46 @@ def make_function_call(chat_key):
     function call, do that.
     """
     func_info = st.session_state.function_call
-    
+    # If func_info is a string, convert it to a dict
+    if isinstance(func_info, str):
+        func_info = json.loads(func_info)
     func_name = func_info['name']
-    arguments = eval(func_info['arguments'])
+    arguments = json.loads(func_info['arguments'])
     with st.spinner(f'Running {func_name}...'):
         func_res = globals()[func_name](**arguments)
-        if func_res:
-            # Add the response to the chat
-            st.session_state[chat_key].append(
-                {'role': 'assistant', 'content': func_res}
-                )
         # Remove the function call from the session state
         del st.session_state['function_call']
-    return "Done"
-        
+        if func_res:
+            # Add the response to the chat
+            st.toast(func_res)
+            return "Done"
+        else:
+            return None
 
-def save_requirements_to_file(file_name: str, content: str):
+
+def save_requirements_to_file(content: str):
     """
     Saves the user requirements to a local file.
     Parameters:
     -----------
-    file_name: str
-        The name of the file to save the requirements to.
     content: str
         The content to save to the file.
     Returns: 
     --------
     Success message: str
     """
-    project_folder = st.session_state.project_folder
-    file = f"{project_folder}/test/{file_name}"
+    # Get the file name
+    file_name = st.session_state.file_path + '.txt'
+
     # Create the directory if it does not exist
-    directory = os.path.dirname(file)
+    directory = os.path.dirname(file_name)
     if not os.path.exists(directory):
         os.makedirs(directory)
         
-    with open(file, 'w') as f:
+    with open(file_name, 'w') as f:
         f.write(content)
-    return f"Saved requirements to {file_name}"
+    st.sidebar.success(f"Saved requirements to {file_name}")
+    return f"Ok, I have saved requirements to {file_name}.  You can create or update the code now."
 
 def save_code_to_file(code_str: str):
     """
@@ -185,33 +200,16 @@ def save_code_to_file(code_str: str):
     # Save the code to the file
     with open(file_path, 'w') as f:
         f.write(code_str)
-    return f"Saved code to {file_path}.  It is ready to use now."
-
-def send_code_to_llm(dummy_arg: str):
-    """
-    Upon request from the LLM, this
-    sends the code to the LLM.
-
-    parameters:
-    -----------
-    Dummy_arg: str
-        A dummy argument to make the function signature
-    Returns:
-    --------
-    Success message: str
-    """
-    file_name = st.session_state.file_path + '.py'
-    if os.path.exists(file_name):
-        with open(file_name, 'r') as f:
-            code_str = f.read()
-        code_str = "This is the current code:\n\n" + code_str + "\n\n"
-        st.sidebar.warning("Added the code to the session state")
-    else:
-        code_str = "No code file exists yet."
-        st.sidebar.warning(f"{file_name} does not exist yet.")
-    # Add the code to the session state
-    st.session_state.code_str = code_str
-
+    # Add the message on saving to the chat and then rerun the app
+    st.session_state[st.session_state.chat_key].append(
+        {'role': 'assistant', 'content': f"Saved code to {file_path}.  It is ready to use now."}
+        )
+    st.success("I updated the code, rerunning the app...")
+    time.sleep(2)
+    # Delete the function call from the session state
+    del st.session_state['function_call']
+    st.experimental_rerun()
+    # Note the message will not be returned since we are rerunning the app here.
     return None
 
 def set_the_stage(stage_name):
@@ -227,5 +225,32 @@ def set_the_stage(stage_name):
     --------
     Success message: str
     """
-    st.session_state.stage_name = stage_name
-    return f"Set the stage to {stage_name}"
+    st.toast("Just set the stage")
+    st.session_state.current_stage = stage_name
+    st.sidebar.warning(f"Current stage is {stage_name}")
+    return f"Focussing on {stage_name} now."
+
+def fix_error_in_code():
+    """
+    Sends the error and the current code to the LLM to fix the error
+    """
+    messages = prompts.get_prompt_to_fix_error()
+    with st.spinner('Fixing an error I ran into...'):
+        response = gpt_function_calling(messages, functions=funcs_available())
+
+    # If there is a response, add it to the chat
+    if response:
+        st.session_state[st.session_state.chat_key].append(
+            {'role': 'assistant', 'content': response}
+            )
+    # If there is a function call, run it
+    if 'function_call' in st.session_state:
+        call_status = make_function_call(st.session_state.chat_key)
+    
+    # If the call_status is done, we would have added the file. Rerun.
+    if call_status == "Done":
+        st.success("Fixed the error.  Rerunning the app...")
+        del st.session_state['function_call']
+        del st.session_state['error']
+        time.sleep(2)
+        st.experimental_rerun()

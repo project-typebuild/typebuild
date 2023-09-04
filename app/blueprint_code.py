@@ -15,8 +15,8 @@ import time
 import pandas as pd
 from blueprint_text import user_requirement_for_view
 import streamlit as st
-from prompts import get_prompt_to_code
-from llm_functions import get_llm_output, parse_code_from_response, parse_modified_user_requirements_from_response
+from prompts import get_prompt_to_code, get_prompt_to_fix_error
+from llm_functions import get_llm_output, gpt_function_calling, parse_code_from_response, parse_modified_user_requirements_from_response
 from project_management import file_upload_and_save, get_project_df
 from glob import glob
 import session_state_management
@@ -126,9 +126,9 @@ def select_view():
     # Ignore files that start with __
     file_names = [i for i in file_names if not i.startswith('__')]
     # Read only files that end with .py
-    file_names = [i for i in file_names if i.endswith('.py')]
+    file_names = [i for i in file_names if i.endswith('.txt')]
     # Remove the .py extension
-    file_names = [i.replace('.py', '') for i in file_names]
+    file_names = [i.replace('.txt', '') for i in file_names]
     file_names.append('Create new view')
 
     # Create a selectbox to select the file
@@ -152,9 +152,20 @@ def select_view():
             st.stop()
         selected_file = new_view_name.lower().replace(' ', '_')
         file_path = os.path.join(dir, selected_file)
-        
         # Save it to the session state
         st.session_state.file_path = file_path
+        st.info("If you like the name for this view, save it.  We can then define the requirements and write the code.")
+        
+        if st.button("Use this name"):
+            # Save the view file
+            txt_file_name = file_path + '.txt'
+            with open(txt_file_name, 'w') as f:
+                f.write(f'FUNCTIONAL REQUIREMENT: {new_view_name}\n')
+            st.success(f'View name saved as {new_view_name}')
+            time.sleep(1)
+            st.experimental_rerun()
+        st.stop()
+
     
     return None
 

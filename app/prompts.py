@@ -246,45 +246,55 @@ def requirements_to_code(chat_key, current_text="", prompt="", func_str=None):
         """
 
     if func_str:
-        func_str = f"""
-        THIS IS THE CURRENT FUNCTION BASED ON THE REQUIREMENTS: 
-        {func_str}
-        """
+        stage_info = f"Note: Requirement and Code has been generated.  You can explain or modify as per the user's request.\n"
+        current_stage = 'code'
+
+    elif 'technical requirement' in current_text.lower():
+        stage_info = "Note: Requirement has been created but code has not been generated yet."
+        current_stage = 'code'
     
-    system_instruction = f"""You are helping me in three stages of my software development process:
-    1.  Gathering functional requirements
-    2.  Gathering technical requirements
-    3.  Generating code based on the requirements
+    elif 'functional requirement' in current_text.lower():
+        stage_info = "Note: Functional requirement has been created but step-by-step technical requirements has not been generated yet."
+        current_stage = 'requirements'
+    else:
+        stage_info = "Note: Requirement and Code have not been generated yet.  Start by creating the functional requirement."
+        current_stage = 'requirements'
+
+    
+    system_instruction = f"""You are helping me in two stages of my software development process:
+    1.  Gathering functional and technical requirements
+    2.  Generating code based on the technical requirements
+
+    It is important that code is generated only on the basis of the technical requirements.
+    {stage_info}
 
     You have to go through the stages in the order given above.  You cannot skip a stage.
     You can go back to a previous stage to make changes.
     If a change is made to one stage, we have to ensure that the changes are reflected in the other stages.
     Anytime a change is made, confirm it with me and then write it to file.
 
-    Work on one stage at a time.  When you move to a new stage call the shift_stage_function
-    to get specific instructions for that stage.
+    Work on one stage at a time.  When you move to a new stage call the set_the_stage function
+    to get specific instructions for that stage.  It will give you the instructions and required assets such as 
+    current code. 
     {data_description}
     {current_text_string}"""
 
     # Get the current stage
-    current_stage = 'functional'
     if 'current_stage' in st.session_state:
         current_stage = st.session_state.current_stage
     
-    # Load the instructions for the current stage
-    if current_stage == 'functional':
-        # Nothing defined yet
-        pass    
-    elif current_stage == 'technical':
-        system_instruction += "WE ARE CURRENTLY IN THE TECHNICAL REQUIREMENTS STAGE\n\n" + get_technical_requirements_instructions()
+    if current_stage == 'requirements':
+        system_instruction += "WE ARE CURRENTLY IN THE REQUIREMENTS STAGE\n\n" + get_technical_requirements_instructions()
 
     elif current_stage == 'code':
         system_instruction += "WE ARE CURRENTLY IN THE CODE GENERATION STAGE\n\n" + get_code_instructions()
+        system_instruction += f"\nTHIS IS THE CURRENT CODE: \n{func_str}\n"
+        st.sidebar.info("Added code instructions")
 
     else:
         st.error(f"Invalid stage, {current_stage}")
 
-    st.sidebar.info(f"Current stage: {current_stage}")
+    st.sidebar.info(f"Stage in prompt: {current_stage}")
     prompt = f"""{prompt}"""
 
     chat = st.session_state[chat_key]
@@ -329,19 +339,9 @@ def get_technical_requirements_instructions():
 
     When the I am happy with the requirements, offer to save the requirements to a file.
     """
+
 def get_code_instructions():
 
-    # Get current code from file
-    py_file = st.session_state.file_path + '.py'
-    if not os.path.exists(py_file):
-        current_code = """THIS IS THE CURRENT CODE.  FIX ERRORS OR MAKE CHANGES AS DESIRED.
-        MAKE ONLY THE REQUESTED CHANGES, LEAVING OTHER PARTS OF THE CODE UNCHANGED.
-        """
-        with open(py_file, 'r') as f:
-            current_code = f.read()
-    else:
-        current_code = "NO CODE HAS BEEN CREATED FOR THESE REQUIREMENTS YET"
-    
 
     system_instruction_to_code = f"""
     You are the python developer with an expertise in packages like streamlit, pandas, altair. 
@@ -354,7 +354,6 @@ def get_code_instructions():
 
     [ st.stop() - A streamlit function to stop the execution under the line ]
         
-    {current_code}
     approved_libraries = HERE ARE THE APPROVED LIBRARIES: {get_approved_libraries()}
     
     THINGS TO REMEMBER:
@@ -371,6 +370,31 @@ def get_code_instructions():
         
     Write concise code based on the instructions above.  Document it with detailed docstrings, and comments.
     When the code is ready, call the save_code_to_file function to save the code to a file.
+
+    Unless asked specifically, do not show the code. 
     """
 
     return system_instruction_to_code
+
+def get_prompt_to_fix_error():
+    """
+    Sends the code and the error message to the LLM to get it fixed
+    """
+    py_file = st.session_state.file_path + ".py"
+    with open(py_file, 'r') as f:
+        code = f.read() 
+    system_instruction = f"""
+    I am getting an error message.  I have sent you the code and the error message.  
+    Please fix the error and save the code to file.
+
+    CODE:
+    {code}
+
+    ERROR MESSAGE:
+    {st.session_state.error}
+    """
+    prompt = "I am getting an error message.  Please fix it."
+    messages =[
+                {"role": "system", "content": system_instruction},
+                {"role": "user", "content": prompt}]
+    return messages

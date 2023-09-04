@@ -21,8 +21,16 @@ if st.sidebar.checkbox('Show session state'):
     st.write(st.session_state)
 if 'last_request' in st.session_state:
     if st.sidebar.checkbox("Show latest request"):
-        st.write(st.session_state.last_request)
+        with st.expander("Latest request"):
+            st.write(st.session_state.last_request)
+        if 'last_response' in st.session_state:
+            with st.expander("Latest response"):
+                st.write(st.session_state.last_response)    
+        if 'last_function_call' in st.session_state:
+            with st.expander("Last Function call"):
+                st.write(st.session_state.last_function_call)
         st.stop()
+
 # Get the project file and data
 get_project_file_folder()
 

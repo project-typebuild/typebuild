@@ -1,6 +1,13 @@
 """
 These are the functions that are available for function calling
 """
+
+stage_description = """Tells the app what stage we are in so that the app
+can send required information to the LLM. 
+requirements stage: Sends detailed information on how to create the requirements.
+code stage: Sends the current code, if any. Also sends information on how create or modify the code.
+""" 
+
 def funcs_available():
     """
     Returns a list of functions available for the user to call.
@@ -8,28 +15,25 @@ def funcs_available():
     f = [
         {
             "name": "save_requirements_to_file",
-            "description": "Saves the user requirements to a file, given the file name and the content.",
+            "description": "Saves the user requirements to a file, given the content.  System knows the file name",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "file_name": {
-                        "type": "string",
-                        "description": "The name of the file to save the requirements to."
-                        },
+
                     "content": {
                         "type": "string",
                         "description": "The content to save to the file."
                         },
                     },
                 
-                "required": ["file_name", "content"]
+                "required": ["content"]
 
             }
 
         },
         {
             "name": "save_code_to_file",
-            "description": "Saves the based on the user requirement to the file.  \nFile name and path is taken from the selected view, and so only \nthe file content is needed.\n\nParameters:\n-----------\ncode_str: str\n    The code based on user requirements to save to the file.\nReturns:\n--------\nSuccess message: str",
+            "description": "When the new code or modified code is ready, this saves the code to the file.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -41,30 +45,16 @@ def funcs_available():
             "required": ["code_str"]
             },
         {
-            "name": "send_code_to_llm",
-            "description": "Call this to explain or modify the current code.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "dummy_arg": {
-                        "type": "string",
-                        "description": "A dummy argument to make the function signature"
-                    }
-            }},
-            "required": []
-        },
-        {
             "name": "set_the_stage",
-            "description": "Sets the name of the stage to the session state so that the LLM\ncan get appropriate instructions.\n\nParameters:\n-----------\nstage_name: str\n    The name of the stage.  Possible values are: 'functional', 'technical', 'code'.\nReturns:\n--------\nSuccess message: str",
+            "description": stage_description,
             "parameters": {
                 "type": "object",
                 "properties": {
                 "stage_name": {
                     "type": "string",
-                    "description": "The name of the stage. Possible values are: 'functional', 'technical', 'code'.",
+                    "description": "The name of the stage. Possible values are: 'requirements', 'code'.",
                     "enum": [
-                    "functional",
-                    "technical",
+                    "requirements",
                     "code"
                     ]
                 }

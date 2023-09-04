@@ -91,9 +91,11 @@ def run_code_in_view_file():
         # Import the module
         my_functions = import_functions(selected_file, ['main'])
         if my_functions:
-            # Run the main function
-            my_functions['main']()
-    
+            try:
+                # Run the main function
+                my_functions['main']()
+            except Exception as e:
+                st.session_state.error = f"I ran into this error: {e}"    
     return None
 
 
