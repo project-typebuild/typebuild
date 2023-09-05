@@ -243,6 +243,7 @@ def fix_error_in_code():
         st.session_state[st.session_state.chat_key].append(
             {'role': 'assistant', 'content': response}
             )
+                del st.session_state['error']
     # If there is a function call, run it
     if 'function_call' in st.session_state:
         call_status = make_function_call(st.session_state.chat_key)
