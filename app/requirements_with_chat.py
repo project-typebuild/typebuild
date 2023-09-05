@@ -56,7 +56,6 @@ def technical_requirements_chat(widget_label):
 
     # Create the chat    
     chat_container = st.container()
-    prompt = st.chat_input("Type here for help", key=f'chat_input_{widget_label}')
     if 'current_stage' in st.session_state:
         st.info(st.session_state.current_stage)
     
@@ -64,8 +63,9 @@ def technical_requirements_chat(widget_label):
     # fix it.  No need to wait for user prompt.
     if 'error' in st.session_state:
         fix_error_in_code()
-        del st.session_state['error']
+        
     
+    prompt = st.chat_input("Type here for help", key=f'chat_input_{widget_label}')
     if prompt:
         # Create the messages from the prompts file
         prompts.requirements_to_code(
@@ -234,7 +234,8 @@ def fix_error_in_code():
     """
     Sends the error and the current code to the LLM to fix the error
     """
-    messages = prompts.get_prompt_to_fix_error()
+    prompts.get_prompt_to_fix_error()
+    messages = st.session_state.error_messages
     with st.spinner('Fixing an error I ran into...'):
         response = gpt_function_calling(messages, functions=funcs_available())
 
@@ -243,15 +244,30 @@ def fix_error_in_code():
         st.session_state[st.session_state.chat_key].append(
             {'role': 'assistant', 'content': response}
             )
+        # Also append it to error messages
+        st.session_state.error_messages.append(
+            {'role': 'assistant', 'content': response}
+            )
+        error_prompt = st.chat_input("Type your response to error resolution", key='error_prompt')
+        if error_prompt:
+            st.session_state[st.session_state.error_messages].append(
+                {'role': 'user', 'content': error_prompt}
+                )
+            # Restart the process that will invoke this function again
+            st.experimental_rerun()
+            # If there is a function call, run it
+            if 'function_call' in st.session_state:
+                call_status = make_function_call(st.session_state.error_messages)
+                del st.session_state['function_call']
                 del st.session_state['error']
+                st.success("Fixed the error.  Rerunning the app...")
+                time.sleep(2)
+                st.experimental_rerun()
     # If there is a function call, run it
     if 'function_call' in st.session_state:
         call_status = make_function_call(st.session_state.chat_key)
-    
-    # If the call_status is done, we would have added the file. Rerun.
-    if call_status == "Done":
-        st.success("Fixed the error.  Rerunning the app...")
         del st.session_state['function_call']
         del st.session_state['error']
+        st.success("Fixed the error.  Rerunning the app...")
         time.sleep(2)
         st.experimental_rerun()
