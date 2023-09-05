@@ -385,7 +385,8 @@ def get_prompt_to_fix_error():
         code = f.read() 
     system_instruction = f"""
     I am getting an error message.  I have sent you the code and the error message.  
-    Please fix the error and save the code to file.
+    Explain the error in plain text, and propose a fix first.  
+    If I agree, fix the error and save the code to file.
 
     CODE:
     {code}
@@ -393,8 +394,15 @@ def get_prompt_to_fix_error():
     ERROR MESSAGE:
     {st.session_state.error}
     """
+    if 'error_messages' not in st.session_state:
+        st.session_state.error_messages = []
     prompt = "I am getting an error message.  Please fix it."
-    messages =[
-                {"role": "system", "content": system_instruction},
-                {"role": "user", "content": prompt}]
-    return messages
+
+    # If the chat is empty, add the system message
+    if len(st.session_state.error_messages) == 0:
+        st.session_state.error_messages.append({'role': 'system', 'content': system_instruction})
+
+    # Append the error
+    st.session_state.error_messages.append({'role': 'user', 'content': st.session_state.error})
+
+    return None
