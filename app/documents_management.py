@@ -38,6 +38,7 @@ def create_document_chunk_df():
             if not os.path.exists(f'{project_folder}/data/{selected_file.split("/")[-1]}.parquet'):
                 docs_text.to_parquet(f'{project_folder}/data/{selected_file.split("/")[-1]}.parquet')
     return docs_text
+
 df = create_document_chunk_df()
 st.subheader('Sample data')
 filtered_df = dataframe_explorer(df, case=False)
