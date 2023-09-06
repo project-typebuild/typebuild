@@ -57,7 +57,7 @@ def get_column_info_for_df(df):
         {'role': 'system', 'content': system_instruction},
         {'role': 'user', 'content': prompt},
     ]
-    res = get_llm_output(messages)
+    res = get_llm_output(messages, model='gpt-3.5-turbo-16k', max_tokens=2000, temperature=0)
 
     return res
 

@@ -141,7 +141,7 @@ def select_view():
     # Set the file path to the session state
     file_path = os.path.join(dir, selected_file)
     st.session_state.file_path = file_path
-
+    st.session_state.selected_view = selected_file
     #--------GET A VIEW NAME FOR NEW VIEWS--------
     if selected_file == 'Create new view':
         if st.checkbox("View sample data"):
@@ -151,6 +151,7 @@ def select_view():
             st.error('Enter a name for the new view')
             st.stop()
         selected_file = new_view_name.lower().replace(' ', '_')
+        st.session_state.selected_view = selected_file
         file_path = os.path.join(dir, selected_file)
         # Save it to the session state
         st.session_state.file_path = file_path

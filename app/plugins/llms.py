@@ -1,8 +1,12 @@
 from glob import glob
+import os
+import time
 import streamlit as st
+from streamlit_extras.dataframe_explorer import dataframe_explorer
 import openai
 openai.api_key = st.secrets.openai.key
 import pandas as pd
+from helpers import text_areas
 
 def get_llm_output(input, max_tokens=800, temperature=0, model='gpt-4'):
 
@@ -56,27 +60,17 @@ def get_gpt_output(messages, model='gpt-4', max_tokens=800, temperature=0):
             )
     return response.choices[0].message.content
 
-def add_data_with_llm():
+
+def create_destination_df(destination_df_name):
     """
-    This function allows the user to extract insights 
-    from existing data using an LLM.  It can be used to
-    summarize, classify, answer questions, or to extract specific information
-    from a given column of the source dataframe.
-
-    The results will be written to a new dataframe that 
-    will connect to the primary key of the source dataframe.
-
-    Args:
-    None: User will select the source dataframe and column(s) to use with widgets.
-
-    Returns:
-    None    
+    To analyze data with LLM, we need to create a new dataframe
+    with the name of the view.
     """
-
     # Select the source dataframe and column
     st.write("### Select the source data and column(s)")
-
-    tables = glob('data/*.parquet')
+    data_folder = st.session_state.project_folder + '/data'
+    tables = glob(f"{data_folder}/*.parquet")
+    st.write(tables)
     # If there is more than one table, allow the user to select the table
     if len(tables) == 0:
         st.error("There should be some uploaded data for this to work.  Please upload some data from the project settings area.")
@@ -96,22 +90,306 @@ def add_data_with_llm():
     appended with paragraphs in-between and used as the input to the LLM.  The sequence
     of the text will be based on the order of the columns selected.
     """
+
+
     st.info(how_to_select)
     columns = st.multiselect("Select the column(s) to use", columns)
-
+    if not columns:
+        st.error("Please select at least one column.")
+        st.stop()
     # Get the text from the columns
     df["text_for_llm"] = df[columns].apply(lambda x: '\n'.join(x), axis=1)
 
-    # RANU: Add filtering options here.
+    # Give option to filter the dataframe based on selected files
+    if st.checkbox("Filter documents to use for the analysis", help="Use this if you want to analyze something specific."):
+        original_len = len(df)
+        df = dataframe_explorer(df, case=False)
+        filtered_len = len(df)
+        # Provide filter information
+        st.info(f"Removed {original_len - filtered_len} / {original_len} rows from the dataframe. {filtered_len} rows remain.")
 
 
-    # Name the destination dataframe
-    dest_df = st.text_input("Name the destination table", value='llm_output')
+    # Copy the id column (ends with _id) and the text_for_llm column to the destination dataframe
+    id_col = [col for col in df.columns if col.endswith('_id')]
+    # If there is no id column, create sequential ids starting with 1
+    if len(id_col) == 0:
+        id_col_name = source_df.split('/')[-1].split('.')[0] + '_id'
+        df[id_col_name] = range(1, len(df) + 1)
+        id_col = [id_col_name]
+        
+        df.to_parquet(source_df)
+    id_col = id_col[0]
+    df_for_llm = df[[id_col, 'text_for_llm']]
+    
+    # Col info to save to the data model file
+    col_info = """
+"""
+    
+    # Save the destination dataframe
+    # Save the source dataframe with the new id column
+    if st.button("Save the file"):
+        df_for_llm.to_parquet(destination_df_name)
+        st.success("I created a new table with this data.  We are ready for the next step.")
+        time.sleep(2)
+        st.experimental_rerun()
     
     # RANU: Save the new data information to the data model
 
     # RANU: Add system instruction and looping here, saving the results to the destination dataframe
 
+def add_data_with_llm():
+    """
+    This function allows the user to extract insights 
+    from existing data using an LLM.  It can be used to
+    summarize, classify, answer questions, or to extract specific information
+    from a given column of the source dataframe.
 
+    The results will be written to a new dataframe that 
+    will connect to the primary key of the source dataframe.
+
+    Args:
+    None: User will select the source dataframe and column(s) to use with widgets.
+
+    Returns:
+    None    
+
+    """
 
     
+    step = st.radio(
+        "How would you like to analyze",
+        ['Row by row', 'Consolidated', 'Results'],
+        horizontal = True
+        )
+
+    if step == 'Row by row':
+        step1_analysis()
+    
+    if step == 'Consolidated':
+        step2_analysis()
+
+    return None
+
+def step1_analysis():
+
+    # Name the destination dataframe is view_name.parquet
+    view_name = st.session_state.selected_view
+    data_folder = st.session_state.project_folder + '/data'
+    destination_df_name = f"{data_folder}/{view_name}.parquet"
+
+    # Create the destination dataframe if it doesn't exist
+    if not os.path.exists(destination_df_name):
+        create_destination_df(destination_df_name)
+    else:
+        df = pd.read_parquet(destination_df_name)
+    
+
+    st.header("Row by row analysis")
+    step1_desc = """On most occasions, you will want to analyze the data row by row to start with.  Even if you are creating a summary of the entire data, it is useful to get a row by row summary first since language models can only deal with limited amount of text at a time.
+
+    - In the box below, tell the LLM what you would like it to do in each row of data (see examples below).
+    - View sample output from the LLM for the 5 randomly selected rows.  If that makes sense, ask the LLM to analyze the entire data.
+    - When the LLM is done, you can move to the next step to consolidate the results.
+
+    **If you do not want row by row analysis, you can skip this step and move to the next step.**
+    """
+    # Replace indents in each line (indents will introduce code blocks when streamlit displays the text)
+    step1_desc = '\n'.join([line.strip() for line in step1_desc.split('\n')])    
+    st.markdown(step1_desc)
+
+    # Get the system instruction
+    txt_file = destination_df_name.replace('.parquet', '_row_by_row.txt')
+    system_instruction = text_areas(
+        file=txt_file,
+        key='system_instruction_step_by_step',
+        widget_label='What would you like the LLM to do in each row?'
+        )
+
+    if len(system_instruction) < 20:
+        st.error(f"Please enter at leat 20 characters. {20-len(system_instruction)} more characters needed.")
+        st.stop()
+
+    # Give option to reset prior analysis
+    if st.sidebar.checkbox("Reset prior analysis"):
+        st.info("This will remove prior analysis and start over.")
+        # Ask for a confirmation
+        if st.sidebar.button("Reset"):
+            df['row_by_row_analysis'] = ''
+    # Sample or full run
+    sample_or_full = st.radio("Sample or full run?", ['Sample', 'Full run'])
+    # If row_by_row_analysis column does not exist, create it
+    if 'row_by_row_analysis' not in df.columns:
+        df['row_by_row_analysis'] = ''
+    if sample_or_full == 'Sample':
+        # Get a sample of 3 rows, if there are at least 5 rows
+        if len(df) > 3:
+            sample = df.sample(3)
+        else:
+            sample = df
+        if st.button("Reset & Analyze the sample"):
+            # Remove prior analysis
+            df['row_by_row_analysis'] = ''
+            # Save the dataframe to the destination dataframe
+            # Add row by row analysis to the sample
+            with st.spinner("Analyzing the sample data..."):
+                sample['row_by_row_analysis'] = sample['text_for_llm'].apply(lambda x: row_by_row_llm_res(x, system_instruction))
+                # Update the dataframe and save the sample.
+                df.update(sample)
+                df.to_parquet(destination_df_name)
+        st.dataframe(sample)
+
+    if sample_or_full == 'Full run':
+        remaining_rows = len(df[df.row_by_row_analysis == ''])
+        if remaining_rows == 0:
+            st.success("All rows have been analyzed.")
+        else:
+            st.info(f"There are {remaining_rows} rows remaining to be analyzed.")
+            if st.button("Analyze rest of the data"):
+                # Keep sample analysis and run on the rest of the data
+                with st.spinner("Analyzing the rest of the data..."):
+                    df.loc[df.row_by_row_analysis == '', 'row_by_row_analysis'] = df.loc[df.row_by_row_analysis == '', 'text_for_llm'].apply(lambda x: row_by_row_llm_res(x, system_instruction))
+
+    # Show the input and output in two columns
+    for row in df[df.row_by_row_analysis != ''].itertuples():
+        c1, c2 = st.columns(2)
+        c1.subheader("Input text")
+        c1.markdown(row.text_for_llm, unsafe_allow_html=True)
+        c2.subheader("LLM output")
+        c2.markdown(row.row_by_row_analysis, unsafe_allow_html=True)
+    
+    return None
+
+def step2_analysis(df, destination_df_name):
+
+    output_file_name = destination_df_name.replace('.parquet', '_consolidated_analysis.md')
+    st.header("Consolidated analysis")
+    step2_desc = """In some cases, you may wish to get overall insights from the data, such as an essay that summarizes the entire data, understanding all the topics covered, etc.  Consolidation can help you do that. If you generated a summary in the last step, we can use that, or it could be done on the entire data (which would be expensive and slow).  We strongly recommend consolidating on summaries.
+    
+    - In the box below, tell the LLM what you would like it to do with the consolidated text.
+    - View sample output from the LLM for the 5 randomly selected rows.  If that makes sense, ask the LLM to analyze the entire data.
+    - When the LLM is done, you can view the results. 
+"""
+
+    # Replace indents in each line (indents will introduce code blocks when streamlit displays the text)
+    step2_desc = '\n'.join([line.strip() for line in step2_desc.split('\n')])
+    st.info(step2_desc)
+    destination_df = pd.read_parquet(destination_df_name)
+    # Get consolidated data from summary if available, if not use the entire data
+    text_col = 'row_by_row_analysis' if 'row_by_row_analysis' in destination_df.columns else 'text_for_llm'
+    consolidated_text = destination_df[text_col].str.cat(sep='\n\n')
+    # Create system instruction
+    system_instruction = text_areas(
+        file=destination_df_name.replace('.parquet', '_consolidated.txt'),
+        key='system_instruction_consolidated',
+        widget_label='What would you like the LLM to do with the consolidated text?'
+        )
+    if len(system_instruction) < 20:
+        st.error(f"Please enter at leat 20 characters. {20-len(system_instruction)} more characters needed.")
+        st.stop()
+    
+    # Chunk the text by 10k characters
+    chunks = chunk_text(consolidated_text, max_chars=10000)
+    # Sample or full run
+    sample_or_full = st.radio("Sample or full run?", ['Sample', 'Full run'], key='sample_or_full_consolidation')
+    if sample_or_full == 'Sample':
+        # Get just one chunk
+        selected_chunks = chunks[:1]
+        if st.button("Analyze the sample"):
+            with st.spinner("Analyzing the sample data..."):
+                res = get_llm_output(
+                    input=[
+                        {"role": "system", "content": system_instruction},
+                        {"role": "user", "content": selected_chunks[0]}],
+                    max_tokens=800,
+                    model='gpt-3.5-turbo-16k'
+                    )
+                # Save the results to output file
+                with open(output_file_name, 'w') as f:
+                    f.write(res)
+    if sample_or_full == 'Full run':
+        output = ""
+        for i, chunk in enumerate(chunks):
+            with st.spinner(f"Analyzing {i+1} of {len(chunks)}"):
+                res = get_llm_output(
+                    input=[
+                        {"role": "system", "content": system_instruction},
+                        {"role": "user", "content": chunk}],
+                    max_tokens=800,
+                    model='gpt-3.5-turbo-16k'
+                    )
+                output += res + '\n\n'
+        # Save the results to output file
+        with open(output_file_name, 'w') as f:
+            f.write(output)
+
+    # Show the output from the file, if the file exists
+    if os.path.exists(output_file_name):
+        with open(output_file_name, 'r') as f:
+            output = f.read()
+        st.markdown(output, unsafe_allow_html=True)
+
+    return None
+
+def row_by_row_llm_res(text, system_instruction):
+    messages =[
+        {"role": "system", "content": system_instruction},
+        {"role": "user", "content": text}]
+    res = get_llm_output(
+        input=messages,
+        max_tokens=800,
+        model='gpt-3.5-turbo-16k'
+        )
+    return res        
+
+def chunk_text(text, max_chars=None, model_name='gpt-3.5-turbo'):
+    """
+    Chunk text into chunks of max_chars.
+    """
+    # Set max chars, not setting token length as per openai here.
+    max_chars_by_model = {
+        'gpt-3.5-turbo': 5000,
+        'gpt-3.5-turbo-16k': 48000,
+        'gpt-4': 45000,
+        'claude': 150000
+    }
+    if max_chars is None:
+        max_chars = max_chars_by_model[model_name]
+    chunks = []
+    chunk = ''
+    # Split the text into sentences
+    sentences = text.split('.')
+    # Remove empty sentences
+    sentences = [s for s in sentences if s.strip()]
+    # Chunk the sentences        
+    for s in sentences:
+        if len(chunk) + len(s) < max_chars:
+            chunk += f"{s}."
+        else:
+            chunks.append(chunk)
+            chunk = f"{s}."
+    chunks.append(chunk)
+    return chunks
+
+def write_to_data_model(file_name, system_instruction_path):
+    """
+    Write the file information to the llm augmented data model.
+    Note: All LLM generated text will have the same column names and so 
+    they do not mean much.  It's critical to have the system instruction
+    as a part of the data model.  In this approach, we will be able to do it.
+    """
+    data_model_file = st.session_state.project_folder + '/llm_data_model.pk'
+    import pickle as pk
+    if not os.path.exists(data_model_file):
+        with open(data_model_file, 'wb') as f:
+            pk.dump({}, f)
+    with open(data_model_file, 'rb') as f:
+        data_model = pk.load(f)
+
+    # Add the file name and system_instruction path to the data model
+    data_model[file_name] = {'system_instruction_path': system_instruction_path}
+
+    # Save the data model
+    with open(data_model_file, 'wb') as f:
+        pk.dump(data_model, f)
+
+    return None

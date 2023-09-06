@@ -250,11 +250,12 @@ def create_new_project():
     if not os.path.exists(user_folder):
         os.makedirs(user_folder)
     
-    project_folder = st.session_state.project_folder
+    # Project folder is project name inside the user folder
+    project_folder = f"{user_folder}/{project_name}"
     if os.path.exists(project_folder):
         st.write('Project already exists, please rename')
         st.stop()
-
+    st.session_state.project_folder = project_folder
     # Create the project folder
     if not os.path.exists(project_folder):
         os.makedirs(project_folder)
@@ -268,7 +269,7 @@ def create_new_project():
     if not os.path.exists(views_folder):
         os.makedirs(views_folder)
     if not os.path.exists(project_settings_folder):
-        os.makedirs(project_settings_folder)
+            os.makedirs(project_settings_folder)
 
     # Create the __init__.py file
     init_file = os.path.join(project_folder, '__init__.py')
@@ -317,6 +318,8 @@ def upload_data_file(uploaded_file, file_extension):
         df = pd.read_csv(uploaded_file)
     elif file_extension == 'parquet':
         df = pd.read_parquet(uploaded_file)
+    elif file_extension == 'tsv':
+        df = pd.read_csv(uploaded_file, sep='\t')
 
     # Show the dataframe
     st.dataframe(df)
@@ -369,7 +372,7 @@ def file_upload_and_save():
     and provides a button to save the file as a parquet file with the same name.
     """
     # Define the allowed file types
-    allowed_data_file_types = ['csv', 'parquet']
+    allowed_data_file_types = ['csv', 'parquet', 'tsv']
     allowed_document_file_types = ['pdf', 'txt']
     # Ask the user to upload a file
     uploaded_file = st.file_uploader("Upload a file", type=allowed_data_file_types + allowed_document_file_types)
