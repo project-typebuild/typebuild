@@ -8,6 +8,7 @@ import os
 import time
 from helpers import text_areas
 from llm_functions import get_llm_output
+from documents_management import create_document_chunk_df
 from project_management_data import get_column_info, get_data_model
 from session_state_management import change_ss_for_project_change
 import streamlit as st
@@ -112,7 +113,6 @@ def manage_project():
         'Project description',
         'Upload data',
         'Data Modelling',
-        'Append data (optional)'
     ]
 
     with st.sidebar:
@@ -343,27 +343,35 @@ def upload_data_file(uploaded_file, file_extension):
 
     return None
 
+
 def upload_document_file(uploaded_file, file_extension):
     """
     This function allows the user to upload a document file and save it to the project folder.
+    Args:
+    - uploaded_file (file): The file uploaded by the user.
+    - file_extension (str): The file extension of the uploaded file.
+
+    Returns:
+    - None
     """
+    tmp_folder = st.session_state.project_folder + '/documents/'
+    # Create the tmp folder if it does not exist
+    if not os.path.exists(tmp_folder):
+        os.makedirs(tmp_folder)
+    
     # Get the name of the uploaded file
     file_name = uploaded_file.name
+    # Get the file extension
+    file_extension = file_name.split('.')[-1]
     # Remove the file extension
     file_name = file_name.replace(f'.{file_extension}', '')
-    # Create a button to save the file as a parquet file with the same name
-    if st.button('Save Document'):
-        # Save the file to the data folder
-        file_path = st.session_state.project_folder + '/documents/' + file_name + '.' + file_extension
-        # Create folder if it does not exist
-        folder_name = os.path.dirname(file_path)
-        if not os.path.exists(folder_name):
-            os.makedirs(folder_name)
-        with open(file_path, 'wb') as f:
-            f.write(uploaded_file.getbuffer())
-        st.success(f'File saved successfully')
+    # Save the file to the tmp folder
+    
+    tmp_file_path =  tmp_folder + file_name + '.' + file_extension
+    with open(tmp_file_path, 'wb') as f:
+        f.write(uploaded_file.getbuffer())
+    
         uploaded_file = None
-
     return None
 
 def file_upload_and_save():
@@ -375,17 +383,64 @@ def file_upload_and_save():
     allowed_data_file_types = ['csv', 'parquet', 'tsv']
     allowed_document_file_types = ['pdf', 'txt']
     # Ask the user to upload a file
-    uploaded_file = st.file_uploader("Upload a file", type=allowed_data_file_types + allowed_document_file_types)
-
-    # If a file was uploaded
-    if uploaded_file is not None:
+    uploaded_files = st.file_uploader("Upload a file", type=allowed_data_file_types + allowed_document_file_types, accept_multiple_files=True)
+    file_extension = None
+    if len(uploaded_files) ==1:
+        st.warning(f'Adding your new document(s) to the existing documents database')   
+        uploaded_file = uploaded_files[0]
         # Get the file extension
         file_extension = uploaded_file.name.split('.')[-1]
+        # If the file is a data file, upload it as a data file
         if file_extension in allowed_data_file_types:
             upload_data_file(uploaded_file, file_extension)
+        # If the file is a document file, upload it as a document file
         elif file_extension in allowed_document_file_types:
-            upload_document_file(uploaded_file, file_extension)        
+            upload_document_file(uploaded_file, file_extension)
 
+    elif len(uploaded_files) > 1:
+        st.warning(f'Adding your new document(s) to the existing documents database')
+        # Get the file extension
+        file_extension = uploaded_files[0].name.split('.')[-1]
+        # If the file is a document file, upload it as a document file
+        if file_extension in allowed_document_file_types:
+            for uploaded_file in uploaded_files:
+                upload_document_file(uploaded_file, file_extension)
+    if file_extension:
+        if file_extension in allowed_document_file_types:
+            tmp_folder = st.session_state.project_folder + '/documents/'
+            # Create chunks of the document and save it to the data folder
+            df_chunks = create_document_chunk_df(tmp_folder)
+            # Add documents_tbid to the dataframe
+            df_chunks['documents_tbid'] = df_chunks.index+1
+                # Move the id column to the front
+            cols = df_chunks.columns.tolist()
+            cols = cols[-1:] + cols[:-1]
+            df_chunks = df_chunks[cols]
+
+            # Show the dataframe
+            st.dataframe(df_chunks)
+            uploaded_file = None
+            # Create a button to save the file as a parquet file in the data folder with the same name
+            # If the parquet file already exists, append the data to the existing file
+            if st.button('Save Document'):
+                # Save the file to the data folder
+                file_path = st.session_state.project_folder + '/data/documents.parquet'
+                # If the file already exists, append the data to the existing file
+                if os.path.exists(file_path):
+                    # Load the existing file as a dataframe
+                    df = pd.read_parquet(file_path)
+                    # Append the data
+                    df = pd.concat([df, df_chunks])
+                    df = df.drop_duplicates(keep='first')
+                    # Save the file to the data folder
+                    df.to_parquet(file_path, index=False)
+                    st.success(f'Data added successfully')
+                else:
+                    # Save the file to the data folder
+                    df_chunks = df_chunks.drop_duplicates(keep='first')
+                    df_chunks.to_parquet(file_path, index=False)
+                    st.success(f'Data saved successfully')
+                st.experimental_rerun()
     st.stop()
     return None
 
