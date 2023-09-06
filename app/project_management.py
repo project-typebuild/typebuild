@@ -378,12 +378,12 @@ def file_upload_and_save():
     """
     # Define the allowed file types
     allowed_data_file_types = ['csv', 'parquet']
-    allowed_document_file_types = ['pdf', 'txt']
+    allowed_document_file_types = ['txt']
     # Ask the user to upload a file
     uploaded_files = st.file_uploader("Upload a file", type=allowed_data_file_types + allowed_document_file_types, accept_multiple_files=True)
     file_extension = None
     if len(uploaded_files) ==1:
-        st.warning(f'Added your new document(s) to the existing documents database')   
+        st.warning(f'Adding your new document(s) to the existing documents database')   
         uploaded_file = uploaded_files[0]
         # Get the file extension
         file_extension = uploaded_file.name.split('.')[-1]
@@ -395,7 +395,7 @@ def file_upload_and_save():
             upload_document_file(uploaded_file, file_extension)
 
     elif len(uploaded_files) > 1:
-        st.warning(f'Added your new document(s) to the existing documents database')
+        st.warning(f'Adding your new document(s) to the existing documents database')
         # Get the file extension
         file_extension = uploaded_files[0].name.split('.')[-1]
         # If the file is a document file, upload it as a document file

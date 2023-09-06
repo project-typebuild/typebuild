@@ -17,15 +17,18 @@ def create_document_chunk_df(documents_folder):
 
     Parameters
     ----------
-    selected_file: list
-        The path to the file selected by the user
+    documents_folder : str
+        The path to the folder with the documents
     """
-    reader = SimpleDirectoryReader(
-                    input_dir=documents_folder,
-                )
-    docs = reader.load_data()
-    docs_text = [o.text for o in docs]
-    filenames = [o.metadata['file_name'] for o in docs]
-    # Convert the list of documents to a dataframe with a column called 'text', add file name, add index
-    df_chunks = pd.DataFrame({'text': docs_text, 'filename': filenames})
-    return df_chunks
+    available_documents = glob(f'{documents_folder}/*')
+    # read all text files in the folder
+    documents = []
+    for document in available_documents:
+        tmp_dict = {}
+        with open(document, 'r') as f:
+            tmp_dict['text'] = f.read()
+
+        tmp_dict['filename'] = document.split('/')[-1]
+        documents.append(tmp_dict)
+    
+    return pd.DataFrame(documents)
