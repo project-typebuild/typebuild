@@ -42,11 +42,14 @@ if st.sidebar.checkbox('Function call maker'):
 add_or_view = st.sidebar.radio(
     "Add or view data", 
     ['Add data', 'View data'],
-    captions= ['Add data with llms', 'Extract insights from data']
+    # captions= ['Add data with llms', 'Extract insights from data']
     )
 if add_or_view == 'Add data':
     add_data_with_llm()
     st.stop()
+
+if 'function_calling_availability' not in st.session_state:
+    st.session_state.function_calling_availability = 'manual'
 
 if add_or_view == 'View data':
     # Select the view from the menu

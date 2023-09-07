@@ -108,9 +108,7 @@ def gpt_function_calling(messages, model='gpt-4-0613', max_tokens=5000, temperat
             st.session_state.last_function_call = func_call
 
     if function_calling_availability == 'manual':
-        st.sidebar.warning('This is a manual function calling mode.  You will need to manually call the function.')
         if '```' in str(content):
-            st.sidebar.info('Found triple backticks in response.  This is a function.')
             current_stage = st.session_state.current_stage
             if current_stage == 'code':
                 extracted_code = parse_code_from_response(content)
