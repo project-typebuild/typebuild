@@ -59,16 +59,11 @@ def get_column_info_for_df(df):
         {'role': 'system', 'content': system_instruction},
         {'role': 'user', 'content': prompt},
     ]
-<<<<<<< HEAD
-
-    res = get_llm_output(messages, model='gpt-4', max_tokens=800, temperature=0)
-=======
-    res = get_llm_output(messages, model='gpt-3.5-turbo-16k', max_tokens=2000, temperature=0)
+    res = get_llm_output(messages, model='gpt-4', max_tokens=2000, temperature=0)
     eval_res = eval(res)
     df = pd.DataFrame(eval_res)
 
     return df
->>>>>>> 32043c39d248ad7a6b457ea5b6d4a7f77ad17611
 
 
 def get_column_info():
@@ -83,21 +78,15 @@ def get_column_info():
     for file in data_files:
         st.info(f"Getting column info for {file}")
         df = pd.read_parquet(project_folder + '/data/' + file)
-<<<<<<< HEAD
-        column_info[file] = get_column_info_for_df(df)
+        df_col_info = get_column_info_for_df(df)
         status.warning("Pausing for 15 secs to avoid rate limit")
         time.sleep(15)
-    status.empty()
-    
-=======
-        df_col_info = get_column_info_for_df(df)
         df_col_info['filename'] = file
         # put the filename as the first column
         cols = df_col_info.columns.tolist()
         cols = cols[-1:] + cols[:-1]
         df_col_info = df_col_info[cols]
         column_info = df_col_info.to_markdown(index=False)
->>>>>>> 32043c39d248ad7a6b457ea5b6d4a7f77ad17611
     # Add column info to the session state
     st.session_state.column_info = column_info
 
