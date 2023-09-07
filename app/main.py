@@ -48,8 +48,7 @@ if add_or_view == 'Add data':
     add_data_with_llm()
     st.stop()
 
-if 'function_calling_availability' not in st.session_state:
-    st.session_state.function_calling_availability = 'manual'
+function_calling_availability = st.sidebar.radio("Function Call type", ['---','auto', 'manual'], key='function_calling_availability')
 
 if add_or_view == 'View data':
     # Select the view from the menu
