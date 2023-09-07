@@ -93,7 +93,8 @@ def gpt_function_calling(messages, model='gpt-4-0613', max_tokens=5000, temperat
                 )
     msg = response.choices[0].message
     content = msg.get('content', None)
-    st.session_state.last_response = response.choices[0].message
+    if content:
+        st.session_state.last_response = response.choices[0].message
     # Get the function_calling_availability from session state
     if 'function_calling_availability' in st.session_state:
         function_calling_availability = st.session_state.function_calling_availability
