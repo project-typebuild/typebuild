@@ -93,14 +93,34 @@ def gpt_function_calling(messages, model='gpt-4-0613', max_tokens=5000, temperat
                 )
     msg = response.choices[0].message
     st.session_state.last_response = response.choices[0].message
-    func_call = msg.get('function_call', None)
-    if func_call:
-        # Save to session state
-        st.session_state.function_call = func_call
+    # Get the function_calling_availability from session state
+    if 'function_calling_availability' in st.session_state:
+        function_calling_availability = st.session_state.function_calling_availability
+    else:
+        function_calling_availability = 'manual'
+    if function_calling_availability == 'auto':
+        func_call = msg.get('function_call', None)
+        if func_call:
+            # Save to session state
+            st.session_state.function_call = func_call
+            st.session_state.last_function_call = func_call
+        return msg.get('content', None)
+    if function_calling_availability == 'manual':
+    # Get the current stage
+        if 'current_stage' in st.session_state:
+            current_stage = st.session_state.current_stage
+        if current_stage == 'code':
+            extracted_code = parse_code_from_response(msg)
+            my_func = 'save_code_to_file'
+            func_call = {'name': my_func, 'args': extracted_code}
+        elif current_stage == 'requirements':
+            extracted_requirements = parse_modified_user_requirements_from_response(msg)
+            my_func = 'save_requirements_to_file'
+            func_call = {'name': my_func, 'arguments': extracted_requirements}
+
+        st.session_state.func_call = func_call
         st.session_state.last_function_call = func_call
-    return msg.get('content', None)
-
-
+        return msg.get('content', None)
 
 #----------FUNCTIONS TO GENERATE PROMPTS----------------
 
@@ -257,6 +277,8 @@ def parse_code_from_response(response):
 
     pattern = r"```python([\s\S]*?)```"
     matches = re.findall(pattern, response)
+    if len(matches) > 0:
+        matches = matches[0]
     return matches
 
 def parse_modified_user_requirements_from_response(response):
@@ -273,7 +295,10 @@ def parse_modified_user_requirements_from_response(response):
 
     """
 
-    pattern = r"\|\|\|([\s\S]*?)\|\|\|"
+    # pattern = r"\|\|\|([\s\S]*?)\|\|\|"
+    # It shouldnt have ```python in it
+    pattern = r"```([\s\S]*?)```"
     matches = re.findall(pattern, response)
-    
+    if len(matches) > 0:
+        matches = matches[0]
     return matches

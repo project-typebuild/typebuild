@@ -4,7 +4,6 @@ import streamlit as st
 # Make it full width
 st.set_page_config(layout="wide")
 token = simple_auth.simple_auth()
-# token = 'ranu'
 st.session_state.token = token
 
 import session_state_management

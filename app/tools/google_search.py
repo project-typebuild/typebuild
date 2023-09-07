@@ -2,6 +2,7 @@ from googlesearch import search
 from datetime import datetime
 import requests 
 import tldextract
+import streamlit as st
 
 def get_google_search_results(search_term, sleep_interval=2, num_results=10):
 
@@ -14,7 +15,14 @@ def get_google_search_results(search_term, sleep_interval=2, num_results=10):
     - num_results (int): The number of results to return. default 10.
 
     Returns:
-    - results (list): A list of search results. Each search result is a dictionary with the url, title, and description.
+    - None: Saves the results to a parquet file. The dataframe has the following columns:
+        - url (str): The url of the webpage.
+        - title (str): The title of the webpage.
+        - description (str): The description of the webpage.
+        - text_content (str): The text content of the webpage.
+        - domain (str): The domain of the webpage.
+        - search_term (str): The search term.
+        - search_date (datetime): The date of the search.
     """
     results = []
     for result in search(search_term, sleep_interval=sleep_interval, num_results=num_results, advanced=True):
@@ -29,6 +37,27 @@ def get_google_search_results(search_term, sleep_interval=2, num_results=10):
     df_results = pd.DataFrame(results)
     df_results['search_term'] = search_term
     df_results['search_date'] = pd.to_datetime(datetime.now())
-    
+   # remove the spaces, special characters, and convert to lowercase for the filename
+    filename = search_term.replace(' ', '_').replace('(', '').replace(')', '').replace('/', '').replace(':', '').replace('.', '').replace(',', '').replace('?', '').replace('!', '').replace("'", '').replace('"', '').replace('-', '').replace('&', '').replace(';', '').replace('=', '').replace('+', '').replace('*', '').replace('$', '').replace('#', '').replace('@', '')
+ 
+    # Write a data model for the streamlit app
+    data_model = f"""
+    INFORMATION ABOUT THE PROJECT DATA FILE(S)
+    -------------------------------------------
+    This data file was created using the following search term: {search_term}
 
-    return results
+    File path to the data file: {st.session_state.project_folder}/data/{filename}.parquet
+    The data file contains the following columns:
+    - url (str): The url of the webpage.
+    - title (str): The title of the webpage.
+    - description (str): The description of the webpage.
+    - text_content (str): The text content of the webpage.
+    - domain (str): The domain of the webpage.
+    - search_term (str): The search term.
+    - search_date (datetime): The date of the search.
+    """
+
+    # Save results to parquet
+    df_results.to_parquet(f'{st.session_state.project_folder}/data/{filename}.parquet', index=False)
+    
+    return None
