@@ -338,8 +338,42 @@ def get_project_df():
 
     return None
 
-def upload_data_file(uploaded_file, file_extension):
+def export_sqlite_to_parquet(uploaded_file, output_dir):
+    
+    tmp_folder = st.session_state.project_folder + '/documents/'
+    # Create the tmp folder if it does not exist
+    if not os.path.exists(tmp_folder):
+        os.makedirs(tmp_folder)
+    
+    with open(tmp_folder + "tmp.sqlite", 'wb') as f:
+        f.write(uploaded_file.read())
+    # Connect to the SQLite database
+    conn = sqlite3.connect(f'{tmp_folder}/tmp.sqlite')
 
+    # Get the list of all tables in the database
+    query = "SELECT name FROM sqlite_master WHERE type='table';"
+    tables = conn.execute(query).fetchall()
+    tables = [table[0] for table in tables]
+
+    # Ensure output directory exists
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    # For each table, read it into a pandas DataFrame and then write it to a Parquet file
+    for table in tables:
+        df = pd.read_sql(f"SELECT * FROM {table}", conn)
+        df.to_parquet(os.path.join(output_dir, f"{table}.parquet"), index=False)
+
+    # Close the SQLite connection
+    conn.close()
+    return None
+
+
+def upload_data_file(uploaded_file, file_extension):
+    """
+    Upload data files to import them into the project.
+    """
+    data_folder = st.session_state.project_folder + '/data'
     # Load the file as a dataframe
     if file_extension == 'csv':
         df = pd.read_csv(uploaded_file)
@@ -347,8 +381,10 @@ def upload_data_file(uploaded_file, file_extension):
         df = pd.read_parquet(uploaded_file)
     elif file_extension == 'tsv':
         df = pd.read_csv(uploaded_file, sep='\t')
-
+    
+    
     # Show the dataframe
+    
     st.dataframe(df)
 
     # Get the name of the uploaded file
@@ -366,7 +402,6 @@ def upload_data_file(uploaded_file, file_extension):
             os.makedirs(folder_name)
         df.to_parquet(file_path, index=False)
         st.success(f'File saved successfully')
-        uploaded_file = None
 
     return None
 
@@ -406,11 +441,16 @@ def file_upload_and_save():
     This function allows the user to upload a CSV or a parquet file, load it as a dataframe,
     and provides a button to save the file as a parquet file with the same name.
     """
+    data_folder = st.session_state.project_folder + '/data'
     # Define the allowed file types
-    allowed_data_file_types = ['csv', 'parquet', 'tsv']
+    allowed_data_file_types = ['csv', 'parquet', 'tsv', 'sqlite', 'db', 'sqlite3']
     allowed_document_file_types = ['pdf', 'txt']
     # Ask the user to upload a file
-    uploaded_files = st.file_uploader("Upload a file", type=allowed_data_file_types + allowed_document_file_types, accept_multiple_files=True)
+    uploaded_files = st.file_uploader(
+        "Upload a file", 
+        type=allowed_data_file_types + allowed_document_file_types, 
+        accept_multiple_files=True)
+
     file_extension = None
     if len(uploaded_files) ==1:
         st.warning(f'Adding your new document(s) to the existing documents database')   
@@ -418,7 +458,10 @@ def file_upload_and_save():
         # Get the file extension
         file_extension = uploaded_file.name.split('.')[-1]
         # If the file is a data file, upload it as a data file
-        if file_extension in allowed_data_file_types:
+        if file_extension in ['sqlite', 'db', 'sqlite3']:
+            export_sqlite_to_parquet(uploaded_file, data_folder)
+            st.success(f'Files saved successfully')
+        elif file_extension in allowed_data_file_types:
             upload_data_file(uploaded_file, file_extension)
         # If the file is a document file, upload it as a document file
         elif file_extension in allowed_document_file_types:

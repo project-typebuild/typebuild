@@ -6,6 +6,7 @@ called 'data' in the root folder of the project.
 - Document the project data so that it can be sent to the LLM
 - Add CRUD functionality to the project data
 """
+import time
 import pandas as pd
 import streamlit as st
 import os
@@ -34,7 +35,7 @@ def get_column_info_for_df(df):
     column_info = column_info[:-2]  # remove the last comma and newline
 
     # Send this to the LLM with two rows of data and ask it to describe the data.
-    sample_data = df.head(2).to_markdown(index=False)
+    sample_data = df.head(1).to_markdown(index=False)
 
     system_instruction = """You are helping me document the data.  
     Using the examples revise the column info by:
@@ -57,7 +58,8 @@ def get_column_info_for_df(df):
         {'role': 'system', 'content': system_instruction},
         {'role': 'user', 'content': prompt},
     ]
-    res = get_llm_output(messages, model='gpt-3.5-turbo-16k', max_tokens=2000, temperature=0)
+
+    res = get_llm_output(messages, model='gpt-4', max_tokens=800, temperature=0)
 
     return res
 
@@ -69,9 +71,14 @@ def get_column_info():
     data_files = os.listdir(project_folder + '/data')
     data_files = [i for i in data_files if i.endswith('.parquet')]
     column_info = {}
+    status = st.empty()
     for file in data_files:
+        st.info(f"Getting column info for {file}")
         df = pd.read_parquet(project_folder + '/data/' + file)
         column_info[file] = get_column_info_for_df(df)
+        status.warning("Pausing for 15 secs to avoid rate limit")
+        time.sleep(15)
+    status.empty()
     
     # Add column info to the session state
     st.session_state.column_info = column_info
@@ -94,8 +101,7 @@ def get_data_model():
         generate_col_info = True
     
     if st.button("Generate column info automatically"):
-        generate_col_info = True
-    
+        generate_col_info = True    
 
     if 'column_info' not in st.session_state and generate_col_info:
         get_column_info()
