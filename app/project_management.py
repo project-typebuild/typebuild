@@ -88,21 +88,13 @@ def get_project_file_folder():
     
     project_folder = os.path.join(user_folder, selected_project)
     
-    # If the file called data_model.txt is missing, toggle the manage project button
-    data_model_file = project_folder + '/data_model.txt'
+    # If the file called data_model.parquet is missing, toggle the manage project button
+    data_model_file = project_folder + '/data_model.parquet'
     if not os.path.exists(data_model_file):
         manage_project_toggle = True
     else:
         # Add data description to session state
-        with open(data_model_file, 'r') as f:
-            st.session_state.data_description = f.read()
-
-        # See if there is a data model pickle file and add it to session state
-        data_model_pkl_file = project_folder + '/llm_data_model.pk'
-        if os.path.exists(data_model_pkl_file):
-            llm_data = add_llm_data_model(data_model_pkl_file)    
-            # Add the llm data to session state data description
-            st.session_state.data_description += "\n" + llm_data
+        st.session_state.data_description = pd.read_parquet(data_model_file).to_markdown(index=False)
 
     # Save to session state
     st.session_state.project_folder = project_folder
@@ -140,6 +132,7 @@ def manage_project():
         'Project description',
         'Upload data',
         'Data Modelling',
+        'Upload Custom LLM'
     ]
 
     with st.sidebar:
@@ -162,6 +155,8 @@ def manage_project():
         get_data_model()
         st.stop()
     
+    if selected_option == 'Upload Custom LLM':
+        st.stop()
     return None
 
 def set_project_description():
@@ -571,3 +566,27 @@ def append_data_to_exisiting_file():
     st.stop()
     return None
 
+def upload_custom_llm_file():
+    """
+    This function allows the user to upload a custom LLM file.
+    """
+    # Ask the user to upload a file
+    uploaded_file = st.file_uploader("Upload a file", type=['py'])
+    # If a file was uploaded, create a df2 dataframe
+    if uploaded_file is not None:
+        # Get the file extension
+        file_extension = uploaded_file.name.split('.')[-1]
+        # Load the file as a dataframe
+        if file_extension == 'py':
+            # Save the file to the data folder
+            file_path = st.session_state.project_folder + '/custom_llm/' + uploaded_file.name
+            # Create folder if it does not exist
+            folder_name = os.path.dirname(file_path)
+            if not os.path.exists(folder_name):
+                os.makedirs(folder_name)
+            with open(file_path, 'wb') as f:
+                f.write(uploaded_file.getbuffer())
+            st.success(f'File saved successfully')
+            uploaded_file = None
+    st.stop()
+    return None
