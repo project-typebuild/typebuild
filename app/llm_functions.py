@@ -101,7 +101,6 @@ def gpt_function_calling(messages, model='gpt-4-0613', max_tokens=5000, temperat
     return msg.get('content', None)
 
 
-
 #----------FUNCTIONS TO GENERATE PROMPTS----------------
 
 

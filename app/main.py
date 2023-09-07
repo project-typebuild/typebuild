@@ -43,7 +43,7 @@ if st.sidebar.checkbox('Function call maker'):
 # Select the view from the menu
 select_view()
 
-add_data_with_llm()
+# add_data_with_llm()
 
 run_code_in_view_file()
 technical_requirements_chat(widget_label='Test requirement')
