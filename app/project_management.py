@@ -97,11 +97,38 @@ def get_project_file_folder():
         with open(data_model_file, 'r') as f:
             st.session_state.data_description = f.read()
 
+        # See if there is a data model pickle file and add it to session state
+        data_model_pkl_file = project_folder + '/llm_data_model.pk'
+        if os.path.exists(data_model_pkl_file):
+            llm_data = add_llm_data_model(data_model_pkl_file)    
+            # Add the llm data to session state data description
+            st.session_state.data_description += "\n" + llm_data
+
     # Save to session state
     st.session_state.project_folder = project_folder
     if st.sidebar.checkbox("Manage project", manage_project_toggle, key='manage_project'):
         manage_project()
     return None
+
+def add_llm_data_model(data_model_pkl_file):
+    import pickle as pk
+    with open(data_model_pkl_file, 'rb') as f:
+        llm_model = pk.load(f)
+    llm_data = ""
+    for file_name in llm_model:
+        llm_data += f"File path: {file_name}\n"
+        system_instruction_path = llm_model[file_name]['system_instruction_path']
+        # Open the system instruction
+        with open(system_instruction_path, 'r') as f:
+            si = f.read()
+    
+        # Add the system instruction to the llm_data for context
+        llm_data += f"This table was created using an llm who got this instruction: {si}\n"
+
+        # Add column info to the llm_data
+        col_info = llm_model[file_name]['col_info']
+        llm_data += f"Column info:\n{col_info}\n"
+    return llm_data
 
 def manage_project():
     """
