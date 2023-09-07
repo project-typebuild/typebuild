@@ -14,7 +14,7 @@ from project_management import get_project_file_folder, get_project_df
 from function_management import create_run_menu, run_code_in_view_file
 from function_calling_spec_maker import main as fcsm
 from requirements_with_chat import technical_requirements_chat
-from plugins.llms import add_data_with_llm
+from plugins.create_content_with_llms import add_data_with_llm
 
 
 if st.sidebar.checkbox('Show session state'):
@@ -39,11 +39,19 @@ if st.sidebar.checkbox('Function call maker'):
     fcsm()
     st.warning("Turn off function call maker to view the app.")
     st.stop()
-# Select the view from the menu
-select_view()
 
-# add_data_with_llm()
+add_or_view = st.sidebar.radio(
+    "Add or view data", 
+    ['Add data', 'View data'],
+    captions= ['Add data with llms', 'Extract insights from data']
+    )
+if add_or_view == 'Add data':
+    add_data_with_llm()
+    st.stop()
 
-run_code_in_view_file()
-technical_requirements_chat(widget_label='Test requirement')
+if add_or_view == 'View data':
+    # Select the view from the menu
+    select_view()
+    run_code_in_view_file()
+    technical_requirements_chat(widget_label='Test requirement')
 
