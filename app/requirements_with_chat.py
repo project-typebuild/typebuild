@@ -62,8 +62,7 @@ def technical_requirements_chat(widget_label):
     # If there is an error in rendering code,
     # fix it.  No need to wait for user prompt.
     if 'error' in st.session_state:
-        fix_error_in_code()
-        
+        fix_error_in_code()        
     
     prompt = st.chat_input("Type here for help", key=f'chat_input_{widget_label}')
     if prompt:
@@ -255,14 +254,14 @@ def fix_error_in_code():
                 )
             # Restart the process that will invoke this function again
             st.experimental_rerun()
-            # If there is a function call, run it
-            if 'function_call' in st.session_state:
-                call_status = make_function_call(st.session_state.error_messages)
-                del st.session_state['function_call']
-                del st.session_state['error']
-                st.success("Fixed the error.  Rerunning the app...")
-                time.sleep(2)
-                st.experimental_rerun()
+        # If there is a function call, run it
+        if 'function_call' in st.session_state:
+            call_status = make_function_call(st.session_state.error_messages)
+            del st.session_state['function_call']
+            del st.session_state['error']
+            st.success("Fixed the error.  Rerunning the app...")
+            time.sleep(2)
+            st.experimental_rerun()
     # If there is a function call, run it
     if 'function_call' in st.session_state:
         call_status = make_function_call(st.session_state.chat_key)

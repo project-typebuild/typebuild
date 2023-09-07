@@ -85,6 +85,7 @@ def create_destination_df(destination_df_name):
 
     # Get the column names
     columns = df.columns
+
     # Select the column to use
     how_to_select = """If more than one column is selected, the text from each column will be 
     appended with paragraphs in-between and used as the input to the LLM.  The sequence
@@ -113,22 +114,30 @@ def create_destination_df(destination_df_name):
     id_col = [col for col in df.columns if col.endswith('_id')]
     # If there is no id column, create sequential ids starting with 1
     if len(id_col) == 0:
-        id_col_name = source_df.split('/')[-1].split('.')[0] + '_id'
+        id_col_name = source_df.split('/')[-1].split('.')[0] + '_tbid'
         df[id_col_name] = range(1, len(df) + 1)
         id_col = [id_col_name]
         
         df.to_parquet(source_df)
     id_col = id_col[0]
     df_for_llm = df[[id_col, 'text_for_llm']]
+    # Create an id for this dataframe
+    dest_id_name = destination_df_name.split('/')[-1].split('.')[0] + '_tbid'
     
     # Col info to save to the data model file
-    col_info = """
+    col_info = f"""
+- {id_col}: The id column of the dataframe
+- {dest_id_name}: The id column of the dataframe created for LLM analysis
+- text_for_llm: The text to be analyzed by the LLM taken from the source dataframe.
 """
     
     # Save the destination dataframe
     # Save the source dataframe with the new id column
     if st.button("Save the file"):
         df_for_llm.to_parquet(destination_df_name)
+        # Save the col info to the data model file
+        write_to_data_model(destination_df_name, col_info=col_info)
+
         st.success("I created a new table with this data.  We are ready for the next step.")
         time.sleep(2)
         st.experimental_rerun()
@@ -199,6 +208,8 @@ def step1_analysis():
 
     # Get the system instruction
     txt_file = destination_df_name.replace('.parquet', '_row_by_row.txt')
+    # Save this as the system instruction path
+    st.session_state.system_instruction_path = txt_file
     system_instruction = text_areas(
         file=txt_file,
         key='system_instruction_step_by_step',
@@ -370,13 +381,14 @@ def chunk_text(text, max_chars=None, model_name='gpt-3.5-turbo'):
     chunks.append(chunk)
     return chunks
 
-def write_to_data_model(file_name, system_instruction_path):
+def write_to_data_model(file_name, col_info):
     """
     Write the file information to the llm augmented data model.
     Note: All LLM generated text will have the same column names and so 
     they do not mean much.  It's critical to have the system instruction
     as a part of the data model.  In this approach, we will be able to do it.
     """
+    system_instruction_path = st.session_state.system_instruction_path
     data_model_file = st.session_state.project_folder + '/llm_data_model.pk'
     import pickle as pk
     if not os.path.exists(data_model_file):
@@ -386,7 +398,10 @@ def write_to_data_model(file_name, system_instruction_path):
         data_model = pk.load(f)
 
     # Add the file name and system_instruction path to the data model
-    data_model[file_name] = {'system_instruction_path': system_instruction_path}
+    data_model[file_name] = {
+        'system_instruction_path': system_instruction_path,
+        'col_info': col_info
+        }
 
     # Save the data model
     with open(data_model_file, 'wb') as f:
