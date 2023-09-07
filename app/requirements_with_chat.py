@@ -56,9 +56,9 @@ def technical_requirements_chat(widget_label):
 
     # Create the chat    
     chat_container = st.container()
-    if 'current_stage' in st.session_state:
-        st.info(st.session_state.current_stage)
-    
+    # We should only have this if the function_calling_availability is 'manual'
+    if st.session_state.function_calling_availability == 'manual':
+        current_stage = st.sidebar.radio("Current stage", ['requirements', 'code'],key='current_stage') 
     # If there is an error in rendering code,
     # fix it.  No need to wait for user prompt.
     if 'error' in st.session_state:
@@ -143,7 +143,10 @@ def make_function_call(chat_key):
     if isinstance(func_info, str):
         func_info = json.loads(func_info)
     func_name = func_info['name']
-    arguments = json.loads(func_info['arguments'])
+    if isinstance(func_info['arguments'], str):
+        arguments = json.loads(func_info['arguments'])
+    else:
+        arguments = func_info['arguments']
     with st.spinner(f'Running {func_name}...'):
         func_res = globals()[func_name](**arguments)
         # Remove the function call from the session state
@@ -219,7 +222,7 @@ def set_the_stage(stage_name):
     Parameters:
     -----------
     stage_name: str
-        The name of the stage.  Possible values are: 'functional', 'technical', 'code'.
+        The name of the stage.  Possible values are: 'code','requirements'.
     Returns:
     --------
     Success message: str

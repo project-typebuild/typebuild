@@ -16,7 +16,6 @@ from function_calling_spec_maker import main as fcsm
 from requirements_with_chat import technical_requirements_chat
 from plugins.llms import add_data_with_llm
 
-
 if st.sidebar.checkbox('Show session state'):
     st.write(st.session_state)
 if 'last_request' in st.session_state:
