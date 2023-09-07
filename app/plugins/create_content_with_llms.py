@@ -69,10 +69,14 @@ def create_destination_df(destination_df_name, consolidated=False):
         # we cannot join with the original dataframe anymore.
         # We will create a df with just one row and the column text_for_llm
         df = pd.DataFrame({'text_for_llm': [df['text_for_llm'].str.cat(sep='\n\n')]})
-        col_info = f"""This dataframe has just one row with the consolidated text from the source dataframe {source_df}.
-        The column information is as follows:
-        - text_for_llm: The text to be analyzed by the LLM taken from the source dataframe.
-        """
+        all_col_info = []
+        col_info = {}
+        col_info['filename'] = source_df
+        col_info['dataframe_description'] = f'This dataframe has just one row with the consolidated text from the source dataframe {source_df}.'
+        col_info['column_name'] = 'text_for_llm'
+        col_info['column_type'] = 'str'
+        col_info['column_info'] = 'The text to be analyzed by the LLM taken from the source dataframe.'
+        all_col_info.append(col_info)
     else:
         id_col = id_col[0]
         df_for_llm = df[[id_col, 'text_for_llm']]
@@ -80,18 +84,39 @@ def create_destination_df(destination_df_name, consolidated=False):
         dest_id_name = destination_df_name.split('/')[-1].split('.')[0] + '_tbid'
         
         # Col info to save to the data model file
-        col_info = f"""
-    - {id_col}: The id column of the dataframe
-    - {dest_id_name}: The id column of the dataframe created for LLM analysis
-    - text_for_llm: The text to be analyzed by the LLM taken from the source dataframe.
-    """
-    
+
+        all_col_info = []
+        col_info = {}
+        col_info['filename'] = source_df
+        col_info['dataframe_description'] = f'This dataframe has the id column of the source dataframe.'
+        col_info['column_name'] = id_col
+        col_info['column_type'] = 'int'
+        col_info['column_info'] = 'The id column of the source dataframe.'
+        all_col_info.append(col_info)
+        col_info = {}
+        col_info['filename'] = source_df
+        col_info['dataframe_description'] = f'This dataframe has the id column of the dataframe created for LLM analysis.'
+        col_info['column_name'] = dest_id_name
+        col_info['column_type'] = 'int'
+        col_info['column_info'] = 'The id column of the dataframe created for LLM analysis.'
+        all_col_info.append(col_info)
+        col_info = {}
+        col_info['filename'] = source_df
+        col_info['dataframe_description'] = f'This dataframe has the text to be analyzed by the LLM taken from the source dataframe.'
+        col_info['column_name'] = 'text_for_llm'
+        col_info['column_type'] = 'str'
+        col_info['column_info'] = 'The text to be analyzed by the LLM taken from the source dataframe.'
+        all_col_info.append(col_info)
+
+    # Get the column information for the dataframe
+    col_info_df = pd.DataFrame(all_col_info)
+
     # Save the destination dataframe
     # Save the source dataframe with the new id column
     if st.button("Save the file"):
         df_for_llm.to_parquet(destination_df_name)
         # Save the col info to the data model file
-        write_to_data_model(destination_df_name, col_info=col_info)
+        write_to_data_model(destination_df_name, col_info_df=col_info_df)
 
         st.success("I created a new table with this data.  We are ready for the next step.")
         time.sleep(2)
@@ -248,7 +273,7 @@ def chunk_text(text, max_chars=None, model_name='gpt-3.5-turbo'):
     chunks.append(chunk)
     return chunks
 
-def write_to_data_model(file_name, col_info):
+def write_to_data_model(file_name, col_info_df):
     """
     Write the file information to the llm augmented data model.
     Note: All LLM generated text will have the same column names and so 
@@ -256,24 +281,26 @@ def write_to_data_model(file_name, col_info):
     as a part of the data model.  In this approach, we will be able to do it.
     """
     system_instruction_path = st.session_state.system_instruction_path
-    data_model_file = st.session_state.project_folder + '/llm_data_model.pk'
-    import pickle as pk
-    if not os.path.exists(data_model_file):
-        with open(data_model_file, 'wb') as f:
-            pk.dump({}, f)
-    with open(data_model_file, 'rb') as f:
-        data_model = pk.load(f)
+    data_model_file = st.session_state.project_folder + '/data_model.parquet'
+    # If the data model file exists, read it
+    if os.path.exists(data_model_file):
+        data_model = pd.read_parquet(data_model_file)
+    else:
+        data_model = pd.DataFrame(
+            columns=[
+                'filename',
+                'dataframe_description',
+                'column_name',
+                'column_type',
+                'column_info'
+                ]
+            )
 
-    # Add the file name and system_instruction path to the data model
-    data_model[file_name] = {
-        'system_instruction_path': system_instruction_path,
-        'col_info': col_info
-        }
-
+    # Add the file information to the data model
+    # concat the data model with the col_info_df
+    data_model = pd.concat([data_model, col_info_df])
     # Save the data model
-    with open(data_model_file, 'wb') as f:
-        pk.dump(data_model, f)
-
+    data_model.to_parquet(data_model_file, index=False)
     return None
 
 def add_data_with_llm():
