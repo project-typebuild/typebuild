@@ -27,7 +27,6 @@ def convert_to_appropriate_dtypes(df, df_res):
     
     """
     dtype_dict = dict(zip(df_res.column_name, df_res.column_type))
-    df = df.fillna('')
     for index, col in enumerate(dtype_dict):
         dtype = dtype_dict[col]
         if dtype == 'object': 
@@ -35,9 +34,8 @@ def convert_to_appropriate_dtypes(df, df_res):
         else:
             try:
                 df[col] = df[col].astype(dtype)
-            except:
-                st.error(f"Could not convert {col} to {dtype}")
-    
+            except Exception as e:
+                st.error(f"Could not convert the column **{col}** to {dtype}.  Got the following error: {e}")    
     return df
     
 
@@ -66,8 +64,9 @@ def get_column_info_for_df(df):
         
     # Send this to the LLM with two rows of data and ask it to describe the data.
     
-    sample_data = df.head(3).to_dict('records')
+    sample_data = df.sample(3).to_dict('records')
     sample_buf = "HERE IS SOME SAMPLE DATA:\n"
+
     for row in sample_data:
         for col in row:
             value = row[col]
@@ -79,6 +78,14 @@ def get_column_info_for_df(df):
             sample_buf += f"- {col}: {value}\n"
         sample_buf += '====================\n'
 
+    # Add possible values for categorical columns
+    # Assuming catgorical columns have less than 10 categories
+    # and they repeat frequently.
+    
+    for col in df.columns:
+        if df[col].nunique() / len(df) < 0.2:
+            if df[col].nunique() < 10:
+                sample_buf += f"\nPossible values for {col}: {', '.join(df[col].dropna().astype(str).unique().tolist())}\n"
 
     system_instruction = """You are helping me document the data.  
     Using the examples revise the column info by:
@@ -86,7 +93,7 @@ def get_column_info_for_df(df):
     - If the column is a date, add the date format
     - I will provide the initial column type, you need to check if the initial column type is appropriate or suggest the new column type
     - The possible column dtypes are ['object', 'int64', 'datetime64', 'float64']
-    - You should strictly return the column information in the same format provided to you.
+    - You should strictly return the column information in the same format provided to you.  Include information about possible values, if provided.
     - Don't add any comments
     """
 
@@ -125,13 +132,17 @@ def get_column_info():
         parquet_file_path = project_folder + '/data/' + file
         df = pd.read_parquet(parquet_file_path)  
         df_col_info = get_column_info_for_df(df)
-        st.dataframe(df_col_info)
-        df = convert_to_appropriate_dtypes(df, df_col_info)
-        df.to_parquet(parquet_file_path, index=False)
-        
-        status.warning("Pausing for 15 secs to avoid rate limit")
-        time.sleep(15)
         df_col_info['filename'] = parquet_file_path
+        st.dataframe(df_col_info)
+        save_data_model(df_col_info, file)
+        df = convert_to_appropriate_dtypes(df, df_col_info)
+        try:
+            df.to_parquet(parquet_file_path, index=False)
+        except Exception as e:
+            st.error(f"Could not save the file.  Got the following error: {e}")
+        
+        status.warning("Pausing for 5 secs to avoid rate limit")
+        time.sleep(5)
         # put the filename as the first column
         cols = df_col_info.columns.tolist()
         cols = cols[-1:] + cols[:-1]
@@ -140,12 +151,29 @@ def get_column_info():
         column_info = df_col_info.to_markdown(index=False)
         all_col_info_markdown += column_info + '\n\n'
         status.empty()
-    df_all_col_infos = pd.concat(all_col_infos)
-    df_all_col_infos.to_parquet(project_folder + '/data_model.parquet', index=False)
     # Add column info to the session state
     st.session_state.column_info = all_col_info_markdown
 
     return None
+
+def save_data_model(data_model_for_file, filename):
+    """
+    Saves the data model.  If the model already exists, it will be appended to.
+    Any old data model for the given filename will be overwritten.
+    """
+    data_model_file = st.session_state.project_folder + '/data_model.parquet'
+    all_dfs = []
+    if os.path.exists(data_model_file):
+        current_model = pd.read_parquet(data_model_file)
+        # Remove information about filename from the current model
+        current_model = current_model[current_model.filename != filename]
+        all_dfs.append(current_model)
+
+    all_dfs.append(data_model_for_file)
+    df_all_col_infos = pd.concat(all_dfs)
+    df_all_col_infos.to_parquet(data_model_file, index=False)
+    return None
+
 
 def get_data_model():
     """
@@ -161,15 +189,17 @@ def get_data_model():
     if os.path.exists(data_model_file):
         df = pd.read_parquet(data_model_file)
         st.dataframe(df)
+        st.session_state.column_info = df.to_markdown(index=False)
         generate_col_info = False
     else:
         if not os.path.exists(data_model_file):
             generate_col_info = True
 
-    if 'column_info' not in st.session_state and generate_col_info:
-        get_column_info()
-
     if st.button("Re-generate column info automatically"):
-        generate_col_info = True    
+        generate_col_info = True
+
+    if 'column_info' not in st.session_state or generate_col_info:
+        with st.spinner("Generating column info..."):
+            get_column_info()
         
     return None
