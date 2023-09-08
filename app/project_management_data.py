@@ -12,25 +12,28 @@ import streamlit as st
 import os
 from llm_functions import get_llm_output
 from helpers import text_areas
+from plugins.data_widgets import display_editable_data
 
-def convert_to_appropriate_dtypes(df, df_res):
+def convert_to_appropriate_dtypes(df, data_model):
     
     """
     Convert the data types of the dataframe columns to the appropriate data types.
 
     Parameters:
     df (dataframe): The dataframe to be converted.
-    df_res (dataframe): The dataframe with the column names and data types.
+    data_model (dataframe): The dataframe with the column names and data types.
 
     Returns:
     A dataframe with the converted data types.
     
     """
-    dtype_dict = dict(zip(df_res.column_name, df_res.column_type))
+    dtype_dict = dict(zip(data_model.column_name, data_model.column_type))
     for index, col in enumerate(dtype_dict):
         dtype = dtype_dict[col]
         if dtype == 'object': 
             pass
+        elif 'date' in dtype:
+            df[col] = pd.to_datetime(df[col], errors='coerce')
         else:
             try:
                 df[col] = df[col].astype(dtype)
@@ -188,7 +191,7 @@ def get_data_model():
     # If the data model file exists, read it
     if os.path.exists(data_model_file):
         df = pd.read_parquet(data_model_file)
-        st.dataframe(df)
+        display_editable_data(df)
         st.session_state.column_info = df.to_markdown(index=False)
         generate_col_info = False
     else:
@@ -201,5 +204,29 @@ def get_data_model():
     if 'column_info' not in st.session_state or generate_col_info:
         with st.spinner("Generating column info..."):
             get_column_info()
+
+    update_colum_types_for_table(df)    
+    return None
+
+def update_colum_types_for_table(data_model):
+    """
+    Looks at the data model and converts
+    the selected files
+    """
+    # Get the list of files
+    files = data_model.filename.unique().tolist()
+    # Get the list of files that have been selected
+    selected_files = st.multiselect("Select the files to update", files)
+    if len(selected_files) > 0:
+        if st.button("Update the column types"):
+            for file in selected_files:
+                df = pd.read_parquet(file)
+                df = convert_to_appropriate_dtypes(df, data_model[data_model.filename == file])
+                df.to_parquet(file, index=False)
+            st.success("Updated the column types")
+
+
+    
+        
         
     return None

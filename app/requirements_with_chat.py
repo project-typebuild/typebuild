@@ -250,6 +250,15 @@ def fix_error_in_code():
     with st.spinner('Fixing an error I ran into...'):
         response = gpt_function_calling(messages, functions=funcs_available())
 
+    # If there is a function call, run it first
+    if 'function_call' in st.session_state:
+        call_status = make_function_call(st.session_state.chat_key)
+        del st.session_state['function_call']
+        del st.session_state['error']
+        st.toast("Fixed the error.  Rerunning the app...")
+        time.sleep(2)
+        st.experimental_rerun()
+    
     # If there is a response, add it to the chat
     if response:
         st.session_state[st.session_state.chat_key].append(
@@ -266,19 +275,4 @@ def fix_error_in_code():
                 )
             # Restart the process that will invoke this function again
             st.experimental_rerun()
-        # If there is a function call, run it
-        if 'function_call' in st.session_state:
-            call_status = make_function_call(st.session_state.error_messages)
-            del st.session_state['function_call']
-            del st.session_state['error']
-            st.success("Fixed the error.  Rerunning the app...")
-            time.sleep(2)
-            st.experimental_rerun()
-    # If there is a function call, run it
-    if 'function_call' in st.session_state:
-        call_status = make_function_call(st.session_state.chat_key)
-        del st.session_state['function_call']
-        del st.session_state['error']
-        st.success("Fixed the error.  Rerunning the app...")
-        time.sleep(2)
-        st.experimental_rerun()
+    return None

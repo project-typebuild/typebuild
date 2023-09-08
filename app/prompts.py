@@ -370,8 +370,6 @@ def get_code_instructions():
         
     Write concise code based on the instructions above.  Document it with detailed docstrings, and comments.
     When the code is ready, call the save_code_to_file function to save the code to a file.
-
-    Unless asked specifically, do not show the code. 
     """
 
     return system_instruction_to_code
@@ -384,18 +382,20 @@ def get_prompt_to_fix_error():
     with open(py_file, 'r') as f:
         code = f.read() 
     system_instruction = f"""
-    I am getting an error message.  I have sent you the code and the error message.  
-    Fix the error and save the code to file.
+    I am getting an error message when I run the code below:
+    
 
     CODE:
     {code}
 
-    ERROR MESSAGE:
+    THIS IS THE ERROR MESSAGE:
     {st.session_state.error}
-    """
+
+    Please fix the error and save the code by calling the save_code_to_file function."""
+
     if 'error_messages' not in st.session_state:
         st.session_state.error_messages = []
-    prompt = "I am getting an error message.  Please fix it."
+    prompt = "Please fix this error and save the new code to file."
 
     # If the chat is empty, add the system message
     if len(st.session_state.error_messages) == 0:
