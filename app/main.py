@@ -16,19 +16,20 @@ from function_calling_spec_maker import main as fcsm
 from requirements_with_chat import technical_requirements_chat
 from plugins.create_content_with_llms import add_data_with_llm
 
-if st.sidebar.checkbox('Show session state'):
-    st.write(st.session_state)
-if 'last_request' in st.session_state:
-    if st.sidebar.checkbox("Show latest request"):
-        with st.expander("Latest request"):
-            st.write(st.session_state.last_request)
-        if 'last_response' in st.session_state:
-            with st.expander("Latest response"):
-                st.write(st.session_state.last_response)    
-        if 'last_function_call' in st.session_state:
-            with st.expander("Last Function call"):
-                st.write(st.session_state.last_function_call)
-        st.stop()
+if st.session_state.token == 'admin':
+    if st.sidebar.checkbox('Show session state'):
+        st.write(st.session_state)
+    if 'last_request' in st.session_state:
+        if st.sidebar.checkbox("Show latest request"):
+            with st.expander("Latest request"):
+                st.write(st.session_state.last_request)
+            if 'last_response' in st.session_state:
+                with st.expander("Latest response"):
+                    st.write(st.session_state.last_response)    
+            if 'last_function_call' in st.session_state:
+                with st.expander("Last Function call"):
+                    st.write(st.session_state.last_function_call)
+            st.stop()
 
 # Get the project file and data
 get_project_file_folder()

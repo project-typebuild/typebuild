@@ -17,6 +17,9 @@ import prompts
 from streamlit_option_menu import option_menu
 import sqlite3
 from streamlit_extras.stateful_button import button
+import json
+import toml 
+home_dir = os.path.expanduser("~")
 
 def get_project_database():
 
@@ -129,6 +132,7 @@ def manage_project():
     - Set / edit project description
     """
     options = [
+        'Config',
         'Project description',
         'Upload data',
         'Data Modelling',
@@ -158,6 +162,10 @@ def manage_project():
     
     if selected_option == 'Upload Custom LLM':
         upload_custom_llm_file()
+        st.stop()
+    
+    if selected_option == 'Config':
+        config_project()
         st.stop()
     return None
 
@@ -681,3 +689,56 @@ def upload_custom_llm_file():
                         st.success(f'File saved successfully')
     st.stop()
     return None
+
+def config_project():
+    """
+    For a new project, there should be a config.json file in the project_settings folder. if not, then this function will create one.
+    this config file should have the following keys:
+    - preferred model (str): The preferred model for the project, e.g. gpt-3.5-turbo-16k, gpt-3.5-turbo, gpt-4, etc.
+    - api key (str): The API key for the openai API, if preferred model is openai's
+    - function_call_availabilty (bool): Does the user have access to the 0613 models of openai?
+
+    Save the api key to streamlit secrets.toml file
+    
+    """
+    # If the file already exists, show the config in the default values
+    config_file = st.session_state.project_folder + '/project_settings/config.json'
+    if os.path.exists(config_file):
+        with open(config_file, 'r') as f:
+            config = json.load(f)
+
+        st.session_state.config = config
+    with st.form('config_project'):
+        # If the config exists in the session state, use the default values
+        if 'config' in st.session_state:
+            st.info('These are the choices you made when you created the project, you can change them if you want')
+            preferred_model = st.selectbox('Select the preferred model', ['gpt-3.5-turbo-16k', 'gpt-3.5-turbo', 'gpt-4'], index=['gpt-3.5-turbo-16k', 'gpt-3.5-turbo', 'gpt-4'].index(st.session_state.config.get('preferred_model', 'gpt-3.5-turbo-16k')))
+            api_key = st.text_input('Enter the API key', value=st.secrets.get('api_key', st.session_state.config.get('api_key', '')))
+            function_call_availabilty = st.checkbox("Do you have access to the function calling models of OpenAI(0613 models)? Ignore if you are not using the GPT models ", value=st.session_state.config.get('function_call_availabilty', False))
+        else:
+            preferred_model = st.selectbox('Select the preferred model', ['gpt-3.5-turbo-16k', 'gpt-3.5-turbo', 'gpt-4'])
+            api_key = st.text_input('Enter the API key')
+            function_call_availabilty = st.checkbox("Do you have access to the function calling models of OpenAI(0613 models)? Ignore if you are not using the GPT models ", value=False)
+        submit_button = st.form_submit_button(label='Save config')
+    if submit_button:
+        # Save the config to the config.json file
+        config = {}
+        config['preferred_model'] = preferred_model
+        config['api_key'] = api_key
+        config['function_call_availabilty'] = function_call_availabilty
+        # Save the config to the config.json file
+        with st.spinner('Saving config...'):
+            time.sleep(2)
+        with open(config_file, 'w') as f:
+            json.dump(config, f)
+            st.toast('Hip!')
+            time.sleep(.5)
+            st.toast('Hip!')
+            time.sleep(.5)
+            st.toast('Hooray!', icon='🎉')
+        secrets_file_path = home_dir + '/.streamlit/secrets.toml'
+        with open(secrets_file_path, 'r') as f:
+            config_ = toml.load(f)
+            config_['api_key'] = api_key
+        with open(secrets_file_path, 'w') as f:
+            toml.dump(config_, f)

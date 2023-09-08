@@ -104,9 +104,9 @@ def technical_requirements_chat(widget_label):
     # Display the messages
     with chat_container:
         display_messages(chat_key)
-
-    if st.sidebar.checkbox("Show chat messages"):
-        st.sidebar.json(st.session_state[chat_key])
+    if st.session_state.token == 'admin':
+        if st.sidebar.checkbox("Show chat messages"):
+            st.sidebar.json(st.session_state[chat_key])
     return None
 
 def get_llm_response(chat_key):
