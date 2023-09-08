@@ -29,12 +29,17 @@ def get_llm_output(input, max_tokens=800, temperature=0, model='gpt-4'):
 
     """
     if 'gpt' in model:
-        res = get_gpt_output(messages=input, max_tokens=max_tokens, temperature=temperature, model=model)
+        res = get_gpt_output(
+            messages=input, 
+            max_tokens=max_tokens, 
+            temperature=temperature, 
+            model=model
+            )
     else:
         res = "Unknown model"
     return res
 
-@retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
+# @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
 def get_gpt_output(messages, model='gpt-4', max_tokens=800, temperature=0):
     """
     Gets the output from GPT models. default is gpt-4. 
@@ -51,6 +56,9 @@ def get_gpt_output(messages, model='gpt-4', max_tokens=800, temperature=0):
     - max_tokens (int): The maximum number of tokens to generate, default 800
     - temperature (float): The temperature for the model. The higher the temperature, the more random the output
     """
+
+    
+
     st.session_state.last_request = messages
     response = openai.ChatCompletion.create(
                 model=model,
