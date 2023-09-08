@@ -350,14 +350,16 @@ def export_sqlite_to_parquet(uploaded_file, output_dir):
     tables = conn.execute(query).fetchall()
     tables = [table[0] for table in tables]
 
-    # Ensure output directory exists
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    tables = st.multiselect("Select tables to import", tables)
+    if st.button("Import these tables"):
+        # Ensure output directory exists
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
 
-    # For each table, read it into a pandas DataFrame and then write it to a Parquet file
-    for table in tables:
-        df = pd.read_sql(f"SELECT * FROM {table}", conn)
-        df.to_parquet(os.path.join(output_dir, f"{table}.parquet"), index=False)
+        # For each table, read it into a pandas DataFrame and then write it to a Parquet file
+        for table in tables:
+            df = pd.read_sql(f"SELECT * FROM {table}", conn)
+            df.to_parquet(os.path.join(output_dir, f"{table}.parquet"), index=False)
 
     # Close the SQLite connection
     conn.close()

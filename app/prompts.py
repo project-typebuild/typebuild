@@ -385,8 +385,7 @@ def get_prompt_to_fix_error():
         code = f.read() 
     system_instruction = f"""
     I am getting an error message.  I have sent you the code and the error message.  
-    Explain the error in plain text, and propose a fix first.  
-    If I agree, fix the error and save the code to file.
+    Fix the error and save the code to file.
 
     CODE:
     {code}

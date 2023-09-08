@@ -57,7 +57,7 @@ def get_gpt_output(messages, model='gpt-4', max_tokens=800, temperature=0):
     return response.choices[0].message.content
 
 
-def gpt_function_calling(messages, model='gpt-4-0613', max_tokens=5000, temperature=0, functions=[]):
+def gpt_function_calling(messages, model='gpt-4-0613', max_tokens=3000, temperature=0, functions=[]):
     """
     Gets the output from GPT models. default is gpt-4. 
 
