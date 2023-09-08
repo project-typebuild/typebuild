@@ -16,7 +16,12 @@ from function_calling_spec_maker import main as fcsm
 from requirements_with_chat import technical_requirements_chat
 from plugins.create_content_with_llms import add_data_with_llm
 
-if st.session_state.token == 'admin':
+if 'user_type' in st.secrets:
+    user_type = st.secrets.user_type
+else:
+    user_type = 'other_user'
+
+if user_type == 'developer':
     if st.sidebar.checkbox('Show session state'):
         st.write(st.session_state)
     if 'last_request' in st.session_state:

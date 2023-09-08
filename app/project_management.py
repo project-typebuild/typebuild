@@ -202,7 +202,10 @@ def project_description_chat():
         # Create the messages from the prompts file
         prompts.blueprint_prompt_structure(prompt=prompt)
         with st.spinner('Generating response...'):
-            res = get_llm_output(st.session_state.project_description_chat, model='gpt-3.5-turbo-16k')
+            res = get_llm_output(
+                st.session_state.project_description_chat, 
+                model='gpt-3.5-turbo-16k'
+                )
             # Add the response to the chat
             st.session_state.project_description_chat.append({'role': 'assistant', 'content': res})
     
@@ -738,7 +741,7 @@ def config_project():
             st.toast('Hip!')
             time.sleep(.5)
             st.toast('Hooray!', icon='🎉')
-        secrets_file_path = home_dir + '/.streamlit/secrets.toml'
+        secrets_file_path = '.streamlit/secrets.toml'
         with open(secrets_file_path, 'r') as f:
             config_ = toml.load(f)
             config_['api_key'] = api_key

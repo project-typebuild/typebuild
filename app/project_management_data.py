@@ -63,7 +63,19 @@ def get_column_info_for_df(df):
         
     # Send this to the LLM with two rows of data and ask it to describe the data.
     
-    sample_data = df.head(2).to_markdown(index=False)
+    sample_data = df.head(3).to_dict('records')
+    sample_buf = "HERE IS SOME SAMPLE DATA:\n"
+    for row in sample_data:
+        for col in row:
+            value = row[col]
+            # If the value is a string, add quotes around it.  Limit the length of the string to 100 characters.
+            if isinstance(value, str):
+                if len(value) > 100:
+                    value = value[:100] + '...'
+                value = f"'{value}'"
+            sample_buf += f"- {col}: {value}\n"
+        sample_buf += '====================\n'
+
 
     system_instruction = """You are helping me document the data.  
     Using the examples revise the column info by:
@@ -80,7 +92,7 @@ def get_column_info_for_df(df):
     {all_col_infos}
 
     SAMPLE DATA:
-    {sample_data}
+    {sample_buf}
 
     You should strictly return the column information in the same format provided to you
     """
