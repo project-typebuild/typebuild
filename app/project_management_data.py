@@ -13,6 +13,30 @@ import os
 from llm_functions import get_llm_output
 from helpers import text_areas
 
+def convert_to_appropriate_dtypes(df, df_res):
+    
+    """
+    Convert the data types of the dataframe columns to the appropriate data types.
+
+    Parameters:
+    df (dataframe): The dataframe to be converted.
+    df_res (dataframe): The dataframe with the column names and data types.
+
+    Returns:
+    A dataframe with the converted data types.
+    
+    """
+    dtype_dict = dict(zip(df_res.column_name, df_res.column_type))
+    df = df.fillna('')
+    for index, col in enumerate(dtype_dict):
+        dtype = dtype_dict[col]
+        if dtype == 'object': 
+            pass
+        else:
+            df[col] = df[col].astype(dtype)
+    
+    return df
+    
 
 def get_column_info_for_df(df):
     """
@@ -22,7 +46,7 @@ def get_column_info_for_df(df):
     parquet_file (str): The path to the parquet file.
 
     Returns:
-    A dataframe with the column names and data types and column info.
+    str: A string containing the column names and data types, with one line per column.
     """
 
     # Read the parquet file using pandas
@@ -34,16 +58,21 @@ def get_column_info_for_df(df):
         column_info['column_name'] = column
         column_info['column_type'] = str(df[column].dtype)
         column_info['column_info'] = ''
+        
         all_col_infos.append(column_info)
         
     # Send this to the LLM with two rows of data and ask it to describe the data.
-    sample_data = df.head(1).to_markdown(index=False)
+    
+    sample_data = df.head(2).to_markdown(index=False)
 
     system_instruction = """You are helping me document the data.  
     Using the examples revise the column info by:
     - Adding a description for each column
     - If the column is a date, add the date format
-    - You should strictly return the column information in the same format provided to you
+    - I will provide the initial column type, you need to check if the initial column type is appropriate or suggest the new column type
+    - The possible column dtypes are ['object', 'int64', 'datetime64', 'float64']
+    - You should strictly return the column information in the same format provided to you.
+    - Don't add any comments
     """
 
     prompt = f"""Given below is the draft column information.
@@ -60,10 +89,9 @@ def get_column_info_for_df(df):
         {'role': 'user', 'content': prompt},
     ]
     res = get_llm_output(messages, model='gpt-4', max_tokens=2000, temperature=0)
-    eval_res = eval(res)
-    df = pd.DataFrame(eval_res)
-
-    return df
+    df_res = pd.DataFrame(eval(res))
+    
+    return df_res
 
 
 def get_column_info():
@@ -75,20 +103,34 @@ def get_column_info():
     data_files = [i for i in data_files if i.endswith('.parquet')]
     column_info = {}
     status = st.empty()
+    all_col_infos = []
+    all_col_info_markdown = ''
     for file in data_files:
         st.info(f"Getting column info for {file}")
-        df = pd.read_parquet(project_folder + '/data/' + file)
+        parquet_file_path = project_folder + '/data/' + file
+        df = pd.read_parquet(parquet_file_path)  
         df_col_info = get_column_info_for_df(df)
+        st.dataframe(df_col_info)
+        try:
+            df = convert_to_appropriate_dtypes(df, df_col_info)
+            df.to_parquet(parquet_file_path, index=False)
+        except:
+            pass
         status.warning("Pausing for 15 secs to avoid rate limit")
         time.sleep(15)
-        df_col_info['filename'] = file
+        df_col_info['filename'] = parquet_file_path
         # put the filename as the first column
         cols = df_col_info.columns.tolist()
         cols = cols[-1:] + cols[:-1]
         df_col_info = df_col_info[cols]
+        all_col_infos.append(df_col_info)
         column_info = df_col_info.to_markdown(index=False)
+        all_col_info_markdown += column_info + '\n\n'
+        status.empty()
+    df_all_col_infos = pd.concat(all_col_infos)
+    df_all_col_infos.to_parquet(project_folder + '/data_model.parquet', index=False)
     # Add column info to the session state
-    st.session_state.column_info = column_info
+    st.session_state.column_info = all_col_info_markdown
 
     return None
 
@@ -101,6 +143,7 @@ def get_data_model():
     data_folder = project_folder + '/data'
     
     data_model_file = project_folder + '/data_model.parquet'
+
     # If the data model file exists, read it
     if os.path.exists(data_model_file):
         df = pd.read_parquet(data_model_file)
@@ -108,32 +151,11 @@ def get_data_model():
     else:
         if not os.path.exists(data_model_file):
             generate_col_info = True
-    
-    if st.button("Generate column info automatically"):
-        generate_col_info = True    
 
     if 'column_info' not in st.session_state and generate_col_info:
         get_column_info()
-    
-    # if generate_col_info:
-    if 'column_info' in st.session_state:
-        st.header('Column info')
-        buf = 'INFORMATION ABOUT THE PROJECT DATA FILE(S)'
-        for file in st.session_state.column_info:
-            # Add file path first
-            file_path = os.path.join(data_folder, file)
-            buf += f'\n\nFile path: {file_path}'
-            # Add column info
-            llm_res = st.session_state.column_info[file]
-            # Get the column info from triple backticks
-            info = llm_res.split('```')
-            if len(info) > 0:
-                info = info[1]
-                # Split lines and add bullets
-                info = '\n\n'.join(['- ' + line for line in info.split('\n') if line.strip() != ''])
-            buf += '\n\n' + info
-        copy_info = """You can copy the column info and paste it in the data model text area.  
-        Please verify the column info and make edits, if necessary."""
-        st.code(buf)
 
+    if st.button("Generate column info automatically"):
+        generate_col_info = True    
+        
     return None
