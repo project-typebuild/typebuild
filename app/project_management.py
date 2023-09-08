@@ -16,7 +16,7 @@ import pandas as pd
 import prompts
 from streamlit_option_menu import option_menu
 import sqlite3
-
+from streamlit_extras.stateful_button import button
 
 def get_project_database():
 
@@ -144,6 +144,7 @@ def manage_project():
     
     if selected_option == 'Upload data':
         file_upload_and_save()
+        st.experimental_rerun()
 
     if selected_option == 'Append data (optional)':
         append_data_to_exisiting_file()
@@ -156,6 +157,7 @@ def manage_project():
         st.stop()
     
     if selected_option == 'Upload Custom LLM':
+        upload_custom_llm_file()
         st.stop()
     return None
 
@@ -377,7 +379,35 @@ def upload_data_file(uploaded_file, file_extension):
     elif file_extension == 'tsv':
         df = pd.read_csv(uploaded_file, sep='\t')
     
-    
+    # Create a streamlit form, with all columns and data types and allow the user to edit the data types
+    # Get the column names and data types
+
+    # Get the column names and data types
+    all_col_infos = []
+    for column in df.columns:
+        column_info = {}
+        column_info['column_name'] = column
+        column_info['column_type'] = str(df[column].dtype)
+        column_info['column_info'] = ''
+        all_col_infos.append(column_info)
+
+    # Create a form for editing the data types
+    with st.form('edit_data_types'):
+        for col_info in all_col_infos:
+            col_name = col_info['column_name']
+            col_type = col_info['column_type']
+            new_col_type = st.selectbox(f'Select data type for column "{col_name}"', options=['int64', 'float64', 'object', 'datetime64[ns]'], index=['int64', 'float64', 'object', 'datetime64[ns]'].index(col_type), key=col_name)
+            if new_col_type != col_type:
+                col_info['column_type'] = new_col_type
+        submit_button = st.form_submit_button(label='Update data types')
+
+    # Update the data types of the dataframe
+    for col_info in all_col_infos:
+        col_name = col_info['column_name']
+        col_type = col_info['column_type']
+        if col_type != 'object':
+            df[col_name] = df[col_name].astype(col_type)
+
     # Show the dataframe
     
     st.dataframe(df)
@@ -386,7 +416,7 @@ def upload_data_file(uploaded_file, file_extension):
     file_name = uploaded_file.name
     # Remove the file extension
     file_name = file_name.replace(f'.{file_extension}', '')
-
+    
     # Create a button to save the file as a parquet file with the same name
     if st.button('Save as Parquet'):
         # Save the file to the data folder
@@ -566,6 +596,47 @@ def append_data_to_exisiting_file():
     st.stop()
     return None
 
+import ast
+
+def verify_functions(file_path, function_dict):
+    # Parse the Python file using the ast library
+    with open(file_path, 'r') as f:
+        tree = ast.parse(f.read())
+
+
+    # Extract all function definitions from the parsed tree
+    functions = []
+    for node in ast.walk(tree):
+        tmp_dict = {}
+        if isinstance(node, ast.FunctionDef):
+            function_name = node.name
+            args = [arg.arg for arg in node.args.args]
+            tmp_dict['function_name'] = function_name
+            tmp_dict['args'] = args
+            functions.append(tmp_dict)
+
+    # Check if the get_llm_output function is present in the functions list
+    # if get_llm_output function present and the args do not match, show an error
+        with open('plugins/llms.py', 'r') as f:
+            tree = f.read()
+
+    if 'get_llm_output' not in [i['function_name'] for i in functions]:
+        st.error('get_llm_output function not found in the file, you need to have a get_llm_output function in the file, for the reference, see the get_llm_output function in the code block below')
+        st.code(tree, language='python')
+        st.stop()
+    else:
+        # Get the args for the get_llm_output function
+        get_llm_output_args = [i['args'] for i in functions if i['function_name'] == 'get_llm_output'][0]
+        # If the args do not match, show an error
+        if get_llm_output_args != function_dict['args']:
+            st.error(f'get_llm_output function args do not match. Expected: {function_dict["args"]}, Actual: {get_llm_output_args}')
+            st.code(tree, language='python')
+            st.stop()
+
+        else:
+            return True
+    
+
 def upload_custom_llm_file():
     """
     This function allows the user to upload a custom LLM file.
@@ -578,15 +649,35 @@ def upload_custom_llm_file():
         file_extension = uploaded_file.name.split('.')[-1]
         # Load the file as a dataframe
         if file_extension == 'py':
-            # Save the file to the data folder
-            file_path = st.session_state.project_folder + '/custom_llm/' + uploaded_file.name
-            # Create folder if it does not exist
-            folder_name = os.path.dirname(file_path)
-            if not os.path.exists(folder_name):
-                os.makedirs(folder_name)
-            with open(file_path, 'wb') as f:
+            # Save the file to the tmp folder
+            tmp_folder = '/tmp/'
+            tmp_file_path =  tmp_folder + uploaded_file.name
+            with open(tmp_file_path, 'wb') as f:
                 f.write(uploaded_file.getbuffer())
-            st.success(f'File saved successfully')
-            uploaded_file = None
+            # Verify the functions in the file
+            function_dict = {'function_name': 'get_llm_output', 'args': ['input', 'max_tokens', 'temperature', 'model']}
+            if verify_functions(tmp_file_path, function_dict):
+                success_message = st.empty()
+                success_message.success('Functions verified successfully, you can now save the file by clicking the button below')
+                if button('Save Custom LLM', key='save_custom_llm'):
+                    success_message.empty()
+                    file_path = 'plugins/custom_llm.py'
+                    # if the file already exists, ask the user if they want to overwrite it or not
+                    if os.path.exists(file_path):
+                        overwrite = st.radio('File already exists, do you want to overwrite it?', ['Yes', 'No'], index=1)
+                        if overwrite == 'Yes':
+                            with st.spinner('Saving file...'):
+                                time.sleep(2)
+                                # Save the file to the data folder
+                                with open(file_path, 'wb') as f:
+                                    f.write(uploaded_file.getbuffer())
+                                st.success(f'File saved successfully')
+                        else:
+                            st.warning('File not saved')
+                    else:
+                        # Save the file to the data folder
+                        with open(file_path, 'wb') as f:
+                            f.write(uploaded_file.getbuffer())
+                        st.success(f'File saved successfully')
     st.stop()
     return None

@@ -49,7 +49,8 @@ if add_or_view == 'Add data':
     st.stop()
 
 function_calling_availability = st.sidebar.radio("Function Call type", ['---','auto', 'manual'], key='function_calling_availability')
-
+if function_calling_availability == '---':
+    st.stop()
 if add_or_view == 'View data':
     # Select the view from the menu
     select_view()
