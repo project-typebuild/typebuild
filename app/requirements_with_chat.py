@@ -67,7 +67,7 @@ def technical_requirements_chat(widget_label):
     prompt = st.chat_input("Type here for help", key=f'chat_input_{widget_label}')
     if prompt:
         # Create the messages from the prompts file
-        prompts.requirements_to_code(
+        prompts.from_requirements_to_code(
             prompt=prompt,
             current_text=current_text,
             chat_key=chat_key,
@@ -86,7 +86,7 @@ def technical_requirements_chat(widget_label):
     # to the llm to get the next response
     if call_status == "Done":
         with st.spinner("Got some extra information.  Working on it..."):
-            prompts.requirements_to_code(
+            prompts.from_requirements_to_code(
                 prompt=None,
                 current_text=current_text,
                 chat_key=chat_key,
@@ -142,22 +142,31 @@ def make_function_call(chat_key):
     # If func_info is a string, convert it to a dict
     if isinstance(func_info, str):
         func_info = json.loads(func_info)
+    
+    # Get function name and arguments
     func_name = func_info['name']
+
+    # If function call is returned by openai, the arguments will be a string
+    # Convert that to a dict
     if isinstance(func_info['arguments'], str):
         arguments = json.loads(func_info['arguments'])
     else:
         arguments = func_info['arguments']
+
+    # Run the function
     with st.spinner(f'Running {func_name}...'):
         func_res = globals()[func_name](**arguments)
         # Remove the function call from the session state
         del st.session_state['function_call']
         if func_res:
             # Add the response to the chat
-            st.toast(func_res)
+            st.session_state[chat_key].append(
+                {'role': 'system', 'content': func_res}
+                )
+
             return "Done"
         else:
             return None
-
 
 def save_requirements_to_file(content: str):
     """
@@ -181,7 +190,7 @@ def save_requirements_to_file(content: str):
     with open(file_name, 'w') as f:
         f.write(content)
     st.sidebar.success(f"Saved requirements to {file_name}")
-    return f"Ok, I have saved requirements to {file_name}.  You can create or update the code now."
+    return f"The requirements have been saved to {file_name}.  Ask the user if they would like to update the code based on the updated requirements."
 
 def save_code_to_file(code_str: str):
     """
@@ -212,7 +221,7 @@ def save_code_to_file(code_str: str):
     del st.session_state['function_call']
     st.experimental_rerun()
     # Note the message will not be returned since we are rerunning the app here.
-    return None
+    return "The code has been saved to the file.  It is ready to use now.  Ask the user to test the app and ask for modifications, if any is required."
 
 def set_the_stage(stage_name):
     """
@@ -230,7 +239,7 @@ def set_the_stage(stage_name):
     st.toast("Just set the stage")
     st.session_state.current_stage = stage_name
     st.sidebar.warning(f"Current stage is {stage_name}")
-    return f"Focussing on {stage_name} now."
+    return f"We are now focussing on {stage_name} now."
 
 def fix_error_in_code():
     """

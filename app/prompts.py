@@ -225,7 +225,7 @@ Return this as a well formatted python list of dicts within ```triple back ticks
                 {"role": "user", "content": prompt}]
     return messages
 
-def requirements_to_code(chat_key, current_text="", prompt="", func_str=None):
+def from_requirements_to_code(chat_key, current_text="", prompt="", func_str=None):
     """
     This function loads the prompt to create everything from
     gathering requirements to generating code.

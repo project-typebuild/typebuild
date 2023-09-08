@@ -33,7 +33,10 @@ def convert_to_appropriate_dtypes(df, df_res):
         if dtype == 'object': 
             pass
         else:
-            df[col] = df[col].astype(dtype)
+            try:
+                df[col] = df[col].astype(dtype)
+            except:
+                st.error(f"Could not convert {col} to {dtype}")
     
     return df
     
@@ -123,11 +126,9 @@ def get_column_info():
         df = pd.read_parquet(parquet_file_path)  
         df_col_info = get_column_info_for_df(df)
         st.dataframe(df_col_info)
-        try:
-            df = convert_to_appropriate_dtypes(df, df_col_info)
-            df.to_parquet(parquet_file_path, index=False)
-        except:
-            pass
+        df = convert_to_appropriate_dtypes(df, df_col_info)
+        df.to_parquet(parquet_file_path, index=False)
+        
         status.warning("Pausing for 15 secs to avoid rate limit")
         time.sleep(15)
         df_col_info['filename'] = parquet_file_path
@@ -159,6 +160,7 @@ def get_data_model():
     # If the data model file exists, read it
     if os.path.exists(data_model_file):
         df = pd.read_parquet(data_model_file)
+        st.dataframe(df)
         generate_col_info = False
     else:
         if not os.path.exists(data_model_file):
@@ -167,7 +169,7 @@ def get_data_model():
     if 'column_info' not in st.session_state and generate_col_info:
         get_column_info()
 
-    if st.button("Generate column info automatically"):
+    if st.button("Re-generate column info automatically"):
         generate_col_info = True    
         
     return None
