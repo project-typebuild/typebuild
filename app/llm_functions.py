@@ -57,7 +57,7 @@ def get_gpt_output(messages, model='gpt-4', max_tokens=800, temperature=0):
     - temperature (float): The temperature for the model. The higher the temperature, the more random the output
     """
 
-    
+
 
     st.session_state.last_request = messages
     response = openai.ChatCompletion.create(
@@ -107,6 +107,7 @@ def gpt_function_calling(messages, model='gpt-4-0613', max_tokens=3000, temperat
                 )
     msg = response.choices[0].message
     content = msg.get('content', None)
+    
     if content:
         st.session_state.last_response = response.choices[0].message
     # Get the function_calling_availability from session state

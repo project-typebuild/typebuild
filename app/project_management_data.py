@@ -191,7 +191,7 @@ def get_data_model():
     # If the data model file exists, read it
     if os.path.exists(data_model_file):
         df = pd.read_parquet(data_model_file)
-        display_editable_data(df)
+        display_editable_data(df, data_model_file)
         st.session_state.column_info = df.to_markdown(index=False)
         generate_col_info = False
     else:

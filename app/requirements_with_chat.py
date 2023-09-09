@@ -219,6 +219,9 @@ def save_code_to_file(code_str: str):
     time.sleep(2)
     # Delete the function call from the session state
     del st.session_state['function_call']
+    # Delete the error from the session state
+    if 'error' in st.session_state:
+        del st.session_state['error']
     st.experimental_rerun()
     # Note the message will not be returned since we are rerunning the app here.
     return "The code has been saved to the file.  It is ready to use now.  Ask the user to test the app and ask for modifications, if any is required."
@@ -248,6 +251,7 @@ def fix_error_in_code():
     prompts.get_prompt_to_fix_error()
     messages = st.session_state.error_messages
     with st.spinner('Fixing an error I ran into...'):
+        st.error(f"I got this error: {st.session_state.error}")
         response = gpt_function_calling(messages, functions=funcs_available())
 
     # If there is a function call, run it first

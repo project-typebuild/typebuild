@@ -148,7 +148,7 @@ def update_data_to_file(df, edited_df, file_name):
     return None
 
 
-def display_editable_data(df):
+def display_editable_data(df, file_name):
     """
     Given a dataframe, display it in a table that can be edited.
     Returns the edited dataframe.  This assumes that the columns have the 
@@ -163,5 +163,5 @@ def display_editable_data(df):
     edited_df = st.data_editor(df, column_config=config, num_rows='dynamic')
 
     # Save the data to file if there are changes
-    # update_data_to_file(df, edited_df, file_name)
+    update_data_to_file(df, edited_df, file_name)
     return None   
