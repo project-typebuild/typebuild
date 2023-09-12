@@ -122,7 +122,7 @@ def create_destination_df(destination_df_name, consolidated=False):
         time.sleep(2)
         st.experimental_rerun()
     
-    return None
+    return df_for_llm
 
 
 
@@ -143,7 +143,7 @@ def analyze_with_llm(consolidated=False):
 
     # Create the destination dataframe if it doesn't exist
     if not os.path.exists(destination_df_name):
-        create_destination_df(destination_df_name, consolidated)
+        df = create_destination_df(destination_df_name, consolidated)
     else:
         df = pd.read_parquet(destination_df_name)
     
@@ -232,7 +232,8 @@ def row_by_row_llm_res(text, system_instruction, sample=True):
         chunks = chunks[:2]
     
     for chunk in chunks:
-        max_tokens = chunk/3
+        max_tokens = len(chunk)/3
+        max_tokens = int(max_tokens)
         messages =[
             {"role": "system", "content": system_instruction},
             {"role": "user", "content": chunk}]
@@ -242,6 +243,7 @@ def row_by_row_llm_res(text, system_instruction, sample=True):
             model='gpt-3.5-turbo-16k'
             )
         output += res + '\n\n'
+    time.sleep(5)
     return output
 
 def chunk_text(text, max_chars=None, model_name='gpt-3.5-turbo'):

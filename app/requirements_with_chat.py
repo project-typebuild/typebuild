@@ -62,7 +62,8 @@ def technical_requirements_chat(widget_label):
     # If there is an error in rendering code,
     # fix it.  No need to wait for user prompt.
     if 'error' in st.session_state:
-        fix_error_in_code()        
+        fix_error_in_code()
+        del st.session_state['error']        
     
     prompt = st.chat_input("Type here for help", key=f'chat_input_{widget_label}')
     if prompt:
