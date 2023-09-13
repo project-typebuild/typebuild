@@ -9,7 +9,7 @@ from tenacity import (
     stop_after_attempt,
     wait_random_exponential,
 ) 
-def get_llm_output(input, max_tokens=800, temperature=0, model='gpt-4'):
+def get_llm_output(input, max_tokens=800, temperature=0.4, model='gpt-4'):
 
     """
     Given an input, get the output from the LLM.  Default is openai's gpt-4.
@@ -40,7 +40,7 @@ def get_llm_output(input, max_tokens=800, temperature=0, model='gpt-4'):
     return res
 
 # @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
-def get_gpt_output(messages, model='gpt-4', max_tokens=800, temperature=0):
+def get_gpt_output(messages, model='gpt-4', max_tokens=800, temperature=0.4):
     """
     Gets the output from GPT models. default is gpt-4. 
 
@@ -71,7 +71,7 @@ def get_gpt_output(messages, model='gpt-4', max_tokens=800, temperature=0):
     return response.choices[0].message.content
 
 @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
-def gpt_function_calling(messages, model='gpt-4-0613', max_tokens=3000, temperature=0, functions=[]):
+def gpt_function_calling(messages, model='gpt-4-0613', max_tokens=3000, temperature=0.4, functions=[]):
     """
     Gets the output from GPT models. default is gpt-4. 
 
@@ -110,20 +110,20 @@ def gpt_function_calling(messages, model='gpt-4-0613', max_tokens=3000, temperat
     
     if content:
         st.session_state.last_response = response.choices[0].message
-    # Get the function_calling_availability from session state
-    if 'function_calling_availability' in st.session_state:
-        function_calling_availability = st.session_state.function_calling_availability
+    # Get the function_call_type from session state
+    if 'function_call_type' in st.session_state:
+        function_call_type = st.session_state.function_call_type
     else:
-        function_calling_availability = 'auto'
+        function_call_type = 'auto'
 
-    if function_calling_availability == 'auto':
+    if function_call_type == 'auto':
         func_call = msg.get('function_call', None)
         if func_call:
             # Save to session state
             st.session_state.function_call = func_call
             st.session_state.last_function_call = func_call
 
-    if function_calling_availability == 'manual':
+    if function_call_type == 'manual':
         if '```' in str(content):
             current_stage = st.session_state.current_stage
             if current_stage == 'code':

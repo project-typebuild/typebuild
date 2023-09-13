@@ -56,8 +56,8 @@ def technical_requirements_chat(widget_label):
 
     # Create the chat    
     chat_container = st.container()
-    # We should only have this if the function_calling_availability is 'manual'
-    if st.session_state.function_calling_availability == 'manual':
+    # We should only have this if the function_call_type is 'manual'
+    if st.session_state.function_call_type == 'manual':
         current_stage = st.sidebar.radio("Current stage", ['requirements', 'code'],key='current_stage') 
     # If there is an error in rendering code,
     # fix it.  No need to wait for user prompt.

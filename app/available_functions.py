@@ -33,7 +33,10 @@ def funcs_available():
         },
         {
             "name": "save_code_to_file",
-            "description": "When the new code or modified code is ready, this saves the code to the file.",
+            "description": """
+                Call this function to save generated code to file. The system knows the file name.
+                Code should only be sent to this function.
+                """,
             "parameters": {
                 "type": "object",
                 "properties": {

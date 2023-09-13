@@ -97,11 +97,20 @@ def get_modified_columns_and_rows(orig, new):
     return modified_columns, modified_rows
 
 
-def update_data_to_file(df, edited_df, file_name):
+def update_data_to_file(df, edited_df, file_name, filtered_df):
     """
     If there are updates to the data, and the user wishes to
     save the updates, this function will save the updates to the file
-    edited_df and df have the same index
+    filtered_df, edited_df and df have the same index.
+
+    Args:
+        df (dataframe): The original dataframe that was read from the file.
+        edited_df (dataframe): The dataframe that the user edited.
+        file_name (string): The name of the file that the data was read from.
+        filtered_df (dataframe): The dataframe that was filtered by the user.
+
+    Returns:
+        None: The data is saved to file.    
     """
     has_edits = False
     # Check if the data has been edited
@@ -121,8 +130,9 @@ def update_data_to_file(df, edited_df, file_name):
         df = pd.concat([df, new_rows])
         has_edits = True
 
-    # Remove deleted rows that were in df but not in edited_df
-    deleted_rows = df[~df.index.isin(edited_df.index)].index.tolist()
+    # Remove deleted rows that were in filtered_df but not in edited_df
+    # Filtered df is the one that the user saw.
+    deleted_rows = filtered_df[~filtered_df.index.isin(edited_df.index)].index.tolist()
     if len(deleted_rows) > 0:
         st.warning(f"{len(deleted_rows)} rows will be deleted")
         df = df[~df.index.isin(deleted_rows)]
@@ -148,20 +158,29 @@ def update_data_to_file(df, edited_df, file_name):
     return None
 
 
-def display_editable_data(df, file_name):
+def display_editable_data(df, file_name, filtered_df=None):
     """
     Given a dataframe, display it in a table that can be edited.
     Returns the edited dataframe.  This assumes that the columns have the 
     correct datatypes.
+
+    Args:
+        df (dataframe): All the rows that were read from the file originally.
+        file_name (string): The name of the file that the data was read from.
+        filtered_df (dataframe, optional): Filtered dataframe that we may want to display to the user.
+            Defaults to None.  If the user edits filtered data, the edits will be applied to the original dataframe.
     """
-    # Get configuration needed to display the data
-    # in correct format and to create the right widgets to edit them
-    # file_name = st.session_state['project_file']
+    # The config tells the data editor how to display the data
     config = get_data_config(df)
     
+    # If the data has been filtered, display the filtered data
+    # Otherwise, display the original data
+    if filtered_df is None:
+        filtered_df = df
+    
     # Display the data
-    edited_df = st.data_editor(df, column_config=config, num_rows='dynamic')
+    edited_df = st.data_editor(filtered_df, column_config=config, num_rows='dynamic')
 
     # Save the data to file if there are changes
-    update_data_to_file(df, edited_df, file_name)
+    update_data_to_file(df, edited_df, file_name, filtered_df)
     return None   

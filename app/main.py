@@ -10,7 +10,7 @@ import session_state_management
 
 session_state_management.main()
 
-from project_management import get_project_file_folder, get_project_df
+from project_management import get_project_file_folder, get_project_df, manage_project
 from function_management import create_run_menu, run_code_in_view_file
 from function_calling_spec_maker import main as fcsm
 from requirements_with_chat import technical_requirements_chat
@@ -20,12 +20,26 @@ if 'user_type' in st.secrets:
     user_type = st.secrets.user_type
 else:
     user_type = 'other_user'
-
 st.session_state.user_type = user_type
+if 'function_call_type' not in st.session_state:
+    st.session_state.function_call_type = 'manual'
 
+st.session_state.function_call_type = st.secrets.function_call_type
+
+st.session_state.show_developer_options = False
 if user_type == 'developer':
+    if st.sidebar.checkbox("Show developer options"):
+        # Display function call type
+        st.sidebar.info(f"Function call type: {st.session_state.function_call_type}")
+        st.session_state.show_developer_options = True
+
+if st.session_state.show_developer_options:
     if st.sidebar.checkbox('Show session state'):
         st.write(st.session_state)
+    if st.sidebar.checkbox('Function call maker'):
+        fcsm()
+        st.warning("Turn off function call maker to view the app.")
+        st.stop()
     if 'last_request' in st.session_state:
         if st.sidebar.checkbox("Show latest request"):
             with st.expander("Latest request"):
@@ -36,29 +50,38 @@ if user_type == 'developer':
             if 'last_function_call' in st.session_state:
                 with st.expander("Last Function call"):
                     st.write(st.session_state.last_function_call)
-            st.stop()
+        # Separator line
+        st.sidebar.markdown("---")
+        st.stop()
 
 # Get the project file and data
 get_project_file_folder()
 
-
-if st.sidebar.checkbox('Function call maker'):
-    fcsm()
-    st.warning("Turn off function call maker to view the app.")
-    st.stop()
-
-add_or_view = st.sidebar.radio(
-    "Add or view data", 
-    ['Add data', 'View data'],
-    # captions= ['Add data with llms', 'Extract insights from data']
+project_option = st.sidebar.radio(
+    "Add or view data",
+    options=[
+        'Manage project', 
+        'Add data', 
+        'View data'
+        ],
+    captions= [
+        'Describe, upload data, settings',
+        'Categorize, extract topics, get external data', 
+        'Extract insights from data'
+        ]
     )
-if add_or_view == 'Add data':
+
+if project_option == 'Manage project':
+    manage_project()
+
+if project_option == 'Add data':
     add_data_with_llm()
     st.stop()
 
-function_calling_availability = st.sidebar.radio("Function Call type", ['auto', 'manual'], key='function_calling_availability')
 
-if add_or_view == 'View data':
+
+
+if project_option == 'View data':
     # Select the view from the menu
     select_view()
     run_code_in_view_file()

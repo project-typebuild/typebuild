@@ -360,6 +360,8 @@ def get_code_instructions():
     THINGS TO REMEMBER:
     - Do not create login or signup, even if requested.
     - Pay careful attention to the data description, especially to column types and names.
+    - Use in-built streamlit methods to create charts if possible. Else, use altair.
+    - Use column ending in _id for counts, if not specified.
     - Try to use only the approved libraries.  If you need to use other libraries, check with me first.
     - You have been given one or more data files.  Load the files needed for this requirement and create a dataframe.
     - Use the loaded the dataframe to fulfill the requirements. 
@@ -370,8 +372,11 @@ def get_code_instructions():
     - Do not call the main function.  It will be called by the system.
         
     Write concise code based on the instructions above.  Document it with detailed docstrings, and comments.
-    When the code is ready, call the save_code_to_file function to save the code to a file.
     """
+
+    # If the function calling type is auto, ask code to be saved to file.
+    if st.session_state.function_call_type == 'auto':
+        system_instruction_to_code += """Do not show the code to the user.  Save the code to file by calling the function save_code_to_file.  The system knows the file name."""
 
     return system_instruction_to_code
 

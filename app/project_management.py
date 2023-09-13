@@ -92,18 +92,10 @@ def get_project_file_folder():
     
     project_folder = os.path.join(user_folder, selected_project)
     
-    # If the file called data_model.parquet is missing, toggle the manage project button
-    data_model_file = project_folder + '/data_model.parquet'
-    if not os.path.exists(data_model_file):
-        manage_project_toggle = True
-    else:
-        # Add data description to session state
-        st.session_state.data_description = pd.read_parquet(data_model_file).to_markdown(index=False)
 
     # Save to session state
     st.session_state.project_folder = project_folder
-    if st.sidebar.checkbox("Manage project", manage_project_toggle, key='manage_project'):
-        manage_project()
+    
     return None
 
 def add_llm_data_model(data_model_pkl_file):
@@ -132,6 +124,17 @@ def manage_project():
     - Manage data
     - Set / edit project description
     """
+    # Get the project folder
+    project_folder = st.session_state.project_folder
+    # If the file called data_model.parquet is missing, toggle the manage project button
+    data_model_file = project_folder + '/data_model.parquet'
+    manage_project_toggle = False
+    if not os.path.exists(data_model_file):
+        manage_project_toggle = True
+    else:
+        # Add data description to session state
+        st.session_state.data_description = pd.read_parquet(data_model_file).to_markdown(index=False)
+
     options = [
         'Project description',
         'Config',
@@ -168,7 +171,7 @@ def manage_project():
     if selected_option == 'Config':
         config_project()
         st.stop()
-    return None
+    return manage_project_toggle
 
 def set_project_description():
     """
@@ -718,11 +721,19 @@ def config_project():
             st.info('These are the choices you made when you created the project, you can change them if you want')
             preferred_model = st.selectbox('Select the preferred model', ['gpt-3.5-turbo-16k', 'gpt-3.5-turbo', 'gpt-4'], index=['gpt-3.5-turbo-16k', 'gpt-3.5-turbo', 'gpt-4'].index(st.session_state.config.get('preferred_model', 'gpt-3.5-turbo-16k')))
             api_key = st.text_input('Enter the API key', value=st.secrets.get('api_key', st.session_state.config.get('api_key', '')))
-            function_call_availabilty = st.checkbox("Do you have access to the function calling models of OpenAI(0613 models)? Ignore if you are not using the GPT models ", value=st.session_state.config.get('function_call_availabilty', False))
+            function_call_availabilty = st.checkbox(
+                "(Expert setting) I have access to function calling", 
+                value=st.session_state.config.get('function_call_availabilty', False),
+                help="Do you have access to openai models ending in 0613? they have a feature called function calling.",
+                )
         else:
             preferred_model = st.selectbox('Select the preferred model', ['gpt-3.5-turbo-16k', 'gpt-3.5-turbo', 'gpt-4'])
             api_key = st.text_input('Enter the API key')
-            function_call_availabilty = st.checkbox("Do you have access to the function calling models of OpenAI(0613 models)? Ignore if you are not using the GPT models ", value=False)
+            function_call_availabilty = st.checkbox(
+                "(Expert setting) I have access to function calling", 
+                value=st.session_state.config.get('function_call_availabilty', False),
+                help="Do you have access to openai models ending in 0613? they have a feature called function calling.",
+                )
         submit_button = st.form_submit_button(label='Save config')
     if submit_button:
         # Save the config to the config.json file
