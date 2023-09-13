@@ -15,6 +15,7 @@ import streamlit as st
 import pandas as pd
 import prompts
 from streamlit_option_menu import option_menu
+import extra_streamlit_components as stx
 import sqlite3
 from streamlit_extras.stateful_button import button
 import json
@@ -132,29 +133,29 @@ def manage_project():
     - Set / edit project description
     """
     options = [
-        'Config',
         'Project description',
+        'Config',
         'Upload data',
         'Data Modelling',
         'Upload Custom LLM'
     ]
-
-    with st.sidebar:
-        selected_option = option_menu(
-            "Project settings",
-            options=options, 
-            key='project_settings',            
-            )
     
+    val = stx.stepper_bar(steps=options)
+
+    selected_option = options[val]
+
     if selected_option == 'Upload data':
         file_upload_and_save()
-        st.experimental_rerun()
+        st.stop()
+        # st.experimental_rerun()
 
     if selected_option == 'Append data (optional)':
         append_data_to_exisiting_file()
+        st.stop()
 
     if selected_option == 'Project description':
         set_project_description()
+        st.stop()
 
     if selected_option == 'Data Modelling':
         get_data_model()
@@ -183,7 +184,6 @@ def set_project_description():
     st.session_state.project_description = project_description
 
     project_description_chat()
-    st.stop()
     return None
 
 
@@ -546,10 +546,10 @@ def file_upload_and_save():
                 else:
                     # Save the file to the data folder
                     df_chunks = df_chunks.drop_duplicates(keep='first')
+                    df_chunks['file_name'] = uploaded_file
                     df_chunks.to_parquet(file_path, index=False)
                     st.success(f'Data saved successfully')
-                st.experimental_rerun()
-    st.stop()
+
     return None
 
 
@@ -606,7 +606,6 @@ def append_data_to_exisiting_file():
             df.to_parquet(selected_file, index=False)
             st.success(f'Data appended successfully')
             uploaded_file = None
-    st.stop()
     return None
 
 import ast

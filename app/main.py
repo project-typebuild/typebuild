@@ -21,6 +21,8 @@ if 'user_type' in st.secrets:
 else:
     user_type = 'other_user'
 
+st.session_state.user_type = user_type
+
 if user_type == 'developer':
     if st.sidebar.checkbox('Show session state'):
         st.write(st.session_state)
