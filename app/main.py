@@ -61,13 +61,13 @@ project_option = st.sidebar.radio(
     "Add or view data",
     options=[
         'Manage project', 
+        'View data',
         'Add data', 
-        'View data'
         ],
     captions= [
         'Describe, upload data, settings',
+        'Extract insights from data',
         'Categorize, extract topics, get external data', 
-        'Extract insights from data'
         ]
     )
 

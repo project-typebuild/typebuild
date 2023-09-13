@@ -549,7 +549,6 @@ def file_upload_and_save():
                 else:
                     # Save the file to the data folder
                     df_chunks = df_chunks.drop_duplicates(keep='first')
-                    df_chunks['file_name'] = uploaded_file
                     df_chunks.to_parquet(file_path, index=False)
                     st.success(f'Data saved successfully')
 
@@ -713,32 +712,22 @@ def config_project():
     if os.path.exists(config_file):
         with open(config_file, 'r') as f:
             config = json.load(f)
-
         st.session_state.config = config
-    with st.form('config_project'):
-        # If the config exists in the session state, use the default values
-        if 'config' in st.session_state:
-            st.info('These are the choices you made when you created the project, you can change them if you want')
-            preferred_model = st.selectbox('Select the preferred model', ['gpt-3.5-turbo-16k', 'gpt-3.5-turbo', 'gpt-4'], index=['gpt-3.5-turbo-16k', 'gpt-3.5-turbo', 'gpt-4'].index(st.session_state.config.get('preferred_model', 'gpt-3.5-turbo-16k')))
-            api_key = st.text_input('Enter the API key', value=st.secrets.get('api_key', st.session_state.config.get('api_key', '')))
-            function_call_availabilty = st.checkbox(
-                "(Expert setting) I have access to function calling", 
-                value=st.session_state.config.get('function_call_availabilty', False),
-                help="Do you have access to openai models ending in 0613? they have a feature called function calling.",
-                )
-        else:
-            preferred_model = st.selectbox('Select the preferred model', ['gpt-3.5-turbo-16k', 'gpt-3.5-turbo', 'gpt-4'])
-            api_key = st.text_input('Enter the API key')
-            function_call_availabilty = st.checkbox(
-                "(Expert setting) I have access to function calling", 
-                value=st.session_state.config.get('function_call_availabilty', False),
-                help="Do you have access to openai models ending in 0613? they have a feature called function calling.",
-                )
-        submit_button = st.form_submit_button(label='Save config')
-    if submit_button:
+    else:
+        st.session_state.config = {}
+    # If the config exists in the session state, use the default values
+    st.info('These are the choices you made when you created the project, you can change them if you want')
+    
+    api_key = st.text_input('Enter the API key', value=st.secrets.get('api_key', st.session_state.config.get('api_key', '')))
+    function_call_availabilty = st.checkbox(
+        "(Expert setting) I have access to function calling", 
+        value=st.session_state.config.get('function_call_availabilty', False),
+        help="Do you have access to openai models ending in 0613? they have a feature called function calling.",
+        )
+    
+    if st.button("Submit config"):
         # Save the config to the config.json file
         config = {}
-        config['preferred_model'] = preferred_model
         config['api_key'] = api_key
         config['function_call_availabilty'] = function_call_availabilty
         # Save the config to the config.json file

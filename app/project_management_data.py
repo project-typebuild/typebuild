@@ -67,7 +67,10 @@ def get_column_info_for_df(df):
         
     # Send this to the LLM with two rows of data and ask it to describe the data.
     
-    sample_data = df.sample(3).to_dict('records')
+    if len(df) > 2:
+        sample_data = df.sample(3).to_dict('records')
+    else:
+        sample_data = df.to_dict('records')
     sample_buf = "HERE IS SOME SAMPLE DATA:\n"
 
     for row in sample_data:
