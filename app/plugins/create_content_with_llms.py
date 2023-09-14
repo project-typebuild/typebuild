@@ -71,7 +71,7 @@ def create_destination_df(destination_df_name, consolidated=False):
         df = pd.DataFrame({'text_for_llm': [df['text_for_llm'].str.cat(sep='\n\n')]})
         all_col_info = []
         col_info = {}
-        col_info['filename'] = source_df
+        col_info['file_name'] = source_df
         col_info['dataframe_description'] = f'This dataframe has just one row with the consolidated text from the source dataframe {source_df}.'
         col_info['column_name'] = 'text_for_llm'
         col_info['column_type'] = 'str'
@@ -87,21 +87,21 @@ def create_destination_df(destination_df_name, consolidated=False):
 
         all_col_info = []
         col_info = {}
-        col_info['filename'] = source_df
+        col_info['file_name'] = source_df
         col_info['dataframe_description'] = f'This dataframe has the id column of the source dataframe.'
         col_info['column_name'] = id_col
         col_info['column_type'] = 'int'
         col_info['column_info'] = 'The id column of the source dataframe.'
         all_col_info.append(col_info)
         col_info = {}
-        col_info['filename'] = source_df
+        col_info['file_name'] = source_df
         col_info['dataframe_description'] = f'This dataframe has the id column of the dataframe created for LLM analysis.'
         col_info['column_name'] = dest_id_name
         col_info['column_type'] = 'int'
         col_info['column_info'] = 'The id column of the dataframe created for LLM analysis.'
         all_col_info.append(col_info)
         col_info = {}
-        col_info['filename'] = source_df
+        col_info['file_name'] = source_df
         col_info['dataframe_description'] = f'This dataframe has the text to be analyzed by the LLM taken from the source dataframe.'
         col_info['column_name'] = 'text_for_llm'
         col_info['column_type'] = 'str'
@@ -227,7 +227,7 @@ def analyze_with_llm(consolidated=False):
 def row_by_row_llm_res(text, system_instruction, sample=True):
     # Chunk the text by 10k characters
     chunks = chunk_text(text, max_chars=10000)
-    output = ""
+    output = []
     if sample:
         chunks = chunks[:2]
     
@@ -242,7 +242,9 @@ def row_by_row_llm_res(text, system_instruction, sample=True):
             max_tokens=max_tokens,
             model='gpt-3.5-turbo-16k'
             )
-        output += res + '\n\n'
+        # Add triple quotes to the res
+        res = f'"""{res}"""'
+        output.append(res)
     time.sleep(5)
     return output
 
@@ -290,7 +292,7 @@ def write_to_data_model(file_name, col_info_df):
     else:
         data_model = pd.DataFrame(
             columns=[
-                'filename',
+                'file_name',
                 'dataframe_description',
                 'column_name',
                 'column_type',

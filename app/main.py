@@ -21,10 +21,8 @@ if 'user_type' in st.secrets:
 else:
     user_type = 'other_user'
 st.session_state.user_type = user_type
-if 'function_call_type' not in st.session_state:
+if 'function_call_type' not in st.secrets:
     st.session_state.function_call_type = 'manual'
-
-st.session_state.function_call_type = st.secrets.function_call_type
 
 st.session_state.show_developer_options = False
 if user_type == 'developer':
