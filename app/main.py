@@ -7,7 +7,10 @@ token = simple_auth.simple_auth()
 st.session_state.token = token
 
 import session_state_management
+if 'function_call_type' not in st.secrets:
+     st.session_state.function_call_type = 'manual'
 
+st.session_state.function_call_type = 'auto'
 session_state_management.main()
 
 from project_management import get_project_file_folder, get_project_df, manage_project
@@ -21,8 +24,8 @@ if 'user_type' in st.secrets:
 else:
     user_type = 'other_user'
 st.session_state.user_type = user_type
-if 'function_call_type' not in st.secrets:
-    st.session_state.function_call_type = 'manual'
+
+
 
 st.session_state.show_developer_options = False
 if user_type == 'developer':
@@ -76,12 +79,11 @@ if project_option == 'Add data':
     add_data_with_llm()
     st.stop()
 
-
-
-
 if project_option == 'View data':
     # Select the view from the menu
     select_view()
+    # if 'data_description' in st.session_state:
+    #     st.write(st.session_state.data_description)
     run_code_in_view_file()
     technical_requirements_chat(widget_label='Test requirement')
 

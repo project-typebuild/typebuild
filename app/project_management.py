@@ -72,6 +72,8 @@ def get_project_file_folder():
 
     # Ignore pycache
     project_names = [i for i in project_names if not 'pycache' in i]
+    # Project names does not start in '.'
+    project_names = [i for i in project_names if not i.startswith('.')]
     # Add new create project option
     project_names.append('Create new project')
     # Make the first project the default

@@ -245,9 +245,4 @@ def update_colum_types_for_table(data_model, data_model_file):
                 df = convert_to_appropriate_dtypes(df, data_model[data_model.filename == file])
                 df.to_parquet(file, index=False)
             st.success("Updated the column types")
-
-
-    
-        
-        
     return None

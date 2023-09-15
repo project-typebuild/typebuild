@@ -128,7 +128,9 @@ def blueprint_technical_requirements(prompt, current_text, chat_key, func_str=No
     """
 
     # Get data description
-    data_description = st.session_state.data_description
+    data_model_file = st.session_state.project_folder + "/data_model.parquet"
+    data_description = pd.read_parquet(data_model_file).to_markdown()
+    st.session_state.data_description = data_description
     
     current_text_string = ""
     if current_text:
@@ -235,7 +237,8 @@ def from_requirements_to_code(chat_key, current_text="", prompt="", func_str=Non
     """
 
     # Get data description
-    data_description = st.session_state.data_description
+    data_model_file = st.session_state.project_folder + "/data_model.parquet"
+    data_description = pd.read_parquet(data_model_file).to_markdown()
     
     current_text_string = ""
     if current_text:
