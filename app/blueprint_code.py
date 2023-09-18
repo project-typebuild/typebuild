@@ -130,12 +130,15 @@ def select_view():
     # Remove the .py extension
     file_names = [i.replace('.txt', '') for i in file_names]
     file_names.append('Create new view')
-
+    
+    # Create a view number if it doesn't exist
+    if 'view_num' not in st.session_state:
+        st.session_state.view_num = 0
     # Create a selectbox to select the file
     selected_file = st.sidebar.selectbox(
         label='Menu', 
         options=file_names, 
-        key=f'selected_file_{st.session_state.ss_num}', 
+        key=f'selected_file_{st.session_state.view_num}', 
         on_change=session_state_management.change_view
         )
     # Set the file path to the session state
@@ -164,6 +167,10 @@ def select_view():
                 f.write(f'FUNCTIONAL REQUIREMENT: {new_view_name}\n')
             st.success(f'View name saved as {new_view_name}')
             time.sleep(1)
+            st.session_state.view_num += 1
+            # Set the view name to the newly created view
+            st.session_state[f'selected_file_{st.session_state.view_num}'] = selected_file
+
             st.experimental_rerun()
         st.stop()
 
@@ -181,12 +188,23 @@ def show_sample_data():
     # Get a list of all data files in the data folder
     data_files = [f for f in os.listdir(data_folder) if f.endswith('.parquet')]
 
-    # Allow the user to select multiple data files
-    selected_files = st.multiselect('Select data files', data_files)
-
-    # Show a sample of 5 rows for each selected file
-    for file in selected_files:
-        file_path = os.path.join(data_folder, file)
+    if len(data_files) == 0:
+        st.warning("There are no data files in the data folder.  Please add data files.")
+        st.stop()
+    # If there is just one file, show it without selection
+    elif len(data_files) == 1:
+        file_path = os.path.join(data_folder, data_files[0])
         df = pd.read_parquet(file_path)
-        st.write(f'Sample data from {file}:')
+        st.write(f'Sample data from {data_files[0]}:')
         st.dataframe(df.head(5))
+
+    else:
+        # Allow the user to select multiple data files
+        selected_files = st.multiselect('Select data files', data_files)
+
+        # Show a sample of 5 rows for each selected file
+        for file in selected_files:
+            file_path = os.path.join(data_folder, file)
+            df = pd.read_parquet(file_path)
+            st.write(f'Sample data from {file}:')
+            st.dataframe(df.head(5))

@@ -17,10 +17,13 @@ def change_view():
     When the view is changed, clear the session state
     of key variables.
     """
+    # Increment view number so that the widget selection changes
+    # Clear the session state of key variables
     key_vars = ['code', 'code_str', 'response', 'user_requirements', 'messages', 'data_description']
     for key in key_vars:
         if key in st.session_state:
             del st.session_state[key]
+
     return None
 
 def change_ss_for_project_change():

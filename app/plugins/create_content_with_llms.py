@@ -126,49 +126,17 @@ def create_destination_df(destination_df_name, consolidated=False):
     
     return df_for_llm
 
+def select_output_col(df):
+    """
+    Allow the user to select the output column.
+    Create a new column if it does not exist.
 
-
-def analyze_with_llm(consolidated=False):
-
-    with st.expander("Understanding row by row analysis"):
-        st.header("Row by row analysis")
-        step1_desc = """On most occasions, you will want to analyze the data row by row to start with.  Even if you are creating a summary of the entire data, it is useful to get a row by row summary first since language models can only deal with limited amount of text at a time.
-
-        - In the box below, tell the LLM what you would like it to do in each row of data (see examples below).
-        - View sample output from the LLM for the 5 randomly selected rows.  If that makes sense, ask the LLM to analyze the entire data.
-        - When the LLM is done, you can move to the next step to consolidate the results.
-
-        **If you do not want row by row analysis, you can skip this step and move to the next step.**
-        """
-        # Replace indents in each line (indents will introduce code blocks when streamlit displays the text)
-        step1_desc = '\n'.join([line.strip() for line in step1_desc.split('\n')])    
-        st.markdown(step1_desc)
-
-    data_folder = st.session_state.project_folder + '/data'
-    tables = glob(f"{data_folder}/*.parquet")
-    # Select the source dataframe
-    selected_table = st.selectbox("Select the source data", tables)
-    
-    # Get the column names
-    df = pd.read_parquet(selected_table)
-    st.dataframe(df.head())
-    columns = df.columns.to_list()
-    # If consolidated, see if there is a column called consolidated_text_for_llm
-    
-    # Default column should be text_for_llm, if it exists
-    if 'text_for_llm' in columns:
-        default_index = columns.index('text_for_llm')
-    else:
-        default_index = 0
-    # Select the column to use
-    selected_column = st.selectbox(
-        "Select Input Column", 
-        columns,
-        index=default_index,
-        help="This column will be used as the input to the LLM."
-        )
-    
-
+    Args:
+        df (pd.DataFrame): The dataframe to use.
+    Returns:
+        output_col_name (str): The name of the output column.
+    """
+    columns = df.columns
     # Select the column to write into.  It has to start with llm_
     # Could also be a new column
     llm_cols = [col for col in columns if col.startswith('llm_')]
@@ -200,7 +168,54 @@ def analyze_with_llm(consolidated=False):
         if output_col_name not in df.columns:
             df[output_col_name] = np.nan
     
+    return output_col_name
+
+
+def analyze_with_llm():
+
+
+    data_folder = st.session_state.project_folder + '/data'
+    tables = glob(f"{data_folder}/*.parquet")
+
+    c1, c2 = st.columns(2)
+    # Select the source dataframe
+    selected_table = c1.selectbox("Select the source data", tables)
     
+    # Get the column names
+    df = pd.read_parquet(selected_table)
+    if c1.checkbox("Show the data"):
+        st.dataframe(df.head())
+    
+    with c2:
+        # Select the output column
+        output_col_name = select_output_col(df)
+    if c2.checkbox(
+        "New analysis with LLM",
+        help="Summarize or extract insights from an input column",  
+        ):
+        create_llm_output(df, output_col_name, selected_table)
+    show_output(df, output_col_name)
+    
+    return None
+
+def create_llm_output(df, output_col_name, selected_table):
+
+
+    # If consolidated, see if there is a column called consolidated_text_for_llm
+    columns = df.columns    
+    # Default column should be text_for_llm, if it exists
+    if 'text_for_llm' in columns:
+        default_index = columns.index('text_for_llm')
+    else:
+        default_index = 0
+    # Select the column to use
+    selected_column = st.selectbox(
+        "Select Input Column", 
+        columns,
+        index=default_index,
+        help="This column will be used as the input to the LLM."
+        )
+        
     # Get the system instruction
     txt_file = f"{st.session_state.project_folder}/{output_col_name}_system_instruction.txt"
     
@@ -228,12 +243,12 @@ def analyze_with_llm(consolidated=False):
     The LLM was asked to do the following:
     {system_instruction}
     """
-    if st.checkbox("Show the data"):
+    if st.checkbox("Show input and output cols"):
         st.markdown("*Input and output colums*")
         st.dataframe(df[[selected_column, output_col_name]])
 
-    # Sample or full run
-    sample_or_full = st.radio("Sample or full run?", ['Sample', 'Full run'])
+    consolidated = row_by_row()
+    
     
     # If row_by_row_analysis column does not exist, create it
     if output_col_name not in df.columns:
@@ -249,80 +264,86 @@ def analyze_with_llm(consolidated=False):
         step=0.1,
         help="This will be set as max tokens for the LLM."
         )
-    if sample_or_full == 'Sample':
+    
+    c1, c2 = st.columns(2)
+    # Sample or full run
+    if c1.button(
+        "🌓 Run a sample analysis 🌓",
+        help="This will run the LLM on a sample of 3 rows.  Use this to test the LLM.",
+        ):
         # Get a sample of 3 rows, if there are at least 5 rows
         if len(df) > 3:
             sample = df.sample(3)
         else:
             sample = df
-        if st.button("Reset & Analyze the sample"):
-            update_data_model(
-                file_name=selected_table, 
-                column_name=output_col_name, 
-                column_type='str', 
-                column_info=col_info,
-                )
-            # Remove prior analysis
-            df[output_col_name] = np.nan
-            # Save the dataframe to the destination dataframe
-            # Add row by row analysis to the sample
-            with st.spinner("Analyzing the sample data..."):
-                sample[selected_column].apply(lambda x: row_by_row_llm_res(x, system_instruction, frac=frac))
-                
-                if 'last_sample' in st.session_state:
-                    # Show input and output to the user
-                    for row in st.session_state.last_sample:
-                        c1, c2 = st.columns(2)
-                        c1.subheader("Input text")
-                        c1.markdown(row[0], unsafe_allow_html=True)
-                        c2.subheader("LLM output")
-                        c2.markdown(row[1], unsafe_allow_html=True)
-                        st.markdown("---")
+        update_data_model(
+            file_name=selected_table, 
+            column_name=output_col_name, 
+            column_type='str', 
+            column_info=col_info,
+            )
+        # Remove prior analysis
+        df[output_col_name] = np.nan
+        # Save the dataframe to the destination dataframe
+        # Add row by row analysis to the sample
+        with st.spinner("Analyzing the sample data..."):
+            sample[output_col_name] = sample[selected_column].apply(lambda x: row_by_row_llm_res(x, system_instruction, frac=frac))
+            
+            # Show input and output to the user
+            for row in sample[[selected_column, output_col_name]].values:
+                c1, c2 = st.columns(2)
+                c1.subheader("Input text")
+                c1.markdown(row[0], unsafe_allow_html=True)
+                c2.subheader("LLM output")
+                c2.markdown(row[1], unsafe_allow_html=True)
+                st.markdown("---")
 
-    if sample_or_full == 'Full run':
-        # TODO: WE HAVE TO MAKE SURE ALL CHUNKS ARE ANALYZED
+    if c2.button("💯 Analyze all rows", help="This will run the LLM on rows where the output is empty."):
         remaining_rows = len(df[df[output_col_name].isna()])
         if remaining_rows == 0:
             st.success("All rows have been analyzed.")
         else:
             st.warning(f"There are {remaining_rows} rows remaining to be analyzed.")
             # Show input and output cols
-            st.markdown("*Input and output colums*")
-            st.dataframe(df[[selected_column, output_col_name]])
-            if st.button("Complete analysis", help="This will run the LLM on rows where the output is empty."):
-                update_data_model(
-                    file_name=selected_table, 
-                    column_name=output_col_name, 
-                    column_type='str', 
-                    column_info=col_info,
-                )
-                # Keep sample analysis and run on the rest of the data
-                with st.spinner("Analyzing the rest of the data..."):
-                    if consolidated:
-                        # Get the full text and the res for it.  Add it to the first row.
-                        full_text = df[selected_column].str.cat(sep='\n\n')
-                        res = row_by_row_llm_res(full_text, system_instruction, frac=frac)
-                        res_text = '\n\n'.join(res)
-                        st.markdown(res_text)
-                        df.iloc[0, df.columns.get_loc(output_col_name)] = res_text
-                    else:
-                        df.loc[df[output_col_name].isna(), output_col_name] = df.loc[df[output_col_name].isna(), selected_column].apply(lambda x: row_by_row_llm_res(x, system_instruction, frac=frac))
-                    # Save the data
-                    df.to_parquet(selected_table, index=False)
-                    st.success("Done analyzing the data.  You can go to 'View Data' to use it.")
-        
-        # Show the output
-        output = df[~df[output_col_name].isna()][output_col_name].to_list()
-        if not output:
-            st.warning("There is no output to show.  Run the analysis first.")
-            st.stop()
-        buf = ""
-        for row in output:
-            for i in row:
-                buf += i + '\n'
-        
-        st.markdown(clean_markdown(buf))
+
+            update_data_model(
+                file_name=selected_table, 
+                column_name=output_col_name, 
+                column_type='str', 
+                column_info=col_info,
+            )
+            # Keep sample analysis and run on the rest of the data
+            with st.spinner("Analyzing the rest of the data..."):
+                if consolidated:
+                    # Get the full text and the res for it.  Add it to the first row.
+                    full_text = df[selected_column].str.cat(sep='\n\n')
+                    res_text = row_by_row_llm_res(full_text, system_instruction, frac=frac, model='gpt-4')
+                    # res_text = '\n\n'.join(res)
+                    df.iloc[0, df.columns.get_loc(output_col_name)] = res_text
+                else:
+                    df.loc[df[output_col_name].isna(), output_col_name] = df.loc[df[output_col_name].isna(), selected_column].apply(lambda x: row_by_row_llm_res(x, system_instruction, frac=frac))
+                # Save the data
+                df.to_parquet(selected_table, index=False)
+                st.success("Done analyzing the data.  You can go to 'View Data' to use it.")
+            
+    return None
+
+def show_output(df, output_col_name):
+    """
+    Given the output column name, show the output
+    from the LLM in markdown format.
+    """
+
+    # Show the output
+    output = df[~df[output_col_name].isna()][output_col_name].to_list()
+    if not output:
+        st.warning("There is no output to show.  Run the analysis first.")
+        st.stop()
+    buf = ""
+    for row in output:
+        buf += row + '\n'
     
+    st.markdown(clean_markdown(buf))
     return None
 
 def update_data_model(file_name, column_name, column_type, column_info):
@@ -373,13 +394,12 @@ def clean_markdown(text):
     """
     import re
     # Remove indents at the beginning of each line
-    text = re.sub(r'^\s+', '', text, flags=re.MULTILINE)
     # Escape special characters such as $
-    text = text.replace('$', '\$')
+    # text = text.replace('$', '\$')
     return text
 
 
-def row_by_row_llm_res(text_or_list, system_instruction, sample=True, frac=0.3):
+def row_by_row_llm_res(text_or_list, system_instruction, sample=True, frac=0.3, model='gpt-3.5-turbo-16k'):
 
     if isinstance(text_or_list, str):
         text = text_or_list
@@ -388,8 +408,7 @@ def row_by_row_llm_res(text_or_list, system_instruction, sample=True, frac=0.3):
 
     # Chunk the text by 10k characters
     st.session_state.last_sample = []
-    chunks = chunk_text(text, max_chars=10000)
-    st.sidebar.warning(f"Text chunked into {len(chunks)} chunks.")
+    chunks = chunk_text(text, max_chars=20000)
     output = []
     if sample:
         chunks = chunks[:2]
@@ -403,12 +422,13 @@ def row_by_row_llm_res(text_or_list, system_instruction, sample=True, frac=0.3):
         res = get_llm_output(
             input=messages,
             max_tokens=max_tokens,
-            model='gpt-3.5-turbo-16k'
+            model=model
             )        
         output.append(res)
         # Add chunk and response to the last sample
         st.session_state.last_sample.append([chunk, res])
-    return output
+    time.sleep(3)
+    return "\n".join(output)
 
 def chunk_text(text, max_chars=None, model_name='gpt-3.5-turbo'):
     """
@@ -469,34 +489,31 @@ def write_to_data_model(file_name, col_info_df):
     data_model.to_parquet(data_model_file, index=False)
     return None
 
-def add_data_with_llm():
+def row_by_row():
     """
-    This function allows the user to extract insights 
-    from existing data using an LLM.  It can be used to
-    summarize, classify, answer questions, or to extract specific information
-    from a given column of the source dataframe.
-
-    The results will be written to a new dataframe that 
-    will connect to the primary key of the source dataframe.
-
-    Args:
-    None: User will select the source dataframe and column(s) to use with widgets.
+    Finds if the user wishes to analyze row by row or consolidated.
 
     Returns:
-    None    
-
+        True if row by row analysis is selected.
     """
+    row_by_row_desc = """**Row by row analysis** will analyze each row separately.  This is useful if you want to summarize or extract insights from each row.
+    and the output will be saved to the same row in a new column.  Use this to extract topics, specific insights, or to categorize.
     
+    **In consolidated analysis**, the text from all rows will be combined and analyzed as one document.
+    """
+# Replace indents in each line (indents will introduce code blocks when streamlit displays the text)
+    row_by_row_desc = '\n'.join([line.strip() for line in row_by_row_desc.split('\n')])    
+  
     step = st.radio(
         "How would you like to analyze",
-        ['Row by row', 'Consolidated', 'Results'],
-        horizontal = True
+        ['Row by row', 'Consolidated'],
+        
+        horizontal=True,
+        help=row_by_row_desc,
         )
 
     if step == 'Row by row':
-        analyze_with_llm(consolidated=False)
+        return True
     
     if step == 'Consolidated':
-        analyze_with_llm(consolidated=True)
-
-    return None
+        return False

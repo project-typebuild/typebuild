@@ -274,11 +274,10 @@ def from_requirements_to_code(chat_key, current_text="", prompt="", func_str=Non
     You have to go through the stages in the order given above.  You cannot skip a stage.
     You can go back to a previous stage to make changes.
     If a change is made to one stage, we have to ensure that the changes are reflected in the other stages.
-    Anytime a change is made, confirm it with me and then write it to file.
+    Anytime a change is made to requirements, confirm it with me and then write it to file.  Don't show the code to me, you can save it directly. 
 
     Work on one stage at a time.  When you move to a new stage call the set_the_stage function
-    to get specific instructions for that stage.  It will give you the instructions and required assets such as 
-    current code. 
+    to get specific instructions for that stage.  It will give you the instructions and required assets such as the current code.
     {data_description}
     {current_text_string}"""
 
@@ -321,9 +320,7 @@ def get_technical_requirements_instructions():
 
     Confirm function requirement if you know it, if not ask me what the functional requirement is.
 
-    Next, Help me create step-by-step instructions for my young developer so that they have every detail they need to code.
-    Do not worry about basic technical details like libraries or loading data.  The developer knows that.
-    I just have to tell them what to do with the data without any scope for doubt.
+    Next, Help me create step-by-step instructions for my young developer so that they have every detail they need to code.  Do not worry about basic technical details like libraries or loading data.  The developer knows that (FYI: The developer will use python, pandas and streamlit).  I just have to tell them what to do with the data without any scope for doubt.
 
     Before you write the instructions:
 
@@ -350,13 +347,16 @@ def get_code_instructions():
     system_instruction_to_code = f"""
     You are the python developer with an expertise in packages like streamlit, pandas, altair. 
     Because of your expertise, a domain expert contacted you to create a streamlit app for them. 
-    After your meeting with the domain expert, you have noted down their requirements. 
+    The expert has given you their requirements. 
 
     In your collection of functions, you have the following functions, ready to use. 
 
     AVAILABLE FUNCTIONS:
 
-    [ st.stop() - A streamlit function to stop the execution under the line ]
+    - st.stop() - A streamlit function to stop the execution under the line
+    - st.experimental_rerun() - A streamlit function to rerun the app
+    - st.expander
+    - st.columns
         
     approved_libraries = HERE ARE THE APPROVED LIBRARIES: {get_approved_libraries()}
     
@@ -364,14 +364,14 @@ def get_code_instructions():
     - Do not create login or signup, even if requested.
     - Pay careful attention to the data description, especially to column types and names.
     - Use in-built streamlit methods to create charts if possible. Else, use altair.
-    - Use column ending in _id for counts, if not specified.
+    - Do not use index columns for calculations, if avoidable.
     - Try to use only the approved libraries.  If you need to use other libraries, check with me first.
     - You have been given one or more data files.  Load the files needed for this requirement and create a dataframe.
     - Use the loaded the dataframe to fulfill the requirements. 
     - Use st.dataframe to display tablular data.  You can use the function display_editable_data to display and edit the data.  You can import the function 'display_editable_data' using the following import statement: ```from data_widgets import display_editable_data```
-    - Do not write unnecessary print, st.write and success, info and warning messages in the functions.
+    - Use st.info, st.warning, st.success for clarity, if needed.  You can also use emojis to draw attention.
     - Create one function per feature, passing necessary data so that data is not loaded again and again.
-    - Create a function called "main" that calls all the other functions in the order they are needed.
+    - Create a function called "main" that calls all the other functions in the order they are needed.  I will only call main() to run this app.
     - Do not call the main function.  It will be called by the system.
         
     Write concise code based on the instructions above.  Document it with detailed docstrings, and comments.
@@ -393,24 +393,23 @@ def get_prompt_to_fix_error():
     system_instruction = f"""
     I am getting an error message when I run the code below:
     
-
     CODE:
-    {code}
+    ```{code}```
 
     THIS IS THE ERROR MESSAGE:
-    {st.session_state.error}
+    ```{st.session_state.error}```
 
     Please fix the error and save the code by calling the save_code_to_file function."""
 
     if 'error_messages' not in st.session_state:
         st.session_state.error_messages = []
-    prompt = "Please fix this error and save the new code to file."
+    prompt = "Please fix this error and save the new code to file. You don't have to show me the code."
 
     # If the chat is empty, add the system message
     if len(st.session_state.error_messages) == 0:
         st.session_state.error_messages.append({'role': 'system', 'content': system_instruction})
 
     # Append the error
-    st.session_state.error_messages.append({'role': 'user', 'content': st.session_state.error})
+    st.session_state.error_messages.append({'role': 'user', 'content': prompt})
 
     return None

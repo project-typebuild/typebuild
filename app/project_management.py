@@ -397,6 +397,8 @@ def upload_data_file(uploaded_file, file_extension):
     elif file_extension == 'tsv':
         df = pd.read_csv(uploaded_file, sep='\t')
     
+    # Clean column names.  Strip, lower case, replace spaces with underscores
+    df.columns = [i.strip().lower().replace(' ', '_') for i in df.columns]
     # Create a streamlit form, with all columns and data types and allow the user to edit the data types
     # Get the column names and data types
 

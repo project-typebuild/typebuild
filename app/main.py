@@ -17,7 +17,8 @@ from project_management import get_project_file_folder, get_project_df, manage_p
 from function_management import create_run_menu, run_code_in_view_file
 from function_calling_spec_maker import main as fcsm
 from requirements_with_chat import technical_requirements_chat
-from plugins.create_content_with_llms import add_data_with_llm
+
+from plugins.create_content_with_llms import analyze_with_llm
 
 if 'user_type' in st.secrets:
     user_type = st.secrets.user_type
@@ -63,7 +64,7 @@ project_option = st.sidebar.radio(
     options=[
         'Manage project', 
         'View data',
-        'Add data', 
+        'LLM generated text', 
         ],
     captions= [
         'Describe, upload data, settings',
@@ -75,8 +76,8 @@ project_option = st.sidebar.radio(
 if project_option == 'Manage project':
     manage_project()
 
-if project_option == 'Add data':
-    add_data_with_llm()
+if project_option == 'LLM generated text':
+    analyze_with_llm()
     st.stop()
 
 if project_option == 'View data':
