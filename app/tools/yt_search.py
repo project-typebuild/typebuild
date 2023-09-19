@@ -111,8 +111,8 @@ def fetch_youtube_video_metadata(video_id):
         video_details['title'] = np.nan
         video_details['view_count'] = np.nan
         initital_json_response = json.loads(response.text.split('ytInitialPlayerResponse =')[1].split(';</script>')[0].strip())
-        video_details['main_reason'] = initital_json_response['playabilityStatus']['errorScreen']['playerErrorMessageRenderer']['reason']['simpleText']
-        video_details['subreason'] = initital_json_response['playabilityStatus']['errorScreen']['playerErrorMessageRenderer']['subreason']['simpleText']
+        video_details['main_reason'] = initital_json_response.get('playabilityStatus', {}).get('errorScreen', {}).get('playerErrorMessageRenderer', {}).get('reason', {}).get('simpleText')
+        video_details['subreason'] = initital_json_response.get('playabilityStatus', {}).get('errorScreen', {}).get('playerErrorMessageRenderer', {}).get('subreason', {}).get('simpleText')
 
     ## Like count
     try:
@@ -122,27 +122,19 @@ def fetch_youtube_video_metadata(video_id):
     
     ## Description
     try:
-        try:
-            description = json_response['contents']['twoColumnWatchNextResults']['results']['results']['contents'][1]['videoSecondaryInfoRenderer']\
+        description = json_response['contents']['twoColumnWatchNextResults']['results']['results']['contents'][1]['videoSecondaryInfoRenderer']\
     ['attributedDescription']['content']
-        except:
-            description = json_response['contents']['twoColumnWatchNextResults']['results']['results']['contents'][2]['videoSecondaryInfoRenderer']\
-    ['attributedDescription']['content']
-        video_details['full_description'] = description
     except:
-        video_details['full_description'] = ''
+        description = json_response.get('contents', {}).get('twoColumnWatchNextResults', {}).get('results', {}).get('results', {}).get('contents', [])[2].get('videoSecondaryInfoRenderer', {}).get('attributedDescription', {}).get('content', '')
+    video_details['full_description'] = ''
     
     ## Channel name and link
     try:
-        try:
-            video_details['channel'] = json_response['contents']['twoColumnWatchNextResults']['results']['results']['contents'][1]['videoSecondaryInfoRenderer']['owner']['videoOwnerRenderer']['title']['runs'][0]['text']
-            video_details['channel_link'] = json_response['contents']['twoColumnWatchNextResults']['results']['results']['contents'][1]['videoSecondaryInfoRenderer']['owner']['videoOwnerRenderer']['title']['runs'][0]['navigationEndpoint']['browseEndpoint']['canonicalBaseUrl']
-        except:
-            video_details['channel'] = json_response['contents']['twoColumnWatchNextResults']['results']['results']['contents'][2]['videoSecondaryInfoRenderer']['owner']['videoOwnerRenderer']['title']['runs'][0]['text']
-            video_details['channel_link'] = json_response['contents']['twoColumnWatchNextResults']['results']['results']['contents'][2]['videoSecondaryInfoRenderer']['owner']['videoOwnerRenderer']['title']['runs'][0]['navigationEndpoint']['browseEndpoint']['canonicalBaseUrl']
+        video_details['channel'] = json_response['contents']['twoColumnWatchNextResults']['results']['results']['contents'][1]['videoSecondaryInfoRenderer']['owner']['videoOwnerRenderer']['title']['runs'][0]['text']
+        video_details['channel_link'] = json_response['contents']['twoColumnWatchNextResults']['results']['results']['contents'][1]['videoSecondaryInfoRenderer']['owner']['videoOwnerRenderer']['title']['runs'][0]['navigationEndpoint']['browseEndpoint']['canonicalBaseUrl']
     except:
-        video_details['channel'] = np.nan
-        video_details['channel_link'] = np.nan
+        video_details['channel'] = json_response.get('contents', {}).get('twoColumnWatchNextResults', {}).get('results', {}).get('results', {}).get('contents', [{}])[2].get('videoSecondaryInfoRenderer', {}).get('owner', {}).get('videoOwnerRenderer', {}).get('title', {}).get('runs', [{}])[0].get('text')
+        video_details['channel_link'] = json_response.get('contents', {}).get('twoColumnWatchNextResults', {}).get('results', {}).get('results', {}).get('contents', [{}])[2].get('videoSecondaryInfoRenderer', {}).get('owner', {}).get('videoOwnerRenderer', {}).get('title', {}).get('runs', [{}])[0].get('navigationEndpoint', {}).get('browseEndpoint', {}).get('canonicalBaseUrl')
     
     ## Tags
     try:
