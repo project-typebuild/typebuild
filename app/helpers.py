@@ -34,7 +34,7 @@ def text_areas(file, key, widget_label):
         placeholder="Write your requirements here...",
         language="markdown",
         theme="github",
-        show_gutter=True,
+        show_gutter=False,
         font_size=14,
         wrap=True,
         keybinding="vscode",

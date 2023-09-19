@@ -2,7 +2,7 @@ from blueprint_code import select_view
 import simple_auth
 import streamlit as st
 # Make it full width
-st.set_page_config(layout="wide")
+st.set_page_config(layout="wide", page_title='TypeBuild')
 token = simple_auth.simple_auth()
 st.session_state.token = token
 
@@ -64,20 +64,25 @@ if st.session_state.show_developer_options:
 
 # Get the project file and data
 get_project_file_folder()
+# Get selected project in title case
+selected_project = st.session_state.selected_project.replace('_', ' ').upper() + " PROJECT"
+st.sidebar.header(f"{selected_project}", divider='rainbow')
 
-if st.session_state.new_menu == 'project_settings':
-    manage_project()
-    st.stop()
+# Manage project option will show up
+# if user needs to set things up or if user selects it.
+manage_project()
 
 project_option = st.sidebar.radio(
     "Add or view data",
     options=[
         'View data',
         'LLM generated text', 
+        'External data',
         ],
     captions= [
         'Charts, tables, widgets & insights',
         'Categorize, extract topics, get external data', 
+        'YouTube, search, and other external data'
         ]
     )
 
@@ -95,3 +100,6 @@ if project_option == 'View data':
     run_code_in_view_file()
     technical_requirements_chat(widget_label='Test requirement')
 
+if project_option == 'External data':
+    st.info("Coming soon")
+    st.stop()
