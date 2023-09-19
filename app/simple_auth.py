@@ -92,7 +92,7 @@ def simple_auth():
 
     
     # Create a logout button right on top.
-    if st.sidebar.button("Logout"):
+    if st.session_state.new_menu == 'logout':
         st.session_state['logmeout'] = True
     # Default token
     token = None

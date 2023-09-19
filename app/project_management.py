@@ -9,6 +9,7 @@ import time
 from helpers import text_areas
 from llm_functions import get_llm_output
 from documents_management import create_document_chunk_df
+from menu import reset_menu
 from project_management_data import get_column_info, get_data_model
 from session_state_management import change_ss_for_project_change
 import streamlit as st
@@ -79,17 +80,24 @@ def get_project_file_folder():
     # Make the first project the default
 
     default_index = 0
-    selected_project = st.sidebar.selectbox(
-        "Select project", 
-        project_names, 
-        index=default_index,
-        key=f'selected_project_{st.session_state.ss_num}',
-        on_change=change_ss_for_project_change
-        )
+
+    # If no project is selected, select the first project
+    if 'selected_project' not in st.session_state:
+        st.session_state.selected_project = project_names[default_index]
+    
+    # Project names in menu have "~" in them.
+    if "~" in st.session_state.new_menu:
+        selected_project = st.session_state.new_menu.split("~")[1]
+        # If it is different from the current project, change the project
+        # and change session state
+        if selected_project != st.session_state.selected_project:
+            st.session_state.selected_project = selected_project
+            change_ss_for_project_change()
+    
+    selected_project = st.session_state.selected_project
     manage_project_toggle = False
     if selected_project == 'Create new project':
-        create_new_project()
-        
+        create_new_project()        
         st.stop()
     
     project_folder = os.path.join(user_folder, selected_project)
@@ -126,6 +134,12 @@ def manage_project():
     - Manage data
     - Set / edit project description
     """
+    
+    # Close project settings button
+    if st.sidebar.button('🛑 Close project settings 🛑'):
+        st.warning("You have to close project settings to work on other aspects of the project.")
+        reset_menu()
+    
     # Get the project folder
     project_folder = st.session_state.project_folder
     # If the file called data_model.parquet is missing, toggle the manage project button
@@ -322,7 +336,7 @@ def create_new_project():
         # Increment session number
         st.session_state.ss_num += 1
         st.session_state[f'selected_project_{st.session_state.ss_num}'] = project_name
-
+        st.session_state.selected_project = project_name
         time.sleep(2)
         st.experimental_rerun()
     return None

@@ -136,10 +136,11 @@ def select_view():
         st.session_state.view_num = 0
     # Create a selectbox to select the file
     selected_file = st.sidebar.selectbox(
-        label='Menu', 
+        label='Views you created', 
         options=file_names, 
         key=f'selected_file_{st.session_state.view_num}', 
-        on_change=session_state_management.change_view
+        on_change=session_state_management.change_view,
+        help="These are the views you created.  Select one to run it.  You can also create a new view."
         )
     # Set the file path to the session state
     file_path = os.path.join(dir, selected_file)

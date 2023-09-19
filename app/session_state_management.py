@@ -5,6 +5,9 @@ def add_default_session_states():
     ss_vars = {
         'messages': [],
         'ss_num': 0,
+        'menu_id': 0,
+        'new_menu': 'Home',
+        'show_developer_options': False,
         }
 
     for key in ss_vars:

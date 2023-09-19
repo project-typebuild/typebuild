@@ -26,14 +26,20 @@ else:
     user_type = 'other_user'
 st.session_state.user_type = user_type
 
+from menu import get_menu, reset_menu
+new_menu = get_menu()
 
 
-st.session_state.show_developer_options = False
-if user_type == 'developer':
-    if st.sidebar.checkbox("Show developer options"):
-        # Display function call type
-        st.sidebar.info(f"Function call type: {st.session_state.function_call_type}")
-        st.session_state.show_developer_options = True
+# If new menu is toggle_developer_options, toggle the developer options
+if st.session_state.new_menu == 'toggle_developer_options':
+    st.session_state.show_developer_options = not st.session_state.show_developer_options
+    reset_menu()
+
+# If developer options are enabled, show the developer options
+if st.session_state.show_developer_options:
+    # Display function call type
+    st.sidebar.info(f"Function call type: {st.session_state.function_call_type}")
+    st.session_state.show_developer_options = True
 
 if st.session_state.show_developer_options:
     if st.sidebar.checkbox('Show session state'):
@@ -59,22 +65,23 @@ if st.session_state.show_developer_options:
 # Get the project file and data
 get_project_file_folder()
 
+if st.session_state.new_menu == 'project_settings':
+    manage_project()
+    st.stop()
+
 project_option = st.sidebar.radio(
     "Add or view data",
     options=[
-        'Manage project', 
         'View data',
         'LLM generated text', 
         ],
     captions= [
-        'Describe, upload data, settings',
         'Charts, tables, widgets & insights',
         'Categorize, extract topics, get external data', 
         ]
     )
 
-if project_option == 'Manage project':
-    manage_project()
+
 
 if project_option == 'LLM generated text':
     analyze_with_llm()
