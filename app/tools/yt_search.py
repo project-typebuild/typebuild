@@ -1,16 +1,15 @@
 import requests
-
 from bs4 import BeautifulSoup
-
 import json
-
 import re
-
 import numpy as np
-
 from youtube_transcript_api import YouTubeTranscriptApi
-
 import time
+from youtube_search import YoutubeSearch
+import streamlit as st
+from datetime import datetime
+import pandas as pd
+import os
 
 
 def get_request_with_retry_timeout(url, headers=None, params=None,
@@ -20,7 +19,6 @@ def get_request_with_retry_timeout(url, headers=None, params=None,
                                           timeout=timeout, max_retry=max_retry, 
                                           method="get")
     return response
-
 def request_with_retry_timeout(url, session=None, data=None, headers=None, params=None, cookies=None,
                  timeout = 300, max_retry=5, method="post"):
     """This is the wrapper function for request post method."""
@@ -98,30 +96,28 @@ def fetch_youtube_video_metadata(video_id):
     json_response = json.loads(response.text.split('ytInitialData =')[1].split(';</script><script nonce=')[0])
     
     video_details = {}
-    
+    video_details['video_url'] = f'https://www.youtube.com/watch?v={video_id}'
     
     ## Title and view count
     try:
-        try:
-            video_details['title'] = json_response['contents']['twoColumnWatchNextResults']['results']['results']['contents'][0]['videoPrimaryInfoRenderer']['title']['runs'][0]['text']
-        except:
-            video_details['title'] = json_response['contents']['twoColumnWatchNextResults']['results']['results']['contents'][1]['videoPrimaryInfoRenderer']['title']['runs'][0]['text']
-        video_details['view_count'] = json_response['contents']['twoColumnWatchNextResults']['results']['results']['contents'][1]['videoPrimaryInfoRenderer']['viewCount']['videoViewCountRenderer']['viewCount']['simpleText']
-        video_details['takedown'] = False
+        video_details['title'] = json_response['contents']['twoColumnWatchNextResults']['results']['results']['contents'][0]['videoPrimaryInfoRenderer']['title']['runs'][0]['text']
+        video_details['view_count'] = json_response['contents']['twoColumnWatchNextResults']['results']['results']['contents'][0]['videoPrimaryInfoRenderer']['viewCount']['videoViewCountRenderer']['viewCount']['simpleText']
+        video_details['takendown'] = False
+        video_details['main_reason'] = np.nan
+        video_details['subreason'] = np.nan
     except:
-        video_details['takedown'] = True
-    
+        video_details['takendown'] = True
+        video_details['title'] = np.nan
+        video_details['view_count'] = np.nan
+        initital_json_response = json.loads(response.text.split('ytInitialPlayerResponse =')[1].split(';</script>')[0].strip())
+        video_details['main_reason'] = initital_json_response['playabilityStatus']['errorScreen']['playerErrorMessageRenderer']['reason']['simpleText']
+        video_details['subreason'] = initital_json_response['playabilityStatus']['errorScreen']['playerErrorMessageRenderer']['subreason']['simpleText']
+
     ## Like count
     try:
-        try:
-            video_details['like_count'] = json_response['contents']['twoColumnWatchNextResults']['results']['results']['contents'][0]['videoPrimaryInfoRenderer']['videoActions']['menuRenderer']['topLevelButtons'][0]['toggleButtonRenderer']['defaultText']['accessibility']['accessibilityData']['label']
-        except:
-            video_details['like_count'] = json_response['contents']['twoColumnWatchNextResults']['results']['results']['contents'][1]['videoPrimaryInfoRenderer']\
-['videoActions']['menuRenderer']['topLevelButtons'][0]['segmentedLikeDislikeButtonRenderer']['likeButton']['toggleButtonRenderer']\
-['defaultText']['accessibility']['accessibilityData']['label'].replace(' likes','')
+        video_details['like_count'] = json_response['contents']['twoColumnWatchNextResults']['results']['results']['contents'][0]['videoPrimaryInfoRenderer']['videoActions']['menuRenderer']['topLevelButtons'][0]['toggleButtonRenderer']['defaultText']['accessibility']['accessibilityData']['label']
     except:
         video_details['like_count'] = np.nan
-    
     
     ## Description
     try:
@@ -186,3 +182,112 @@ def fetch_youtube_video_metadata(video_id):
         video_details['thumbnail'] = np.nan
 
     return video_details
+
+
+def search_youtube_and_save_results(search_term, num_videos=10):
+
+    """
+    Search YouTube and save the results to a parquet file.
+
+    Args:
+    - search_term (str): The search term.
+    - num_videos (int): The number of videos to return. default 10.
+
+    Returns:
+    - None: Saves the results to a parquet file. The dataframe has the following columns:
+        - video_url (str): The url of the youtube video.
+        - title (str): The title of the youtube video.
+        - view_count (str): The view count of the youtube video.
+        - like_count (str): The like count of the youtube video.
+        - full_description (str): The full description of the youtube video.
+        - channel (str): The channel name of the youtube video.
+        - channel_link (str): The channel link of the youtube video.
+        - tags (list): A list of tags mentioned on the youtube video.
+        - language (str): The language of the youtube video.
+        - transcript (str): The text transcript of the youtube video.
+        - thumbnail (str): The thumbnail url of the youtube video.
+        - search_term (str): The search term used to get the youtube video.
+        - search_date (datetime): The date of the search. the format is YYYY-MM-DD
+    """
+
+
+    with st.status("Downloading data...", expanded=True) as status:
+        st.write("Searching in YouTube...")
+        time.sleep(1)
+        st.write("Getting video metadata...")
+        time.sleep(1)
+        results = get_yt_info(search_term, max_results=num_videos)
+        st.session_state.yt_info = results
+        time.sleep(1)
+        st.write("Data downloaded!")
+        time.sleep(1)
+        st.write("Saving data...")
+        time.sleep(1)
+        cleaned_search_term_for_filename = search_term.replace(' ', '_').replace('(', '').replace(')', '').replace('/', '').replace(':', '').replace('.', '').replace(',', '').replace('?', '').replace('!', '').replace("'", '').replace('"', '').replace('-', '').replace('&', '').replace(';', '').replace('=', '').replace('+', '').replace('*', '').replace('$', '').replace('#', '').replace('@', '')
+        # Limit the length of the filename to 500 characters
+        if len(cleaned_search_term_for_filename) > 500:
+            cleaned_search_term_for_filename = cleaned_search_term_for_filename[:500]
+        file_name = st.session_state.project_folder + f'/data/youtube_{cleaned_search_term_for_filename}.parquet'
+
+        save_youtube_data(file_name)
+        st.write(f"Data saved to {file_name}")
+        status.update(label=f"Download complete!", state="complete")
+
+def get_yt_info(search_term, max_results=10):
+    results = YoutubeSearch(search_term, max_results=max_results)
+    videos = results.to_dict()
+    video_details = []
+    for i,v in enumerate(videos):
+        print(f"Starting {i}")
+        video_id = v['id']
+        info = fetch_youtube_video_metadata(video_id)
+        # info = {**info, **v}
+        info['search_term'] = search_term
+        video_details.append(info)    
+    
+    return video_details
+
+def save_youtube_data(file_name):
+    if 'yt_info' not in st.session_state:
+        st.stop()
+    # Save the data to a parquet file
+    df = pd.DataFrame(st.session_state.yt_info)
+    search_term = st.session_state.yt_info[0]['search_term']
+    search_date = str(datetime.now().date())
+    df['search_date'] = search_date
+
+    df.to_parquet(file_name, index=False)
+
+    col_names = ['video_url', 'title', 'view_count', 'like_count', 'full_description',
+        'channel', 'channel_link', 'tags', 'language', 'transcript',
+        'thumbnail', 'search_term', 'search_date']
+
+    col_dtypes = ['object', 'object', 'object', 'object', 'object', 'object', 'object', 'object', 'object', 'object', 'object', 'object', 'datetime']
+
+    col_infos = ['The url of the youtube video.', 'The title of the youtube video.',
+                 'The view count of the youtube video.', 'The like count of the youtube video.', 
+                 'The full description of the youtube video.', 'The channel name of the youtube video.',
+                  'The channel link of the youtube video.', 'A list of tags mentioned on the youtube video.',
+                   'The language of the youtube video.', 'The text transcript of the youtube video.', 
+                   'The thumbnail url of the youtube video.', 'The search term used to get the youtube video.',
+                    'The date of the search. the format is YYYY-MM-DD']
+
+    new_data_model = pd.DataFrame({'column_name': col_names, 'column_dtype': col_dtypes, 'column_info': col_infos})
+    new_data_model['file_name'] = file_name
+    # Save the data model to the project folder, append to the existing data model
+    data_model_file = st.session_state.project_folder + '/data_model.parquet'
+    all_dfs = []
+    if os.path.exists(data_model_file):
+        current_model = pd.read_parquet(data_model_file)
+        all_dfs.append(current_model)
+        all_dfs.append(new_data_model)
+        df_all_col_infos = pd.concat(all_dfs)
+        df_all_col_infos.to_parquet(data_model_file, index=False)
+    return None
+
+def main():
+    search_term = st.text_input("Search YouTube")
+    num_videos = st.number_input("How many videos?", min_value=1, max_value=20, value=10, step=2)
+    if st.button("Search"):
+        search_youtube_and_save_results(search_term=search_term, num_videos=num_videos)
+    return None
