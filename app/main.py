@@ -101,5 +101,6 @@ if project_option == 'View data':
     technical_requirements_chat(widget_label='Test requirement')
 
 if project_option == 'External data':
-    st.info("Coming soon")
+    from tools.yt_search import main as yt_search
+    yt_search()
     st.stop()

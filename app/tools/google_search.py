@@ -37,8 +37,8 @@ def get_google_search_results(search_term, sleep_interval=2, num_results=10):
     df_results = pd.DataFrame(results)
     df_results['search_term'] = search_term
     df_results['search_date'] = pd.to_datetime(datetime.now())
-   # remove the spaces, special characters, and convert to lowercase for the filename
-    filename = search_term.replace(' ', '_').replace('(', '').replace(')', '').replace('/', '').replace(':', '').replace('.', '').replace(',', '').replace('?', '').replace('!', '').replace("'", '').replace('"', '').replace('-', '').replace('&', '').replace(';', '').replace('=', '').replace('+', '').replace('*', '').replace('$', '').replace('#', '').replace('@', '')
+   # remove the spaces, special characters, and convert to lowercase for the file_name
+    file_name = search_term.replace(' ', '_').replace('(', '').replace(')', '').replace('/', '').replace(':', '').replace('.', '').replace(',', '').replace('?', '').replace('!', '').replace("'", '').replace('"', '').replace('-', '').replace('&', '').replace(';', '').replace('=', '').replace('+', '').replace('*', '').replace('$', '').replace('#', '').replace('@', '')
  
     # Write a data model for the streamlit app
     data_model = f"""
@@ -46,7 +46,7 @@ def get_google_search_results(search_term, sleep_interval=2, num_results=10):
     -------------------------------------------
     This data file was created using the following search term: {search_term}
 
-    File path to the data file: {st.session_state.project_folder}/data/{filename}.parquet
+    File path to the data file: {st.session_state.project_folder}/data/{file_name}.parquet
     The data file contains the following columns:
     - url (str): The url of the webpage.
     - title (str): The title of the webpage.
@@ -58,6 +58,6 @@ def get_google_search_results(search_term, sleep_interval=2, num_results=10):
     """
 
     # Save results to parquet
-    df_results.to_parquet(f'{st.session_state.project_folder}/data/{filename}.parquet', index=False)
+    df_results.to_parquet(f'{st.session_state.project_folder}/data/{file_name}.parquet', index=False)
     
     return None

@@ -177,12 +177,12 @@ def select_view():
         st.stop()
     else:
         # Show the requirements, if user wants to see it
-        with st.sidebar.expander("View requirements"):
+        if st.sidebar.checkbox("View requirements"):
             # Show the requirements using text area
             txt_file = file_path + '.txt'
             with open(txt_file, 'r') as f:
                 requirements = f.read()
-            st.write(requirements)    
+            st.sidebar.warning(requirements)    
     return None
 
 def show_sample_data():

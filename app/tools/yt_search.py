@@ -19,6 +19,7 @@ def get_request_with_retry_timeout(url, headers=None, params=None,
                                           timeout=timeout, max_retry=max_retry, 
                                           method="get")
     return response
+
 def request_with_retry_timeout(url, session=None, data=None, headers=None, params=None, cookies=None,
                  timeout = 300, max_retry=5, method="post"):
     """This is the wrapper function for request post method."""
@@ -262,7 +263,7 @@ def save_youtube_data(file_name):
         'channel', 'channel_link', 'tags', 'language', 'transcript',
         'thumbnail', 'search_term', 'search_date']
 
-    col_dtypes = ['object', 'object', 'object', 'object', 'object', 'object', 'object', 'object', 'object', 'object', 'object', 'object', 'datetime']
+    col_types = ['object', 'object', 'object', 'object', 'object', 'object', 'object', 'object', 'object', 'object', 'object', 'object', 'datetime']
 
     col_infos = ['The url of the youtube video.', 'The title of the youtube video.',
                  'The view count of the youtube video.', 'The like count of the youtube video.', 
@@ -272,7 +273,7 @@ def save_youtube_data(file_name):
                    'The thumbnail url of the youtube video.', 'The search term used to get the youtube video.',
                     'The date of the search. the format is YYYY-MM-DD']
 
-    new_data_model = pd.DataFrame({'column_name': col_names, 'column_dtype': col_dtypes, 'column_info': col_infos})
+    new_data_model = pd.DataFrame({'column_name': col_names, 'column_type': col_types, 'column_info': col_infos})
     new_data_model['file_name'] = file_name
     # Save the data model to the project folder, append to the existing data model
     data_model_file = st.session_state.project_folder + '/data_model.parquet'

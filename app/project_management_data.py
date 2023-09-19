@@ -138,7 +138,7 @@ def get_column_info():
         parquet_file_path = project_folder + '/data/' + file
         df = pd.read_parquet(parquet_file_path)  
         df_col_info = get_column_info_for_df(df)
-        df_col_info['filename'] = parquet_file_path
+        df_col_info['file_name'] = parquet_file_path
         st.dataframe(df_col_info)
         save_data_model(df_col_info, file)
         df = convert_to_appropriate_dtypes(df, df_col_info)
@@ -149,7 +149,7 @@ def get_column_info():
         
         status.warning("Pausing for 5 secs to avoid rate limit")
         time.sleep(5)
-        # put the filename as the first column
+        # put the file_name as the first column
         cols = df_col_info.columns.tolist()
         cols = cols[-1:] + cols[:-1]
         df_col_info = df_col_info[cols]
@@ -162,17 +162,17 @@ def get_column_info():
 
     return None
 
-def save_data_model(data_model_for_file, filename):
+def save_data_model(data_model_for_file, file_name):
     """
     Saves the data model.  If the model already exists, it will be appended to.
-    Any old data model for the given filename will be overwritten.
+    Any old data model for the given file_name will be overwritten.
     """
     data_model_file = st.session_state.project_folder + '/data_model.parquet'
     all_dfs = []
     if os.path.exists(data_model_file):
         current_model = pd.read_parquet(data_model_file)
-        # Remove information about filename from the current model
-        current_model = current_model[current_model.filename != filename]
+        # Remove information about file_name from the current model
+        current_model = current_model[current_model.file_name != file_name]
         all_dfs.append(current_model)
 
     all_dfs.append(data_model_for_file)
@@ -222,7 +222,7 @@ def update_colum_types_for_table(data_model, data_model_file):
     the selected files
     """
     # Get the list of files
-    files = data_model.filename.unique().tolist()
+    files = data_model.file_name.unique().tolist()
     # Get the list of files that have been selected
     selected_files = st.multiselect(
         "Select the files to update", 
@@ -238,11 +238,11 @@ def update_colum_types_for_table(data_model, data_model_file):
         display_editable_data(data_model, data_model_file)
     else:
         st.info(info)
-        display_editable_data(data_model[data_model.filename.isin(selected_files)], data_model_file)
+        display_editable_data(data_model[data_model.file_name.isin(selected_files)], data_model_file)
         if st.button("Update the column types"):
             for file in selected_files:
                 df = pd.read_parquet(file)
-                df = convert_to_appropriate_dtypes(df, data_model[data_model.filename == file])
+                df = convert_to_appropriate_dtypes(df, data_model[data_model.file_name == file])
                 df.to_parquet(file, index=False)
             st.success("Updated the column types")
     return None
