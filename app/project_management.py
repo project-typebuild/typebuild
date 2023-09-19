@@ -128,6 +128,18 @@ def add_llm_data_model(data_model_pkl_file):
         llm_data += f"Column info:\n{col_info}\n"
     return llm_data
 
+def show_project_settings():
+    show_settings = False
+    if st.session_state.new_menu == 'project_settings':
+        show_settings = True
+    
+    project_folder = st.session_state.project_folder
+    data_model_file = project_folder + '/data_model.parquet'
+    if not os.path.exists(data_model_file):
+        show_settings = True
+    
+    return show_settings
+
 def manage_project():
     """
     Allows the user to manage key aspects of the selected project:
@@ -135,21 +147,30 @@ def manage_project():
     - Set / edit project description
     """
     
-    # Close project settings button
-    if st.sidebar.button('🛑 Close project settings 🛑'):
-        st.warning("You have to close project settings to work on other aspects of the project.")
-        reset_menu()
+    show_settings = show_project_settings()
+    if show_settings:
+        project_settings()
+    return None
+
+def project_settings():
+    """
+    This function allows the user to manage key aspects of the selected project:
+    - Manage data
+    - Set / edit project description
+    """    
     
     # Get the project folder
     project_folder = st.session_state.project_folder
     # If the file called data_model.parquet is missing, toggle the manage project button
     data_model_file = project_folder + '/data_model.parquet'
-    manage_project_toggle = False
-    if not os.path.exists(data_model_file):
-        manage_project_toggle = True
-    else:
+    if os.path.exists(data_model_file):
         # Add data description to session state
         st.session_state.data_description = pd.read_parquet(data_model_file).to_markdown(index=False)
+    
+        # Close project settings button
+        if st.sidebar.button('🛑 Close project settings 🛑'):
+            st.warning("You have to close project settings to work on other aspects of the project.")
+            reset_menu()
 
     options = [
         'Project description',
@@ -166,7 +187,6 @@ def manage_project():
     if selected_option == 'Upload data':
         file_upload_and_save()
         st.stop()
-        # st.experimental_rerun()
 
     if selected_option == 'Append data (optional)':
         append_data_to_exisiting_file()
@@ -187,7 +207,8 @@ def manage_project():
     if selected_option == 'Config':
         config_project()
         st.stop()
-    return manage_project_toggle
+
+    return None
 
 def set_project_description():
     """

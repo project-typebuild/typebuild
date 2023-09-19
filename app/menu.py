@@ -105,8 +105,8 @@ def get_menu():
 
 def reset_menu(save_header_state=True, new_menu=None):
     st.session_state['old_menu'] = st.session_state.new_menu
-    st.session_state.menu_id += 1
     st.session_state.new_menu = new_menu
+    st.session_state.menu_id += 1
     rerun_app(save_header_state)
     return None
 

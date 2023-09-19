@@ -67,9 +67,10 @@ get_project_file_folder()
 # Get selected project in title case
 selected_project = st.session_state.selected_project.replace('_', ' ').title()
 st.sidebar.header(selected_project)
-if st.session_state.new_menu == 'project_settings':
-    manage_project()
-    st.stop()
+
+# Manage project option will show up
+# if user needs to set things up or if user selects it.
+manage_project()
 
 project_option = st.sidebar.radio(
     "Add or view data",
