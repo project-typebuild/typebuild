@@ -291,12 +291,12 @@ def from_requirements_to_code(chat_key, current_text="", prompt="", func_str=Non
     elif current_stage == 'code':
         system_instruction += "WE ARE CURRENTLY IN THE CODE GENERATION STAGE\n\n" + get_code_instructions()
         system_instruction += f"\nTHIS IS THE CURRENT CODE: \n{func_str}\n"
-        if st.session_state.user_type == 'developer':
+        if st.session_state.show_developer_options:
             st.sidebar.info("Added code instructions")
 
     else:
         st.error(f"Invalid stage, {current_stage}")
-    if st.session_state.user_type == 'developer':
+    if st.session_state.show_developer_options:
         st.sidebar.info(f"Stage in prompt: {current_stage}")
     prompt = f"""{prompt}"""
 

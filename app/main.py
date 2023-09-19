@@ -2,7 +2,7 @@ from blueprint_code import select_view
 import simple_auth
 import streamlit as st
 # Make it full width
-st.set_page_config(layout="wide")
+st.set_page_config(layout="wide", page_title='TypeBuild')
 token = simple_auth.simple_auth()
 st.session_state.token = token
 
@@ -65,8 +65,8 @@ if st.session_state.show_developer_options:
 # Get the project file and data
 get_project_file_folder()
 # Get selected project in title case
-selected_project = st.session_state.selected_project.replace('_', ' ').title()
-st.sidebar.header(selected_project)
+selected_project = st.session_state.selected_project.replace('_', ' ').upper() + " PROJECT"
+st.sidebar.header(f"{selected_project}", divider='rainbow')
 
 # Manage project option will show up
 # if user needs to set things up or if user selects it.
