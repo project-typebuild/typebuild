@@ -338,7 +338,8 @@ def create_new_project():
         st.session_state[f'selected_project_{st.session_state.ss_num}'] = project_name
         st.session_state.selected_project = project_name
         time.sleep(2)
-        st.experimental_rerun()
+        # Take user to project settings
+        reset_menu(new_menu='project_settings')
     return None
 
 

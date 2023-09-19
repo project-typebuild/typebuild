@@ -64,7 +64,9 @@ if st.session_state.show_developer_options:
 
 # Get the project file and data
 get_project_file_folder()
-
+# Get selected project in title case
+selected_project = st.session_state.selected_project.replace('_', ' ').title()
+st.sidebar.header(selected_project)
 if st.session_state.new_menu == 'project_settings':
     manage_project()
     st.stop()
