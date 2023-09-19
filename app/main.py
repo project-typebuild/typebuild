@@ -77,10 +77,12 @@ project_option = st.sidebar.radio(
     options=[
         'View data',
         'LLM generated text', 
+        'External data',
         ],
     captions= [
         'Charts, tables, widgets & insights',
         'Categorize, extract topics, get external data', 
+        'YouTube, search, and other external data'
         ]
     )
 
@@ -98,3 +100,6 @@ if project_option == 'View data':
     run_code_in_view_file()
     technical_requirements_chat(widget_label='Test requirement')
 
+if project_option == 'External data':
+    st.info("Coming soon")
+    st.stop()
