@@ -14,6 +14,7 @@ import os
 import time
 import pandas as pd
 from blueprint_text import user_requirement_for_view
+from helpers import text_areas
 import streamlit as st
 from prompts import get_prompt_to_code, get_prompt_to_fix_error
 from llm_functions import get_llm_output, gpt_function_calling, parse_code_from_response, parse_modified_user_requirements_from_response
@@ -174,8 +175,14 @@ def select_view():
 
             st.experimental_rerun()
         st.stop()
-
-    
+    else:
+        # Show the requirements, if user wants to see it
+        with st.sidebar.expander("View requirements"):
+            # Show the requirements using text area
+            txt_file = file_path + '.txt'
+            with open(txt_file, 'r') as f:
+                requirements = f.read()
+            st.write(requirements)    
     return None
 
 def show_sample_data():
