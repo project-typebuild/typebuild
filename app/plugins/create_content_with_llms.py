@@ -183,7 +183,7 @@ def analyze_with_llm():
     
     # Get the column names
     df = pd.read_parquet(selected_table)
-    if c1.checkbox("Show the data"):
+    if c1.checkbox("Show input data"):
         st.dataframe(df.head())
     
     with c2:
@@ -238,6 +238,8 @@ def create_llm_output(df, output_col_name, selected_table):
         if st.sidebar.button("Reset"):
             df[output_col_name] = np.nan
             st.sidebar.success("Prior analysis has been removed.")
+            # Save the data
+            df.to_parquet(selected_table, index=False)
     
     col_info = f"""This column contains the output from the LLM based on the column {selected_column}.  
     The LLM was asked to do the following:
@@ -248,7 +250,6 @@ def create_llm_output(df, output_col_name, selected_table):
         st.dataframe(df[[selected_column, output_col_name]])
 
     consolidated = row_by_row()
-    
     
     # If row_by_row_analysis column does not exist, create it
     if output_col_name not in df.columns:
@@ -298,7 +299,7 @@ def create_llm_output(df, output_col_name, selected_table):
                 c2.markdown(row[1], unsafe_allow_html=True)
                 st.markdown("---")
 
-    if c2.button("💯 Analyze all rows", help="This will run the LLM on rows where the output is empty."):
+    if c2.button("💯 Analyze all the rows", help="This will run the LLM on rows where the output is empty."):
         remaining_rows = len(df[df[output_col_name].isna()])
         if remaining_rows == 0:
             st.success("All rows have been analyzed.")
@@ -317,15 +318,20 @@ def create_llm_output(df, output_col_name, selected_table):
                 if consolidated:
                     # Get the full text and the res for it.  Add it to the first row.
                     full_text = df[selected_column].str.cat(sep='\n\n')
-                    res_text = row_by_row_llm_res(full_text, system_instruction, frac=frac, model='gpt-4')
+                    res_text = row_by_row_llm_res(full_text, system_instruction, frac=frac, model='gpt-3.5-turbo')
                     # res_text = '\n\n'.join(res)
                     df.iloc[0, df.columns.get_loc(output_col_name)] = res_text
                 else:
-                    df.loc[df[output_col_name].isna(), output_col_name] = df.loc[df[output_col_name].isna(), selected_column].apply(lambda x: row_by_row_llm_res(x, system_instruction, frac=frac))
+                    data = df.loc[df[output_col_name].isna(), selected_column].to_list()
+                    output = []
+                    for row in data:
+                        output.append(row_by_row_llm_res(row, system_instruction, frac=frac))
+                    # Add the output to the dataframe
+                    df.loc[df[output_col_name].isna(), output_col_name] = output
+
                 # Save the data
                 df.to_parquet(selected_table, index=False)
-                st.success("Done analyzing the data.  You can go to 'View Data' to use it.")
-            
+                st.dataframe(df[[selected_column, output_col_name]])            
     return None
 
 def show_output(df, output_col_name):
@@ -342,7 +348,11 @@ def show_output(df, output_col_name):
     buf = ""
     for row in output:
         buf += row + '\n'
+        # add a separator
+        buf += '\n---\n'
     
+    st.subheader("Output from the LLM")
+    st.info(f"This information is saved in the *{output_col_name}* column.")
     st.markdown(clean_markdown(buf))
     return None
 
@@ -416,6 +426,9 @@ def row_by_row_llm_res(text_or_list, system_instruction, sample=True, frac=0.3, 
     for chunk in chunks:
         max_tokens = len(chunk) * frac / 3
         max_tokens = int(max_tokens)
+        # If max tokens is too small, make it 800
+        if max_tokens < 800:
+            max_tokens = 800
         messages =[
             {"role": "system", "content": system_instruction},
             {"role": "user", "content": chunk}]
@@ -513,7 +526,7 @@ def row_by_row():
         )
 
     if step == 'Row by row':
-        return True
+        return False
     
     if step == 'Consolidated':
-        return False
+        return True

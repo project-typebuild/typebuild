@@ -68,7 +68,7 @@ project_option = st.sidebar.radio(
         ],
     captions= [
         'Describe, upload data, settings',
-        'Extract insights from data',
+        'Charts, tables, widgets & insights',
         'Categorize, extract topics, get external data', 
         ]
     )

@@ -363,7 +363,7 @@ def get_code_instructions():
     THINGS TO REMEMBER:
     - Do not create login or signup, even if requested.
     - Pay careful attention to the data description, especially to column types and names.
-    - Use in-built streamlit methods to create charts if possible. Else, use altair.
+    - Use in-built streamlit methods to create charts if possible. Else, use altair.  Be sure to pass valid dataframe to altair, and specify column encoding.
     - Do not use index columns for calculations, if avoidable.
     - Try to use only the approved libraries.  If you need to use other libraries, check with me first.
     - You have been given one or more data files.  Load the files needed for this requirement and create a dataframe.
