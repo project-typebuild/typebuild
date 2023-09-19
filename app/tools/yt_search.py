@@ -265,7 +265,11 @@ def save_youtube_data(file_name):
                    'The thumbnail url of the youtube video.', 'The search term used to get the youtube video.',
                     'The date of the search. the format is YYYY-MM-DD']
 
-    new_data_model = pd.DataFrame({'column_name': col_names, 'column_type': col_types, 'column_info': col_infos})
+    new_data_model = pd.DataFrame({
+        'column_name': col_names, 
+        'column_type': col_types, 
+        'column_info': col_infos
+        })
     new_data_model['file_name'] = file_name
     # Save the data model to the project folder, append to the existing data model
     data_model_file = st.session_state.project_folder + '/data_model.parquet'
@@ -276,6 +280,8 @@ def save_youtube_data(file_name):
         all_dfs.append(new_data_model)
         df_all_col_infos = pd.concat(all_dfs)
         df_all_col_infos.to_parquet(data_model_file, index=False)
+    else:
+        new_data_model.to_parquet(data_model_file, index=False)
     return None
 
 def main():

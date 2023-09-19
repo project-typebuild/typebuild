@@ -146,10 +146,16 @@ def manage_project():
     - Manage data
     - Set / edit project description
     """
-    
     show_settings = show_project_settings()
+
     if show_settings:
+        if st.sidebar.checkbox("Get data from YouTube"):
+            from tools.yt_search import main as yt_search
+            yt_search()
+            st.warning("Uncheck get data from YouTube to go to project settings")
+            st.stop()
         project_settings()
+
     return None
 
 def project_settings():

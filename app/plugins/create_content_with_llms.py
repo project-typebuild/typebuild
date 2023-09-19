@@ -202,7 +202,10 @@ def create_llm_output(df, output_col_name, selected_table):
 
 
     # If consolidated, see if there is a column called consolidated_text_for_llm
-    columns = df.columns    
+    columns = df.columns.to_list()
+
+    # Add SELECT to the columns
+    columns = ['SELECT'] + columns
     # Default column should be text_for_llm, if it exists
     if 'text_for_llm' in columns:
         default_index = columns.index('text_for_llm')
@@ -215,6 +218,9 @@ def create_llm_output(df, output_col_name, selected_table):
         index=default_index,
         help="This column will be used as the input to the LLM."
         )
+    if selected_column == 'SELECT':
+        st.error("Please select a column.")
+        st.stop()
         
     # Get the system instruction
     txt_file = f"{st.session_state.project_folder}/{output_col_name}_system_instruction.txt"
@@ -223,7 +229,7 @@ def create_llm_output(df, output_col_name, selected_table):
     st.session_state.system_instruction_path = txt_file
     system_instruction = text_areas(
         file=txt_file,
-        key='system_instruction_step_by_step',
+        key=f'step_by_step_{txt_file}',
         widget_label='What would you like the LLM to do in each row?'
         )
 

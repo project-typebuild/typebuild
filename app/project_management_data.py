@@ -89,9 +89,13 @@ def get_column_info_for_df(df):
     # and they repeat frequently.
     
     for col in df.columns:
-        if df[col].nunique() / len(df) < 0.2:
-            if df[col].nunique() < 10:
-                sample_buf += f"\nPossible values for {col}: {', '.join(df[col].dropna().astype(str).unique().tolist())}\n"
+        try:
+            if df[col].nunique() / len(df) < 0.2:
+                if df[col].nunique() < 10:
+                    sample_buf += f"\nPossible values for {col}: {', '.join(df[col].dropna().astype(str).unique().tolist())}\n"
+        except:
+            # If the column is not a string, this will fail
+            pass
 
     system_instruction = """You are helping me document the data.  
     Using the examples revise the column info by:
