@@ -54,16 +54,20 @@ def technical_requirements_chat(widget_label):
     if chat_key not in st.session_state:
         st.session_state[chat_key] = []
 
-    # Create the chat    
-    chat_container = st.container()
-    # We should only have this if the function_call_type is 'manual'
-    if st.session_state.function_call_type == 'manual':
-        current_stage = st.sidebar.radio("Current stage", ['requirements', 'code'],key='current_stage') 
-    # If there is an error in rendering code,
-    # fix it.  No need to wait for user prompt.
-    if 'error' in st.session_state:
-        fix_error_in_code()
-        del st.session_state['error']        
+    with st.status("Ready to chat", expanded=True) as st.session_state.chat_status:
+        # Create the chat
+        chat_container = st.container()
+        # We should only have this if the function_call_type is 'manual'
+        if st.session_state.function_call_type == 'manual':
+            current_stage = st.sidebar.radio("Current stage", ['requirements', 'code'],key='current_stage') 
+        # If there is an error in rendering code,
+        # fix it.  No need to wait for user prompt.
+        if 'error' in st.session_state:
+            st.session_state.chat_status.info("I ran into an error.  Fixing it...")
+            fix_error_in_code()
+            del st.session_state['error']
+            st.session_state.chat_status.update("Fixed the error.  Let's review the code", expanded=False)
+            
     
     prompt = st.chat_input("Type here for help", key=f'chat_input_{widget_label}')
     if prompt:
@@ -86,7 +90,7 @@ def technical_requirements_chat(widget_label):
     # the function response to the chat.  Send the message
     # to the llm to get the next response
     if call_status == "Done":
-        with st.spinner("Got some extra information.  Working on it..."):
+        with st.session_state.chat_status.spinner("Got some extra information.  Working on it..."):
             prompts.from_requirements_to_code(
                 prompt=None,
                 current_text=current_text,
@@ -223,6 +227,7 @@ def save_code_to_file(code_str: str):
     # Delete the error from the session state
     if 'error' in st.session_state:
         del st.session_state['error']
+    st.session_state.chat_status.update("Updated the code.  Rerunning the app...", expanded=False)
     st.experimental_rerun()
     # Note the message will not be returned since we are rerunning the app here.
     return "The code has been saved to the file.  It is ready to use now.  Ask the user to test the app and ask for modifications, if any is required."
@@ -262,7 +267,8 @@ def fix_error_in_code():
         del st.session_state['function_call']
         del st.session_state['error']
         st.toast("Fixed the error.  Rerunning the app...")
-        time.sleep(2)
+        time.sleep(1)
+        st.session_state.chat_status.update("Fixed the error.  Rerunning the app...", expanded=False)
         st.experimental_rerun()
     
     # If there is a response, add it to the chat
