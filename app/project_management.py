@@ -180,9 +180,9 @@ def project_settings():
 
     options = [
         'Project description',
-        'Config',
         'Upload data',
         'Data Modelling',
+        'Config',
         'Upload Custom LLM'
     ]
     

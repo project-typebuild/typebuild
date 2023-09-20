@@ -331,7 +331,11 @@ def create_llm_output(df, output_col_name, selected_table):
                     data = df.loc[df[output_col_name].isna(), selected_column].to_list()
                     output = []
                     for row in data:
-                        output.append(row_by_row_llm_res(row, system_instruction, frac=frac))
+                        try:
+                            res = row_by_row_llm_res(row, system_instruction, frac=frac)
+                        except:
+                            res = np.nan
+                        output.append(res)
                     # Add the output to the dataframe
                     df.loc[df[output_col_name].isna(), output_col_name] = output
 
@@ -419,33 +423,38 @@ def row_by_row_llm_res(text_or_list, system_instruction, sample=True, frac=0.3, 
 
     if isinstance(text_or_list, str):
         text = text_or_list
+    elif text_or_list is None:
+        text = ''
     else:
-        text = '\n\n'.join(text_or_list)
+        text = '\n\n'.join([str(i) for i in text_or_list])
 
     # Chunk the text by 10k characters
     st.session_state.last_sample = []
-    chunks = chunk_text(text, max_chars=20000)
-    output = []
-    if sample:
-        chunks = chunks[:2]
-    
-    for chunk in chunks:
-        max_tokens = len(chunk) * frac / 3
-        max_tokens = int(max_tokens)
-        # If max tokens is too small, make it 800
-        if max_tokens < 800:
-            max_tokens = 800
-        messages =[
-            {"role": "system", "content": system_instruction},
-            {"role": "user", "content": chunk}]
-        res = get_llm_output(
-            input=messages,
-            max_tokens=max_tokens,
-            model=model
-            )        
-        output.append(res)
-        # Add chunk and response to the last sample
-        st.session_state.last_sample.append([chunk, res])
+    if not text:
+        return ""
+    else:
+        chunks = chunk_text(text, max_chars=20000)
+        output = []
+        if sample:
+            chunks = chunks[:2]
+        
+        for chunk in chunks:
+            max_tokens = len(chunk) * frac / 3
+            max_tokens = int(max_tokens)
+            # If max tokens is too small, make it 800
+            if max_tokens < 800:
+                max_tokens = 800
+            messages =[
+                {"role": "system", "content": system_instruction},
+                {"role": "user", "content": chunk}]
+            res = get_llm_output(
+                input=messages,
+                max_tokens=max_tokens,
+                model=model
+                )        
+            output.append(res)
+            # Add chunk and response to the last sample
+            st.session_state.last_sample.append([chunk, res])
     time.sleep(3)
     return "\n".join(output)
 

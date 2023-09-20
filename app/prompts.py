@@ -78,6 +78,7 @@ THINGS TO REMEMBER:
 - Do not write unnecessary print, st.write and success, info and warning messages in the functions.
 - Do not return the available functions in the response. Your response should include only the newly generated functions
 - You need to create one function for each feature in the app
+- Do not use streamlit cache
 - You need to have a main function that calls all the other functions
 - Dont add the code 
     if __name__ == '__main__':
