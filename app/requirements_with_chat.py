@@ -90,21 +90,21 @@ def technical_requirements_chat(widget_label):
     # the function response to the chat.  Send the message
     # to the llm to get the next response
     if call_status == "Done":
-        with st.session_state.chat_status.spinner("Got some extra information.  Working on it..."):
-            prompts.from_requirements_to_code(
-                prompt=None,
-                current_text=current_text,
-                chat_key=chat_key,
-                func_str=current_code,
+        st.session_state.chat_status.write("Got some extra information.  Working on it...")
+        prompts.from_requirements_to_code(
+            prompt=None,
+            current_text=current_text,
+            chat_key=chat_key,
+            func_str=current_code,
+            )
+        messages = st.session_state[chat_key]
+        # Get the response
+        res = get_gpt_output(messages)
+        # Add the response to the chat
+        if res:
+            st.session_state[chat_key].append(
+                {'role': 'assistant', 'content': res}
                 )
-            messages = st.session_state[chat_key]
-            # Get the response
-            res = get_gpt_output(messages)
-            # Add the response to the chat
-            if res:
-                st.session_state[chat_key].append(
-                    {'role': 'assistant', 'content': res}
-                    )
             
     # Display the messages
     with chat_container:
@@ -227,7 +227,7 @@ def save_code_to_file(code_str: str):
     # Delete the error from the session state
     if 'error' in st.session_state:
         del st.session_state['error']
-    st.session_state.chat_status.update("Updated the code.  Rerunning the app...", expanded=False)
+    st.session_state.chat_status.update(label="Updated the code.  Rerunning the app...", expanded=False)
     st.experimental_rerun()
     # Note the message will not be returned since we are rerunning the app here.
     return "The code has been saved to the file.  It is ready to use now.  Ask the user to test the app and ask for modifications, if any is required."

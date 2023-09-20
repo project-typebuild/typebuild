@@ -442,8 +442,8 @@ def row_by_row_llm_res(text_or_list, system_instruction, sample=True, frac=0.3, 
             max_tokens = len(chunk) * frac / 3
             max_tokens = int(max_tokens)
             # If max tokens is too small, make it 800
-            if max_tokens < 800:
-                max_tokens = 800
+            if max_tokens < 500:
+                max_tokens = 500
             messages =[
                 {"role": "system", "content": system_instruction},
                 {"role": "user", "content": chunk}]
