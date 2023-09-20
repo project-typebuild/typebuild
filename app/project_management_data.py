@@ -126,13 +126,19 @@ def get_column_info_for_df(df):
     return df_res
 
 
-def get_column_info():
+def get_column_info(data_model, new_files_only=True):
     """
     Loop through all the data files and get the column info for each file.
     """
+    # Get the list of files in data model
+
     project_folder = st.session_state.project_folder
     data_files = os.listdir(project_folder + '/data')
     data_files = [i for i in data_files if i.endswith('.parquet')]
+    if new_files_only:
+        # Get the list of files that have already been processed
+        processed_files = data_model.file_name.unique().tolist()
+        data_files = [i for i in data_files if i not in processed_files]
     column_info = {}
     status = st.empty()
     all_col_infos = []
@@ -189,34 +195,50 @@ def get_data_model():
     """
     Save the data model to the project folder.
     """
+    generate_for_new_files_only = True
     # Save the column info to the project folder
     project_folder = st.session_state.project_folder
     data_folder = project_folder + '/data'
     
     data_model_file = project_folder + '/data_model.parquet'
 
+    # Get a list of parquet data files
+    data_files = os.listdir(data_folder)
+    data_files = [i for i in data_files if i.endswith('.parquet')]
+    # Add data folder path to the file names
+    data_files = [data_folder + '/' + i for i in data_files]
+    # See which files have already been processed
+    processed_files = []
+    files_to_process = data_files
     # If the data model file exists, read it
     if os.path.exists(data_model_file):
         df = pd.read_parquet(data_model_file)
         st.session_state.column_info = df.to_markdown(index=False)
         generate_col_info = False
-        
-        # Allow the user to update the column types for the files
-        update_colum_types_for_table(df, data_model_file)    
+        processed_files = df.file_name.unique().tolist()
+        files_to_process = [i for i in data_files if i not in processed_files]
+
     else:
         if not os.path.exists(data_model_file):
             generate_col_info = True
 
+    # It the data model does not have information about all the files, generate the column info
+    if files_to_process:
+        generate_col_info = True
+        st.sidebar.warning("There are files to process")
+
+    update_colum_types_for_table(df, data_model_file)
     if st.button(
         "🚨 Re-generate column info automatically 🚨",
         help="The LLM will recreate column definitions.  Use this only if the table needs major changes.",
         ):
 
         generate_col_info = True
+        generate_for_new_files_only = False
 
     if 'column_info' not in st.session_state or generate_col_info:
         with st.spinner("Generating column info..."):
-            get_column_info()
+            get_column_info(data_model=df, new_files_only=generate_for_new_files_only)
 
     return None
 
