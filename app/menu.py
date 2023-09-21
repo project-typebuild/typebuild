@@ -20,8 +20,16 @@ def get_menu_data():
     menu_data = []
 
     # List of available projects
-    token_name = st.session_state.token
-    user_folder = os.path.join('users', token_name)
+    # token_name = st.session_state.token
+    # user_folder = os.path.join('users', token_name)
+
+    # Get the user folder from the session state
+    if 'user_folder' not in st.session_state:
+        home_dir = os.path.expanduser("~")
+        st.session_state.user_folder = os.path.join(home_dir, ".typebuild")
+        
+    user_folder = st.session_state.user_folder
+
     # Get just the directory names, ignore the files
     try:
         project_names = [i for i in os.listdir(user_folder) if os.path.isdir(os.path.join(user_folder, i))]

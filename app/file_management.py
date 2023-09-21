@@ -61,6 +61,15 @@ def create_new_file_with_imports(func_str, file_path):
     import_statement = "import streamlit as st\nimport pandas as pd\nimport os\nfrom glob import glob\nimport altair as alt\n\n"
     func_str = import_statement + func_str
 
+    # Comment out lines that call the "main" function
+    func_lines = func_str.split('\n')
+    for i, line in enumerate(func_lines):
+        if 'main(' in line:
+            func_lines[i] = '# ' + line
+
+    # Join the modified lines back into a string
+    func_str = '\n'.join(func_lines)
+
     # Add .py if not already there
     if not file_path.endswith('.py'):
         file_path += '.py'

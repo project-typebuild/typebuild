@@ -90,7 +90,7 @@ def technical_requirements_chat(widget_label):
     # the function response to the chat.  Send the message
     # to the llm to get the next response
     if call_status == "Done":
-        st.session_state.chat_status.write("Got some extra information.  Working on it...")
+        # st.session_state.chat_status.write("Got some extra information.  Working on it...")
         prompts.from_requirements_to_code(
             prompt=None,
             current_text=current_text,

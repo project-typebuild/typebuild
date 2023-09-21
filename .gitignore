@@ -6,10 +6,12 @@
 # Folders within projects
 */projects/*
 */users/*
+*/session_states/*
 
 # Remove workspace files
 .vscode/
 *.code-workspace
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -117,7 +117,7 @@ def simple_auth():
             token = get_auth(cookie_manager)
             st.session_state['token'] = token
         else:
-            st.warning("You just logged out.  Please close the browser tab.")
+            st.warning("You just logged out.  Please close the browser tab. Or refresh the page to login again.")
     if token is None:
         st.stop()        
     if token == 'admin': 
@@ -146,7 +146,10 @@ def get_cookie_token(cookie_manager):
 
 def logout():
     cookie_manager = stx.CookieManager()
-    cookie_manager.delete('cookie_token')
+    try:
+        cookie_manager.delete('cookie_token')
+    except:
+        pass
     return None
 
 # Add user

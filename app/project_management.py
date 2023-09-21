@@ -62,7 +62,7 @@ def get_project_file_folder():
     - project_file (str): The path to the project file.
     """
     token_name = st.session_state.token
-    user_folder = os.path.join('users', token_name)
+    user_folder = st.session_state.user_folder 
     # Get just the directory names, ignore the files
     try:
         project_names = [i for i in os.listdir(user_folder) if os.path.isdir(os.path.join(user_folder, i))]
@@ -324,13 +324,23 @@ def create_new_project():
     # Lower case and replace spaces with underscores
     project_name = project_name.lower().replace(' ', '_')
     # Check if the project name already exists
-    token_name = st.session_state.token
-    user_folder = os.path.join('users', token_name)
+    # token_name = st.session_state.token
+    # user_folder = os.path.join('users', token_name)
 
-    # Create the user folder if it does not exist
+    # Get the path to the home directory
+    home_dir = os.path.expanduser("~")
+
+    # Create the path to the .typebuild directory
+    user_folder = os.path.join(home_dir, ".typebuild")
+
+    # Check if the directory exists
     if not os.path.exists(user_folder):
+        # Create the directory if it doesn't exist
         os.makedirs(user_folder)
-    
+
+    # Add user folder to the session state
+    st.session_state.user_folder = user_folder
+
     # Project folder is project name inside the user folder
     project_folder = f"{user_folder}/{project_name}"
     if os.path.exists(project_folder):
@@ -767,7 +777,7 @@ def config_project():
     api_key = st.text_input('Enter the API key', value=st.secrets.get('api_key', st.session_state.config.get('api_key', '')))
     function_call_availabilty = st.checkbox(
         "(Expert setting) I have access to function calling", 
-        value=st.session_state.config.get('function_call_availabilty', False),
+        value=st.session_state.config.get('function_call_availabilty', True),
         help="Do you have access to openai models ending in 0613? they have a feature called function calling.",
         )
     
@@ -786,7 +796,13 @@ def config_project():
             st.toast('Hip!')
             time.sleep(.5)
             st.toast('Hooray!', icon='🎉')
-        secrets_file_path = '.streamlit/secrets.toml'
+        # Get the project folder from the session state
+        project_folder = st.session_state.project_folder
+        # Create the secrets.toml file if it does not exist
+        secrets_file_path = project_folder + '/secrets.toml'
+        if not os.path.exists(secrets_file_path):
+            with open(secrets_file_path, 'w') as f:
+                f.write('')
         with open(secrets_file_path, 'r') as f:
             config_ = toml.load(f)
             config_['api_key'] = api_key
