@@ -137,7 +137,10 @@ def get_column_info(data_model, new_files_only=True):
     data_files = [i for i in data_files if i.endswith('.parquet')]
     if new_files_only:
         # Get the list of files that have already been processed
-        processed_files = data_model.file_name.unique().tolist()
+        if data_model is None:
+            processed_files = []
+        else:
+            processed_files = data_model.file_name.unique().tolist()
         data_files = [i for i in data_files if i not in processed_files]
     column_info = {}
     status = st.empty()
@@ -212,13 +215,15 @@ def get_data_model():
     files_to_process = data_files
     # If the data model file exists, read it
     if os.path.exists(data_model_file):
-        df = pd.read_parquet(data_model_file)
-        st.session_state.column_info = df.to_markdown(index=False)
+        data_model_df = pd.read_parquet(data_model_file)
+        st.session_state.column_info = data_model_df.to_markdown(index=False)
         generate_col_info = False
-        processed_files = df.file_name.unique().tolist()
+        processed_files = data_model_df.file_name.unique().tolist()
         files_to_process = [i for i in data_files if i not in processed_files]
+        update_colum_types_for_table(data_model_df, data_model_file)
 
     else:
+        data_model_df = None
         if not os.path.exists(data_model_file):
             generate_col_info = True
 
@@ -227,7 +232,6 @@ def get_data_model():
         generate_col_info = True
         st.sidebar.warning("There are files to process")
 
-    update_colum_types_for_table(df, data_model_file)
     if st.button(
         "🚨 Re-generate column info automatically 🚨",
         help="The LLM will recreate column definitions.  Use this only if the table needs major changes.",
@@ -238,7 +242,7 @@ def get_data_model():
 
     if 'column_info' not in st.session_state or generate_col_info:
         with st.spinner("Generating column info..."):
-            get_column_info(data_model=df, new_files_only=generate_for_new_files_only)
+            get_column_info(data_model=data_model_df, new_files_only=generate_for_new_files_only)
 
     return None
 

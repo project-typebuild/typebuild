@@ -22,7 +22,10 @@ def change_view():
     """
     # Increment view number so that the widget selection changes
     # Clear the session state of key variables
-    key_vars = ['code', 'code_str', 'response', 'user_requirements', 'messages', 'data_description']
+    key_vars = ['code', 'code_str', 'response', 
+                'user_requirements', 'messages', 'data_description',
+                'error'
+                ]
     for key in key_vars:
         if key in st.session_state:
             del st.session_state[key]
