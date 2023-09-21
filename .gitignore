@@ -12,6 +12,8 @@
 .vscode/
 *.code-workspace
 
+# Remove all .7z files across the repo
+*.7z
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
