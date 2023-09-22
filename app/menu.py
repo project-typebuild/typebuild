@@ -26,9 +26,13 @@ def get_menu_data():
     # Get the user folder from the session state
     if 'user_folder' not in st.session_state:
         home_dir = os.path.expanduser("~")
-        st.session_state.user_folder = os.path.join(home_dir, ".typebuild")
+        st.session_state.user_folder = os.path.join(home_dir, ".typebuild", st.session_state.token)
         
     user_folder = st.session_state.user_folder
+    # If the user folder does not exist, create it
+    if not os.path.exists(user_folder):
+        os.makedirs(user_folder)
+    
 
     # Get just the directory names, ignore the files
     try:

@@ -231,6 +231,8 @@ def get_data_model():
     if files_to_process:
         generate_col_info = True
         st.sidebar.warning("There are files to process")
+        st.sidebar.write(files_to_process)
+    st.stop()
 
     if st.button(
         "🚨 Re-generate column info automatically 🚨",
