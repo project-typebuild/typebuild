@@ -451,8 +451,27 @@ def upload_data_file(uploaded_file, file_extension):
     
     # Clean column names.  Strip, lower case, replace spaces with underscores
     df.columns = [i.strip().lower().replace(' ', '_') for i in df.columns]
+    
     # Create a streamlit form, with all columns and data types and allow the user to edit the data types
+
+    # Get the list of column names
+    col_names = df.columns.tolist()
+
+    # If there are duplicate column names, add _1, _2, etc. to the end of the column name
+    for i, col_name in enumerate(col_names):
+        if col_names.count(col_name) > 1:
+            col_names[i] = col_name + '_' + str(col_names[:i].count(col_name) + 1)
+
+    # Rename the columns with the updated column names
+    df.columns = col_names
+
+    # st.dataframe(df)
+
+    # If there are duplicate col names, add _1, _2, etc. to the end of the col name
+    # Get the list of col names
+        
     # Get the column names and data types
+
 
     # Get the column names and data types
     all_col_infos = []
@@ -472,6 +491,7 @@ def upload_data_file(uploaded_file, file_extension):
             if new_col_type != col_type:
                 col_info['column_type'] = new_col_type
         submit_button = st.form_submit_button(label='Update data types')
+
 
     # Update the data types of the dataframe
     for col_info in all_col_infos:
