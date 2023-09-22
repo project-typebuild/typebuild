@@ -13,7 +13,7 @@ import datetime
 
 
 def create_auth_file():
-    profile_dict = {'admin': None, 'vivek': None}
+    profile_dict = {'admin': None}
     with open('profile_dict.pk', 'wb') as f:
         pk.dump(profile_dict, f)
     print("Created profile dict")
@@ -41,7 +41,6 @@ def delete_users():
         p = pk.load(f)
     users = list(p)
     users.remove('admin')
-    users.remove('vivek')
     to_delete = st.multiselect("Delete users", users)
     if to_delete:
         if st.button("Confirm deletion"):
@@ -56,6 +55,8 @@ def delete_users():
     return None
 
 def get_profile_dict():
+    if not os.path.exists('profile_dict.pk'):
+        create_auth_file()
     with open('profile_dict.pk', 'rb') as f:
         profile_dict = pk.load(f)
     return profile_dict

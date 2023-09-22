@@ -99,7 +99,7 @@ def get_column_info_for_df(df):
 
     system_instruction = """You are helping me document the data.  
     Using the examples revise the column info by:
-    - Adding a description for each column
+    - Adding a detailed description for each column
     - If the column is a date, add the date format
     - I will provide the initial column type, you need to check if the initial column type is appropriate or suggest the new column type
     - The possible column dtypes are ['object', 'int64', 'datetime64', 'float64']
@@ -120,7 +120,7 @@ def get_column_info_for_df(df):
         {'role': 'system', 'content': system_instruction},
         {'role': 'user', 'content': prompt},
     ]
-    res = get_llm_output(messages, model='gpt-4', max_tokens=2000, temperature=0)
+    res = get_llm_output(messages, model='gpt-3.5-turbo', max_tokens=2000, temperature=0)
     df_res = pd.DataFrame(eval(res))
     
     return df_res

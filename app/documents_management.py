@@ -8,6 +8,7 @@ from streamlit_extras.dataframe_explorer import dataframe_explorer
 from streamlit_extras.stateful_button import button
 import nest_asyncio
 nest_asyncio.apply()
+import chardet
 
 
 def create_document_chunk_df(documents_folder):
@@ -26,7 +27,10 @@ def create_document_chunk_df(documents_folder):
     for document in available_documents:
         tmp_dict = {}
         with open(document, 'r') as f:
-            tmp_dict['text'] = f.read()
+            contents = f.read()
+            encoding = chardet.detect(contents)['encoding']
+            contents = contents.decode(encoding)
+            tmp_dict['text'] = contents
 
         tmp_dict['filename'] = document.split('/')[-1]
         documents.append(tmp_dict)
