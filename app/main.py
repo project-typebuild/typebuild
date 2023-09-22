@@ -1,4 +1,4 @@
-# from blueprint_code import select_view
+from blueprint_code import select_view
 import simple_auth
 import streamlit as st
 # Make it full width
