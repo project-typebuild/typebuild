@@ -201,6 +201,7 @@ def get_data_model():
     generate_for_new_files_only = True
     # Save the column info to the project folder
     project_folder = st.session_state.project_folder
+    
     data_folder = project_folder + '/data'
     
     data_model_file = project_folder + '/data_model.parquet'
@@ -216,6 +217,7 @@ def get_data_model():
     # If the data model file exists, read it
     if os.path.exists(data_model_file):
         data_model_df = pd.read_parquet(data_model_file)
+        st.table(data_model_df)
         st.session_state.column_info = data_model_df.to_markdown(index=False)
         generate_col_info = False
         processed_files = data_model_df.file_name.unique().tolist()

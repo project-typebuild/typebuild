@@ -181,7 +181,7 @@ def project_settings():
             reset_menu()
 
     options = [
-        'Project description',
+        # 'Project description',
         'Upload data',
         'Data Modelling',
         'Config',
@@ -194,11 +194,13 @@ def project_settings():
 
     if selected_option == 'Upload data':
         file_upload_and_save()
+        get_data_model()
         st.stop()
 
-    if selected_option == 'Append data (optional)':
-        append_data_to_exisiting_file()
-        st.stop()
+    # TODO: Confirm that we don't need this anymore
+    # if selected_option == 'Append data (optional)':
+    #     append_data_to_exisiting_file()
+    #     st.stop()
 
     if selected_option == 'Project description':
         set_project_description()
