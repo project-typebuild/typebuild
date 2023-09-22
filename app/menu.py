@@ -32,12 +32,10 @@ def get_menu_data():
     
 
     # Get just the directory names, ignore the files
-    try:
-        project_names = [i for i in os.listdir(user_folder) if os.path.isdir(os.path.join(user_folder, i))]
-    except FileNotFoundError as e:
-        # Create the folder
-        os.makedirs(user_folder)
-        project_names = []
+    project_names = [i for i in os.listdir(user_folder) if os.path.isdir(os.path.join(user_folder, i))]
+
+
+
 
     # Ignore pycache
     project_names = [i for i in project_names if not 'pycache' in i]
