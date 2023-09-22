@@ -54,7 +54,7 @@ def technical_requirements_chat(widget_label):
     if chat_key not in st.session_state:
         st.session_state[chat_key] = []
 
-    with st.status("Ready to chat", expanded=True) as st.session_state.chat_status:
+    with st.status("Click Here to view chat", expanded=True) as st.session_state.chat_status:
         # Create the chat
         chat_container = st.container()
         # We should only have this if the function_call_type is 'manual'

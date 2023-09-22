@@ -21,6 +21,8 @@ import sqlite3
 from streamlit_extras.stateful_button import button
 import json
 import toml 
+import pandas_profiling
+from streamlit_pandas_profiling import st_profile_report
 home_dir = os.path.expanduser("~")
 
 def get_project_database():
@@ -331,8 +333,8 @@ def create_new_project():
     home_dir = os.path.expanduser("~")
 
     # Create the path to the .typebuild directory
-    user_folder = os.path.join(home_dir, ".typebuild")
-
+    user_folder = os.path.join(home_dir, ".typebuild",'users', st.session_state.token)    
+    
     # Check if the directory exists
     if not os.path.exists(user_folder):
         # Create the directory if it doesn't exist
@@ -448,6 +450,8 @@ def upload_data_file(uploaded_file, file_extension):
         df = pd.read_parquet(uploaded_file)
     elif file_extension == 'tsv':
         df = pd.read_csv(uploaded_file, sep='\t')
+    elif file_extension in ['.xlsx']:
+        df = pd.read_excel(uploaded_file)
     
     # Clean column names.  Strip, lower case, replace spaces with underscores
     df.columns = [i.strip().lower().replace(' ', '_') for i in df.columns]
@@ -463,16 +467,6 @@ def upload_data_file(uploaded_file, file_extension):
         column_info['column_info'] = ''
         all_col_infos.append(column_info)
 
-    # Create a form for editing the data types
-    with st.form('edit_data_types'):
-        for col_info in all_col_infos:
-            col_name = col_info['column_name']
-            col_type = col_info['column_type']
-            new_col_type = st.selectbox(f'Select data type for column "{col_name}"', options=['int64', 'float64', 'object', 'datetime64[ns]'], index=['int64', 'float64', 'object', 'datetime64[ns]'].index(col_type), key=col_name)
-            if new_col_type != col_type:
-                col_info['column_type'] = new_col_type
-        submit_button = st.form_submit_button(label='Update data types')
-
     # Update the data types of the dataframe
     for col_info in all_col_infos:
         col_name = col_info['column_name']
@@ -484,13 +478,18 @@ def upload_data_file(uploaded_file, file_extension):
     
     st.dataframe(df)
 
+    button_placeholder = st.empty()
+    # Pandas profiler report
+    pr = df.profile_report()
+    st_profile_report(pr)
+
     # Get the name of the uploaded file
     file_name = uploaded_file.name
     # Remove the file extension
     file_name = file_name.replace(f'.{file_extension}', '')
     
     # Create a button to save the file as a parquet file with the same name
-    if st.button('Save as Parquet'):
+    if button_placeholder.button('Save as Parquet'):
         # Save the file to the data folder
         file_path = st.session_state.project_folder + '/data/' + file_name + '.parquet'
         # Create folder if it does not exist
@@ -540,7 +539,7 @@ def file_upload_and_save():
     """
     data_folder = st.session_state.project_folder + '/data'
     # Define the allowed file types
-    allowed_data_file_types = ['csv', 'parquet', 'tsv', 'sqlite', 'db', 'sqlite3']
+    allowed_data_file_types = ['csv', 'parquet', 'xlsx' , 'tsv', 'sqlite', 'db', 'sqlite3']
     allowed_document_file_types = ['pdf', 'txt']
     # Ask the user to upload a file
     uploaded_files = st.file_uploader(
