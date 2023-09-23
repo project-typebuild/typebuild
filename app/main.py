@@ -1,4 +1,3 @@
-from blueprint_code import select_view
 import simple_auth
 import streamlit as st
 # Make it full width
@@ -7,15 +6,16 @@ token = simple_auth.simple_auth()
 st.session_state.token = token
 
 import session_state_management
-from helpers import set_function_calling_availability
+from helpers import starter_code
 
-set_function_calling_availability()
+starter_code()
 session_state_management.main()
 
 from project_management import get_project_file_folder, get_project_df, manage_project
 from function_management import create_run_menu, run_code_in_view_file
 from function_calling_spec_maker import main as fcsm
 from requirements_with_chat import technical_requirements_chat
+from blueprint_code import select_view
 
 from plugins.create_content_with_llms import analyze_with_llm
 

@@ -84,7 +84,7 @@ def extract_python_code(text):
 def get_approved_libraries():
     return "import streamlit as st\nimport pandas as pd\nimport numpy as np\nimport matplotlib.pyplot as plt\nimport seaborn as sns\nfrom glob import glob\nimport datetime"
 
-
+#--------------CODE TO RUN AT THE START OF THE APP----------------
 def set_function_calling_availability(toggle=False):
     """
     This sets the function calling availability to the session state.
@@ -94,9 +94,15 @@ def set_function_calling_availability(toggle=False):
     - toggle: bool, whether to toggle the function calling availability.
     """
     # st.sidebar.warning(st.secrets.function_call_type)
+    
+
+    
     # Look at the secrets if function_call is not in session state
+    
     if 'function_call' not in st.session_state:
-        if 'function_call_type' not in st.secrets:
+        if not os.path.exists('.streamlit/secrets.toml'):
+            st.session_state.function_call = False
+        elif 'function_call_type' not in st.secrets:
             st.session_state.function_call = False
         elif st.secrets.function_call_type == 'auto':
             st.session_state.function_call = True
@@ -108,3 +114,26 @@ def set_function_calling_availability(toggle=False):
         st.session_state.function_call = not st.session_state.function_call
 
     return None
+
+def create_secrets_file():
+    """
+    If the secrets file does not exist, create it.
+    """
+    # Create directory if it doesn't exist
+    if not os.path.exists('.streamlit'):
+        os.makedirs('.streamlit')
+    if not os.path.exists('.streamlit/secrets.toml'):
+        
+        with open('.streamlit/secrets.toml', 'w') as f:
+            f.write('')
+    return None
+
+def starter_code():
+    """
+    Functions that need to be run at hte top of the app.
+    """
+    create_secrets_file()
+    set_function_calling_availability()
+
+    return None
+    

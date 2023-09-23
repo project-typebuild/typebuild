@@ -29,8 +29,6 @@ sys.path.append('plugins')
 # Import the plugins
 from data_widgets import display_editable_data
 
-import openai
-openai.api_key = st.secrets.openai.key 
 
 # Create a menu to run the app
 # create_run_menu()
