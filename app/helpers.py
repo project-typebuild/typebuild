@@ -128,10 +128,20 @@ def create_secrets_file():
             f.write('')
     return None
 
+def get_llm_key_or_function():
+    """
+    For this system to work, we need LLM keys or functions.
+    """
+    # Check if openai key is in secrets
+    if 'openai' not in st.secrets:
+        st.warning("Please add your OpenAI key to secrets.toml")
+        st.stop()
+
 def starter_code():
     """
     Functions that need to be run at hte top of the app.
     """
+    
     create_secrets_file()
     set_function_calling_availability()
 
