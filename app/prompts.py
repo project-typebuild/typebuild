@@ -379,7 +379,7 @@ def get_code_instructions():
     Write concise code based on the instructions above.  Document it with detailed docstrings, and comments.
     """
     # If the function calling type is auto, ask code to be saved to file.
-    if st.session_state.function_call_type == 'auto':
+    if st.session_state.function_call:
         system_instruction_to_code += """Strictly do not show the code to the user as they may have no programming background.  Save the code to file by calling the function save_code_to_file.  The system knows the file name."""
 
     return system_instruction_to_code

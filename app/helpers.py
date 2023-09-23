@@ -83,3 +83,28 @@ def extract_python_code(text):
 
 def get_approved_libraries():
     return "import streamlit as st\nimport pandas as pd\nimport numpy as np\nimport matplotlib.pyplot as plt\nimport seaborn as sns\nfrom glob import glob\nimport datetime"
+
+
+def set_function_calling_availability(toggle=False):
+    """
+    This sets the function calling availability to the session state.
+    If function_call is not in session state, it looks at secrets.
+
+    Args:
+    - toggle: bool, whether to toggle the function calling availability.
+    """
+    # st.sidebar.warning(st.secrets.function_call_type)
+    # Look at the secrets if function_call is not in session state
+    if 'function_call' not in st.session_state:
+        if 'function_call_type' not in st.secrets:
+            st.session_state.function_call = False
+        elif st.secrets.function_call_type == 'auto':
+            st.session_state.function_call = True
+        else:
+            st.session_state.function_call = False
+
+    # Toggle the function calling availability
+    if toggle:
+        st.session_state.function_call = not st.session_state.function_call
+
+    return None

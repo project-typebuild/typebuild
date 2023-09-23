@@ -7,10 +7,9 @@ token = simple_auth.simple_auth()
 st.session_state.token = token
 
 import session_state_management
-if 'function_call_type' not in st.secrets:
-     st.session_state.function_call_type = 'manual'
+from helpers import set_function_calling_availability
 
-st.session_state.function_call_type = 'auto'
+set_function_calling_availability()
 session_state_management.main()
 
 from project_management import get_project_file_folder, get_project_df, manage_project
@@ -35,10 +34,15 @@ if st.session_state.new_menu == 'toggle_developer_options':
     st.session_state.show_developer_options = not st.session_state.show_developer_options
     reset_menu()
 
+# If new menu is toggle_function_calling_mode, toggle the function calling mode
+if st.session_state.new_menu == 'toggle_function_calling_mode':
+    st.session_state.function_call = not st.session_state.function_call
+    reset_menu()
+
 # If developer options are enabled, show the developer options
 if st.session_state.show_developer_options:
     # Display function call type
-    st.sidebar.info(f"Function call type: {st.session_state.function_call_type}")
+    st.sidebar.info(f"Function call is allowed: {st.session_state.function_call}")
     st.session_state.show_developer_options = True
 
 if st.session_state.show_developer_options:

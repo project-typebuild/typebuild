@@ -110,20 +110,19 @@ def gpt_function_calling(messages, model='gpt-4-0613', max_tokens=3000, temperat
     
     if content:
         st.session_state.last_response = response.choices[0].message
-    # Get the function_call_type from session state
-    if 'function_call_type' in st.session_state:
-        function_call_type = st.session_state.function_call_type
+    # Get the function_call from session state
+    if 'function_call' in st.session_state:
+        function_call = st.session_state.function_call
     else:
-        function_call_type = 'auto'
+        function_call = True
 
-    if function_call_type == 'auto':
+    if function_call:
         func_call = msg.get('function_call', None)
         if func_call:
             # Save to session state
-            st.session_state.function_call = func_call
             st.session_state.last_function_call = func_call
 
-    if function_call_type == 'manual':
+    if not function_call:
         if '```' in str(content):
             current_stage = st.session_state.current_stage
             if current_stage == 'code':
@@ -134,7 +133,6 @@ def gpt_function_calling(messages, model='gpt-4-0613', max_tokens=3000, temperat
                 extracted_requirements = parse_modified_user_requirements_from_response(content)
                 my_func = 'save_requirements_to_file'
                 func_call = {'name': my_func, 'arguments': {'content':extracted_requirements}}
-            st.session_state.function_call = func_call
             st.session_state.last_function_call = func_call
     return content
 

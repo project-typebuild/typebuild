@@ -147,13 +147,17 @@ def select_view():
     file_path = os.path.join(dir, selected_file)
     st.session_state.file_path = file_path
     st.session_state.selected_view = selected_file
+    if st.checkbox("View sample data"):
+        show_sample_data()
     #--------GET A VIEW NAME FOR NEW VIEWS--------
     if selected_file == 'Create new view':
-        if st.checkbox("View sample data"):
-            show_sample_data()
-        new_view_name = st.text_input('Enter the name of the new view', key='new_view_name')
+        new_view_name = st.text_input(
+            'Enter the name of the new view', 
+            key='new_view_name',
+            help="Give the chart, table or any analysis you are doing with data a name."
+            )
         if not new_view_name:
-            st.error('Enter a name for the new view')
+            st.error('Enter a name for the new view.  You can use this to find your report later in the dropdown on your left.')
             st.stop()
         selected_file = new_view_name.lower().replace(' ', '_')
         st.session_state.selected_view = selected_file

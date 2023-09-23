@@ -183,7 +183,6 @@ def project_settings():
     options = [
         # 'Project description',
         'Upload data',
-        'Data Modelling',
         'Config',
         'Upload Custom LLM'
     ]
@@ -452,9 +451,11 @@ def upload_data_file(uploaded_file, file_extension):
         df = pd.read_parquet(uploaded_file)
     elif file_extension == 'tsv':
         df = pd.read_csv(uploaded_file, sep='\t')
-    elif file_extension in ['.xlsx']:
+    elif file_extension in ['xlsx']:
         df = pd.read_excel(uploaded_file)
-    
+    else:
+        st.error(f'File type {file_extension} not supported')
+        st.stop()    
     # Clean column names.  Strip, lower case, replace spaces with underscores
     df.columns = [i.strip().lower().replace(' ', '_') for i in df.columns]
     
@@ -499,18 +500,19 @@ def upload_data_file(uploaded_file, file_extension):
     
     st.dataframe(df)
 
-    button_placeholder = st.empty()
-    # Pandas profiler report
-    pr = df.profile_report()
-    st_profile_report(pr)
+    if st.checkbox("Explore the data before saving"):
+        # Pandas profiler report
+        pr = df.profile_report()
+        st_profile_report(pr)
 
     # Get the name of the uploaded file
     file_name = uploaded_file.name
     # Remove the file extension
     file_name = file_name.replace(f'.{file_extension}', '')
-    
+    st.info("Once you save the data, we will explore a few lines of data to a language model to understand the data.  This will help us later to generate code for the data.")
     # Create a button to save the file as a parquet file with the same name
-    if button_placeholder.button('Save as Parquet'):
+    if st.button('Save Data'):
+        
         # Save the file to the data folder
         file_path = st.session_state.project_folder + '/data/' + file_name + '.parquet'
         # Create folder if it does not exist
@@ -792,9 +794,9 @@ def config_project():
     else:
         st.session_state.config = {}
     # If the config exists in the session state, use the default values
-    st.info('These are the choices you made when you created the project, you can change them if you want')
+    st.info('If you have a custom model, skip the API key and go to the next step')
     
-    api_key = st.text_input('Enter the API key', value=st.secrets.get('api_key', st.session_state.config.get('api_key', '')))
+    api_key = st.text_input('OpenAI API key', value=st.secrets.get('api_key', st.session_state.config.get('api_key', '')))
     function_call_availabilty = st.checkbox(
         "(Expert setting) I have access to function calling", 
         value=st.session_state.config.get('function_call_availabilty', True),

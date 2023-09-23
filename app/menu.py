@@ -35,8 +35,6 @@ def get_menu_data():
     project_names = [i for i in os.listdir(user_folder) if os.path.isdir(os.path.join(user_folder, i))]
 
 
-
-
     # Ignore pycache
     project_names = [i for i in project_names if not 'pycache' in i]
     # Project names does not start in '.'
@@ -61,7 +59,20 @@ def get_menu_data():
     # Logout
     logout = {'id':'logout', 'icon': "🚪", 'label':"Logout"}
     # Toggle developer options
-    developer_options = {'id':'toggle_developer_options','icon': "🛠️", 'label':"Developer", "ttp": "Toggle developer options"}
+    developer_options = {
+        'id':'doptions',
+        'icon': "🛠️", 
+        'label':"Developer", 
+        "ttp": "Toggle developer options",
+        "submenu": [
+            # Toggle the developer options
+            {"label": "Toggle developer options", "id": "toggle_developer_options"},
+            # Toggle function calling mode
+            {"label": "Toggle function calling mode", "id": "toggle_function_calling_mode"},
+            # Close menu
+            close_menu
+            ]
+        }
 
     # Project settings
     project_settings = {

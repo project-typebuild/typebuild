@@ -27,7 +27,8 @@ def technical_requirements_chat(widget_label):
     """
     st.subheader("Create, update or understand")
     st.info("Use the chat below to create, update or understand the technical requirements and the code of this view.")
-    # Get view file
+
+    # Get requirements text
     txt_file_path = st.session_state.file_path + '.txt'
     # If the file exists, read it
     if os.path.exists(txt_file_path):
@@ -54,19 +55,24 @@ def technical_requirements_chat(widget_label):
     if chat_key not in st.session_state:
         st.session_state[chat_key] = []
 
-    with st.status("Click Here to view chat", expanded=True) as st.session_state.chat_status:
+    with st.status("Expand to view chat", expanded=True) as st.session_state.chat_status:
         # Create the chat
         chat_container = st.container()
-        # We should only have this if the function_call_type is 'manual'
-        if st.session_state.function_call_type == 'manual':
-            current_stage = st.sidebar.radio("Current stage", ['requirements', 'code'],key='current_stage') 
+        # We should only have this if the function_call is 'manual'
+        if not st.session_state.function_call:
+            st.sidebar.radio(
+                "Update code or requirements?", 
+                ['requirements', 'code'], 
+                key='current_stage'
+                ) 
         # If there is an error in rendering code,
         # fix it.  No need to wait for user prompt.
         if 'error' in st.session_state:
-            st.session_state.chat_status.info("I ran into an error.  Fixing it...")
-            fix_error_in_code()
-            del st.session_state['error']
-            st.session_state.chat_status.update("Fixed the error.  Let's review the code", expanded=False)
+            if st.button("Fix the error"):
+                st.session_state.chat_status.info("I ran into an error.  Fixing it...")
+                fix_error_in_code()
+                del st.session_state['error']
+                st.session_state.chat_status.update("Fixed the error.  Let's review the code", expanded=False)
             
     
     prompt = st.chat_input("Type here for help", key=f'chat_input_{widget_label}')
@@ -82,7 +88,7 @@ def technical_requirements_chat(widget_label):
         get_llm_response(chat_key)
     
     call_status = None
-    if 'function_call' in st.session_state:
+    if 'last_function_call' in st.session_state:
         # If there is a function call, run it
         call_status = make_function_call(chat_key)
     
@@ -134,8 +140,7 @@ def display_messages(chat_key):
         if msg['role'] in ['user', 'assistant']:
             the_content = msg['content']
             with st.chat_message(msg['role']):
-                if the_content:
-                    st.markdown(the_content)
+                st.markdown(the_content)
 
     
 def make_function_call(chat_key):
@@ -143,7 +148,7 @@ def make_function_call(chat_key):
     If the llm response includes a 
     function call, do that.
     """
-    func_info = st.session_state.function_call
+    func_info = st.session_state.last_function_call
     # If func_info is a string, convert it to a dict
     if isinstance(func_info, str):
         func_info = json.loads(func_info)
@@ -162,7 +167,7 @@ def make_function_call(chat_key):
     with st.spinner(f'Running {func_name}...'):
         func_res = globals()[func_name](**arguments)
         # Remove the function call from the session state
-        del st.session_state['function_call']
+        del st.session_state['last_function_call']
         if func_res:
             # Add the response to the chat
             st.session_state[chat_key].append(
@@ -220,14 +225,15 @@ def save_code_to_file(code_str: str):
     st.session_state[st.session_state.chat_key].append(
         {'role': 'assistant', 'content': f"Saved code to {file_path}.  It is ready to use now."}
         )
-    st.success("I updated the code, rerunning the app...")
+    st.toast("I updated the code.")
+    st.toast("Chat window will close in 2 seconds.")
     time.sleep(2)
     # Delete the function call from the session state
-    del st.session_state['function_call']
+    del st.session_state['last_function_call']
     # Delete the error from the session state
     if 'error' in st.session_state:
         del st.session_state['error']
-    st.session_state.chat_status.update(label="Updated the code.  Rerunning the app...", expanded=False)
+    st.session_state.chat_status.update(label="Expand to view chat", expanded=False)
     st.experimental_rerun()
     # Note the message will not be returned since we are rerunning the app here.
     return "The code has been saved to the file.  It is ready to use now.  Ask the user to test the app and ask for modifications, if any is required."
@@ -262,9 +268,9 @@ def fix_error_in_code():
         response = gpt_function_calling(messages, functions=funcs_available())
 
     # If there is a function call, run it first
-    if 'function_call' in st.session_state:
+    if 'last_function_call' in st.session_state:
         call_status = make_function_call(st.session_state.chat_key)
-        del st.session_state['function_call']
+        del st.session_state['last_function_call']
         del st.session_state['error']
         st.toast("Fixed the error.  Rerunning the app...")
         time.sleep(1)

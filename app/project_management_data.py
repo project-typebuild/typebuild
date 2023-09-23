@@ -217,7 +217,6 @@ def get_data_model():
     # If the data model file exists, read it
     if os.path.exists(data_model_file):
         data_model_df = pd.read_parquet(data_model_file)
-        st.table(data_model_df)
         st.session_state.column_info = data_model_df.to_markdown(index=False)
         generate_col_info = False
         processed_files = data_model_df.file_name.unique().tolist()
@@ -235,16 +234,18 @@ def get_data_model():
         st.sidebar.warning("There are files to process")
         st.sidebar.write(files_to_process)
 
-    if st.button(
-        "🚨 Re-generate column info automatically 🚨",
-        help="The LLM will recreate column definitions.  Use this only if the table needs major changes.",
-        ):
-
-        generate_col_info = True
-        generate_for_new_files_only = False
+    if data_files:
+        if st.checkbox(
+            "🚨 Re-generate column info automatically 🚨",
+            help="The LLM will recreate column definitions.  Use this only if the table needs major changes.",
+            ):
+                st.warning("Use this only if the table needs major changes")
+                if st.button("Confirm regeneration"):
+                    generate_col_info = True
+                    generate_for_new_files_only = False
 
     if 'column_info' not in st.session_state or generate_col_info:
-        with st.spinner("Generating column info..."):
+        with st.spinner("Studying the data to understand it..."):
             get_column_info(data_model=data_model_df, new_files_only=generate_for_new_files_only)
 
     return None
@@ -254,23 +255,22 @@ def update_colum_types_for_table(data_model, data_model_file):
     Looks at the data model and converts
     the selected files
     """
+    st.subheader("Does this look right?")
+    info = """Take a look at the column_info and see if it looks right.  Getting it right will help us a lot when we work with the data."""
+    st.info(info)
     # Get the list of files
     files = data_model.file_name.unique().tolist()
     # Get the list of files that have been selected
+
     selected_files = st.multiselect(
-        "Select the files to update", 
+        "Filter files", 
         files,
-        help="Select the files to update the column types or description."
+        help="You can filter the file(s) you wish to examine now."
         )
-    info = """The table below contains the column names, column type and descriptions.  
-    Getting them right will help the language model work with the content.  Please review it
-    carefully and change them if necessary. """
+
     if not selected_files:
-        info += "You can select a specific file to see the definitions for that file, if you would prefer that."
-        st.info(info)
         display_editable_data(data_model, data_model_file)
     else:
-        st.info(info)
         display_editable_data(data_model[data_model.file_name.isin(selected_files)], data_model_file)
         if st.button("Update the column types"):
             for file in selected_files:
