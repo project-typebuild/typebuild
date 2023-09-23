@@ -60,7 +60,6 @@ multimethod==1.10
 mypy-extensions==1.0.0
 nest-asyncio==1.5.7
 networkx==3.1
-nocode-execution-genstudiopy-genstudiopy==0.10.2
 numexpr==2.8.5
 numpy==1.25.2
 nx-altair==0.1.6
