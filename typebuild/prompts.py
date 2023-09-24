@@ -29,19 +29,19 @@ def get_prompt_to_code(user_requirements, data_description=None, mod_requirement
         
         YOU CREATED CODE BASED ON REQUIREMENTS GIVEN BELOW.  
         NOW THE USER WANTS TO MAKE THIS CHANGE:
-        ```{mod_requirements}```
+        |||{mod_requirements}|||
         
         """
         current_code_string = f"""CURRENT CODE:
         MAKE THE REQUIRED CHANGES TO THE CODE BELOW, LEAVING OTHER PARTS OF THE CODE UNCHANGED:
-        ```{current_code}```"""
+        |||{current_code}|||"""
 
 
     if data_description is not None:
         df_string = f"""DATA DESCRIPTION:
         The following dictionary has the file names as keys and description of the data in each file as values:
         Use the column names and data types when you are writing the functions
-        ```{data_description}```"""
+        |||{data_description}|||"""
     else:    
         df_string = "NOTE: No data description is provided"
 
@@ -59,9 +59,9 @@ AVAILABLE FUNCTIONS:
 {df_string}
 {mod_requirements_string}
 The Requirements are:
-```
+|||
 {user_requirements}
-```
+|||
 {current_code_string}
 
 THINGS TO REMEMBER:
@@ -73,7 +73,7 @@ THINGS TO REMEMBER:
 - Identify the file name and write a function to read the data from the particular parquet.
 - Once you have the dataframe, you can use it to write the functions that the user is asking for. 
 - If the user asks for a table, you should always use the function 'display_editable_data' to display the table. This function will take care of displaying the table and also editing the table.
-- You can import the function 'display_editable_data' using the following import statement: ```from data_widgets import display_editable_data```
+- You can import the function 'display_editable_data' using the following import statement: |||from data_widgets import display_editable_data|||
 - You need to return the full code of the functions you are generating.
 - Do not write unnecessary print, st.write and success, info and warning messages in the functions.
 - Do not return the available functions in the response. Your response should include only the newly generated functions
@@ -138,7 +138,7 @@ def blueprint_technical_requirements(prompt, current_text, chat_key, func_str=No
         current_text_string = f"""
         THIS IS WHAT I HAVE SO FAR IN MY REQUIREMENTS FILE:
         file_name: {st.session_state.file_path}.txt
-        ```{current_text}```
+        |||{current_text}|||
         """
 
     if func_str:
@@ -150,7 +150,7 @@ def blueprint_technical_requirements(prompt, current_text, chat_key, func_str=No
     code_info = "If you need to access the current code base, you can call the function send_code_to_llm"
     if 'code_str' in st.session_state:
         code_info = f"""This is the current code:
-        ```{st.session_state.code_str}```"""
+        |||{st.session_state.code_str}|||"""
     
 
     system_instruction = f"""You are helping me develop technical requirements for my project.
@@ -175,11 +175,11 @@ def blueprint_technical_requirements(prompt, current_text, chat_key, func_str=No
     6.  Format the final instructions in markdown and give it to me in triple back ticks. 
 
     The final instructions should be in the following format:
-    ```
+    |||
     FUNCTIONAL REQUIREMENT: <functional requirement>
     TECHNICAL REQUIREMENTS:
     <step by step instructions>
-    ```
+    |||
 
     When the I am happy with the requirements, offer to save the requirements to a file.
 
@@ -218,7 +218,7 @@ def get_parameter_info(func_str):
 - required (True/False)
 
 If there are no parameters, return an empty list.
-Return this as a well formatted python list of dicts within ```triple back ticks```"""
+Return this as a well formatted python list of dicts within |||triple back ticks|||"""
 
     prompt = f"""EXTRACT INFORMATION ABOUT THE ARGS AND KWARGS FOR THIS FUNCTION:
     {func_str}"""
@@ -246,7 +246,7 @@ def from_requirements_to_code(chat_key, current_text="", prompt="", func_str=Non
         current_text_string = f"""
         THIS IS WHAT I HAVE SO FAR IN MY REQUIREMENTS FILE:
         file_name: {st.session_state.file_path}.txt
-        ```{current_text}```
+        |||{current_text}|||
         """
 
     if func_str:
@@ -333,17 +333,24 @@ def get_technical_requirements_instructions():
     6.  Format the final instructions in markdown and give it to me in triple back ticks. 
 
     The final instructions should be in the following format:
-    ```
+    |||
     FUNCTIONAL REQUIREMENT: <functional requirement>
     TECHNICAL REQUIREMENTS:
     <step by step instructions>
-    ```
+    |||
 
     When the I am happy with the requirements, offer to save the requirements to a file.
     """
 
 def get_code_instructions():
 
+    # If there is an error, get error message
+    error_msg = ""
+    if 'error' in st.session_state:
+        error_msg = f"""GOT THIS ERROR MESSAGE IN THE CURRENT CODE.  PLEASE FIX IT:
+        |||{st.session_state.error}|||
+        
+        """
 
     system_instruction_to_code = f"""
     You are the python developer with an expertise in packages like streamlit, pandas, altair. 
@@ -370,12 +377,13 @@ def get_code_instructions():
     - You have been given one or more data files.  Load the files needed for this requirement and create a dataframe.
     - Use the loaded the dataframe to fulfill the requirements. 
     - Use st.dataframe to display tablular data.  This is not editable.
-    - If the user has to edit the data, you can use the function display_editable_data(df, file_name) to display and edit the data.  You can import the function 'display_editable_data' using the following import statement: ```from data_widgets import display_editable_data```
+    - If the user has to edit the data, you can use the function display_editable_data(df, file_name) to display and edit the data.  You can import the function 'display_editable_data' using the following import statement: |||from data_widgets import display_editable_data|||
     - Use st.info, st.warning, st.success for clarity, if needed.  You can also use emojis to draw attention.
     - Create one function per feature, passing necessary data so that data is not loaded again and again.
     - Create a function called "main" that calls all the other functions in the order they are needed.  I will only call main() to run this app.
     - Do not call the main function.  It will be called by the system.
-        
+
+    {error_msg}        
     Write concise code based on the instructions above.  Document it with detailed docstrings, and comments.
     """
     # If the function calling type is auto, ask code to be saved to file.
@@ -384,7 +392,7 @@ def get_code_instructions():
 
     return system_instruction_to_code
 
-def get_prompt_to_fix_error():
+def get_prompt_to_fix_error(chat_key):
     """
     Sends the code and the error message to the LLM to get it fixed
     """
@@ -398,19 +406,19 @@ def get_prompt_to_fix_error():
     ```{code}```
 
     THIS IS THE ERROR MESSAGE:
-    ```{st.session_state.error}```
+    |||{st.session_state.error}|||
 
     Please fix the error and save the code by calling the save_code_to_file function."""
 
-    if 'error_messages' not in st.session_state:
-        st.session_state.error_messages = []
-    prompt = "Please fix this error and save the new code to file. You don't have to show me the code."
+    prompt = """Please fix the error I am getting and give me the revised code.  
+    The message, current code, and other relevant information are in the instructions.
+    """
 
     # If the chat is empty, add the system message
     if len(st.session_state.error_messages) == 0:
         st.session_state.error_messages.append({'role': 'system', 'content': system_instruction})
 
     # Append the error
-    st.session_state.error_messages.append({'role': 'user', 'content': prompt})
+    st.session_state[chat_key].append({'role': 'user', 'content': prompt})
 
     return None

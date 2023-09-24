@@ -104,38 +104,42 @@ def gpt_function_calling(messages, model='gpt-4-0613', max_tokens=3000, temperat
                     n=1,
                 )
     msg = response.choices[0].message
+    st.write(msg)
     content = msg.get('content', None)
     
     if content:
         st.session_state.last_response = response.choices[0].message
-    # Get the function_call from session state
-    if 'function_call' in st.session_state:
-        function_call = st.session_state.function_call
-    else:
-        function_call = True
+    
+    # We can get back code or requirements in multiple forms
+    # Look for each form and extract the code or requirements
 
-    if function_call:
+    # Recent GPT models return function_call as a separate json object
+    # Look for that first.
+    if 'function_call' in msg:
         func_call = msg.get('function_call', None)
-        if func_call:
-            # Save to session state
-            st.session_state.last_function_call = func_call
-
-    if not function_call:
-        if '```' in str(content):
-            current_stage = st.session_state.current_stage
-            if current_stage == 'code':
-                extracted_code = parse_code_from_response(content)
+        st.session_state.last_function_call = func_call
+    else:
+        # If there are triple backticks, we expect code
+        if '```' in str(content) or '|||' in str(content):
+            # NOTE: THERE IS AN ASSUMPTION THAT WE CAN'T GET BOTH CODE AND REQUIREMENTS
+            extracted, code_or_requirement = parse_code_or_requirements_from_response(content)
+            
+            if code_or_requirement == 'code':
                 my_func = 'save_code_to_file'
-                func_call = {'name': my_func, 'arguments': {'code_str':extracted_code}}
-            elif current_stage == 'requirements':
-                extracted_requirements = parse_modified_user_requirements_from_response(content)
+                func_call = {'name': my_func, 'arguments': {'code_str':extracted}}
+                st.session_state.last_function_call = func_call
+            
+            if code_or_requirement == 'requirements':
                 my_func = 'save_requirements_to_file'
-                func_call = {'name': my_func, 'arguments': {'content':extracted_requirements}}
-            st.session_state.last_function_call = func_call
+                func_call = {'name': my_func, 'arguments': {'content':extracted}}
+                st.session_state.last_function_call = func_call
+
+
+    # Stop ask llm
+    st.session_state.ask_llm = False    
     return content
 
 #----------FUNCTIONS TO GENERATE PROMPTS----------------
-
 
 def col_names_and_types(df):
     """Given a df, it returns a string with the column names and types"""
@@ -200,30 +204,6 @@ def get_function_prompt(df, default=None):
 
     return prompt
 
-def create_new_function_with_llm(system_message, prompt):
-    """
-    This helps create a new function based on 
-    natural language description of what the function should do.
-
-    The function can be saved to views.py for later use.
-    """
-
-    info_state = st.empty()
-    if st.button("Go GPT!", key='main button'):
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        
-        info_state.info("Getting response from GPT")
-        response = get_gpt_output(system_message)
-        st.session_state.response = response
-        info_state.warning("Response received from GPT")    
-        func_found = parse_function_from_response()
-        if func_found:
-            info_state.success("Extracted function from response")
-            st.code(st.session_state.the_func, language='python')
-        else:
-            info_state.error("Could not extract function from response")
-            st.code(response, language='python')
-    return None
 
 def clean_function(the_func):
     """
@@ -250,28 +230,35 @@ def clean_function(the_func):
     st.session_state.the_func = revised_func
     return revised_func
 
-def parse_function_from_response():
-    
-    # If there are triple backticks, get the function
+def parse_code_or_requirements_from_response(response):
+    """
+    The LLM can return code or requirements in the content.  
+    Ideally, requirements come in triple pipe delimiters, 
+    but sometimes they come in triple backticks.
 
-    # the_func is the first thing between triple backticks, if any
-    # If the func is a list, take the first one
-    if "```" in st.session_state.response:
-        the_func = st.session_state.response.split('```')
-        func_found = True
-        the_func = the_func[1].strip()
-        the_func = clean_function(the_func)
-        
-    # If we get a response with backticks but has the function
-    elif 'my_func' in st.session_state.response:
-        func_found = True
-        the_func = st.session_state.response.strip()
-        the_func = clean_function(the_func)
+    Figure out which one it is and return the extracted code or requirements.
+    """
+    # If there are ```, it could be code or requirements
+    code_or_requirement = None
+    if '```' in response:
+        # If it's python code, it should have at least one function in it
+        if 'def ' in response:
+            extracted = parse_code_from_response(response)
+            code_or_requirement = 'code'
+        # If it's not python code, it's probably requirements
+        else:
+            extracted = parse_modified_user_requirements_from_response(response)
+            code_or_requirement = 'requirements'
+    # If there are |||, it's probably requirements
+    elif '|||' in response:
+        extracted = parse_modified_user_requirements_from_response(response)
+        code_or_requirement = 'requirements'
     else:
-        the_func = "None"
-        func_found = False
-    
-    return func_found
+        extracted = None
+    return extracted, code_or_requirement
+            
+
+
 
 def parse_code_from_response(response):
 
@@ -308,8 +295,8 @@ def parse_modified_user_requirements_from_response(response):
     - matches (list): A list of strings with the modified user requirements
 
     """
-
-    # pattern = r"\|\|\|([\s\S]*?)\|\|\|"
+    if '|||' in response:
+        pattern = r"\|\|\|([\s\S]*?)\|\|\|"
     # It shouldnt have ```python in it
     pattern = r"```([\s\S]*?)```"
     matches = re.findall(pattern, response)

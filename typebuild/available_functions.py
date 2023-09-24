@@ -16,7 +16,7 @@ def funcs_available():
         {
             "name": "save_requirements_to_file",
             "description": """Saves the user requirements to a file, given the content.  
-                System knows the file name.  This is the only way to save the requirements to file.""",
+                System knows the file name.  If I ask you to save the requirements, you can call this function.""",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -36,7 +36,7 @@ def funcs_available():
             "name": "save_code_to_file",
             "description": """
                 Call this function to save generated code to file. The system knows the file name.
-                This is the only way to save the code to file.  Do not send code on chat.
+                If I ask you to save the code to file, you can call this function.
                 """,
             "parameters": {
                 "type": "object",

@@ -8,6 +8,8 @@ def add_default_session_states():
         'menu_id': 0,
         'new_menu': 'Home',
         'show_developer_options': False,
+        'ask_llm': False,
+        'call_status': None,
         }
 
     for key in ss_vars:

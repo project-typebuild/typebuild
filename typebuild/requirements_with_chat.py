@@ -11,23 +11,11 @@ import prompts
 from helpers import text_areas
 from available_functions import funcs_available
 
-
-def technical_requirements_chat(widget_label):
+def get_text_and_code():
     """
-    A chat on the technical requirements.
-    That could be exported to the project description file.
-    Parameters:
-    -----------
-    widget_label: str
-        The label of the widget that triggered the chat.
-    
-    Returns:
-    --------
-    None
+    Returns the current requirement text and code
+    for the selected view.
     """
-    st.subheader("Create, update or understand")
-    st.info("Use the chat below to create, update or understand the technical requirements and the code of this view.")
-
     # Get requirements text
     txt_file_path = st.session_state.file_path + '.txt'
     # If the file exists, read it
@@ -45,8 +33,25 @@ def technical_requirements_chat(widget_label):
             current_code = f.read()
     else:
         current_code = ""
+    return current_code, current_text
 
+def technical_requirements_chat(widget_label):
+    """
+    A chat on the technical requirements.
+    That could be exported to the project description file.
+    Parameters:
+    -----------
+    widget_label: str
+        The label of the widget that triggered the chat.
+    
+    Returns:
+    --------
+    None
+    """
+    st.subheader("Create, update or understand")
+    st.info("Use the chat below to create, update or understand the technical requirements and the code of this view.")
 
+    current_code, current_text = get_text_and_code()
     # Generate key from file name, after removing directory and extension
     chat_key = "chat_" + st.session_state.file_path.split('/')[-1].split('.')[0]
     st.session_state.chat_key = chat_key
@@ -55,26 +60,26 @@ def technical_requirements_chat(widget_label):
     if chat_key not in st.session_state:
         st.session_state[chat_key] = []
 
-    with st.status("Expand to view chat", expanded=True) as st.session_state.chat_status:
-        # Create the chat
-        chat_container = st.container()
-        # We should only have this if the function_call is 'manual'
-        if not st.session_state.function_call:
-            st.sidebar.radio(
-                "Update code or requirements?", 
-                ['requirements', 'code'], 
-                key='current_stage'
-                ) 
-        # If there is an error in rendering code,
-        # fix it.  No need to wait for user prompt.
-        if 'error' in st.session_state:
-            if st.button("Fix the error"):
-                st.session_state.chat_status.info("I ran into an error.  Fixing it...")
-                fix_error_in_code()
-                del st.session_state['error']
-                st.session_state.chat_status.update("Fixed the error.  Let's review the code", expanded=False)
-            
-    
+    # If function calling is not available, the user
+    # should tell us if we are working on requirements or code
+    if not st.session_state.function_call:
+        st.sidebar.radio(
+            "Update code or requirements?", 
+            ['requirements', 'code'], 
+            key='current_stage'
+            ) 
+
+    if st.session_state.call_status:
+        # st.session_state.chat_status.write("Got some extra information.  Working on it...")
+        prompts.from_requirements_to_code(
+            prompt=st.session_state.call_status,
+            current_text=current_text,
+            chat_key=chat_key,
+            func_str=current_code,
+            )
+        del st.session_state['call_status']
+        st.session_state.ask_llm = True
+        
     prompt = st.chat_input("Type here for help", key=f'chat_input_{widget_label}')
     if prompt:
         # Create the messages from the prompts file
@@ -84,34 +89,44 @@ def technical_requirements_chat(widget_label):
             chat_key=chat_key,
             func_str=current_code,
             )
+        st.session_state.ask_llm = True
+
+        
+    # If there is an error in rendering code,
+    # fix it.  No need to wait for user prompt.
+    if 'error' in st.session_state:
+        st.error(f"I got this error: {st.session_state.error}")
+        if st.button("Fix the error"):
+            st.session_state.chat_status.info("I ran into an error.  Fixing it...")
+            st.sidebar.warning(chat_key)
+            prompts.from_requirements_to_code(
+                prompt=prompt,
+                current_text=current_text,
+                chat_key=chat_key,
+                func_str=current_code,
+            )
+            # fix_error_in_code()
+            del st.session_state['error']
+            st.session_state.ask_llm = True
+
+
+    if st.session_state.ask_llm:
         # Get the response
         get_llm_response(chat_key)
-    
-    call_status = None
+        st.session_state.ask_llm = False
+        if 'error' in st.session_state:
+            del st.session_state['error']    
+
+    with st.status("Expand to view chat", expanded=True) as st.session_state.chat_status:
+        # Create the chat
+        chat_container = st.container()
+
+    # TODO: MAKE FUNCTION CALL GENERATE A PROMPT FOR NEXT ROUND.
     if 'last_function_call' in st.session_state:
         # If there is a function call, run it
-        call_status = make_function_call(chat_key)
+        st.session_state.call_status = make_function_call(chat_key)
     
-    # If the call_status is done, we would have added
-    # the function response to the chat.  Send the message
-    # to the llm to get the next response
-    if call_status == "Done":
-        # st.session_state.chat_status.write("Got some extra information.  Working on it...")
-        prompts.from_requirements_to_code(
-            prompt=None,
-            current_text=current_text,
-            chat_key=chat_key,
-            func_str=current_code,
-            )
-        messages = st.session_state[chat_key]
-        # Get the response
-        res = get_gpt_output(messages)
-        # Add the response to the chat
-        if res:
-            st.session_state[chat_key].append(
-                {'role': 'assistant', 'content': res}
-                )
-            
+
     # Display the messages
     with chat_container:
         display_messages(chat_key)
@@ -122,11 +137,17 @@ def technical_requirements_chat(widget_label):
 
 def get_llm_response(chat_key):
     with st.spinner('Generating response...'):
-        content = gpt_function_calling(
-            st.session_state[chat_key], 
-            functions=funcs_available(),
-            )
-        
+        # If we are using function calling, send functions
+        # else, dont send functions
+        if st.session_state.function_call:    
+            content = gpt_function_calling(
+                st.session_state[chat_key], 
+                functions=funcs_available(),
+                )
+        else:
+            content = gpt_function_calling(st.session_state[chat_key])
+
+
         # Add the response to the chat
         if content:
             st.session_state[chat_key].append(
@@ -163,20 +184,23 @@ def make_function_call(chat_key):
     else:
         arguments = func_info['arguments']
 
-    # Run the function
-    with st.spinner(f'Running {func_name}...'):
-        func_res = globals()[func_name](**arguments)
-        # Remove the function call from the session state
-        del st.session_state['last_function_call']
-        if func_res:
-            # Add the response to the chat
-            st.session_state[chat_key].append(
-                {'role': 'system', 'content': func_res}
-                )
-
-            return "Done"
-        else:
-            return None
+    res = None
+    # Ask the user if they want to run the function
+    button_label = func_name.replace('_', ' ').upper()
+    if st.button(f":fire: {button_label} :fire:"):
+        # Run the function
+        with st.spinner(f'Running {func_name}...'):
+            func_res = globals()[func_name](**arguments)
+            # Remove the function call from the session state
+            del st.session_state['last_function_call']
+            if func_res:
+                # Add the response to the chat
+                st.session_state[chat_key].append(
+                    {'role': 'system', 'content': func_res}
+                    )
+                res = func_res
+        
+    return res
 
 def save_requirements_to_file(content: str):
     """
@@ -199,8 +223,8 @@ def save_requirements_to_file(content: str):
         
     with open(file_name, 'w') as f:
         f.write(content)
-    st.sidebar.success(f"Saved requirements to {file_name}")
-    return f"The requirements have been saved to {file_name}.  Ask the user if they would like to update the code based on the updated requirements."
+    st.toast(f"Saved requirements")
+    return f"I saved the requirements.  Can you generate the code now based on the requirements?"
 
 def save_code_to_file(code_str: str):
     """
@@ -223,7 +247,7 @@ def save_code_to_file(code_str: str):
         f.write(code_str)
     # Add the message on saving to the chat and then rerun the app
     st.session_state[st.session_state.chat_key].append(
-        {'role': 'assistant', 'content': f"Saved code to {file_path}.  It is ready to use now."}
+        {'role': 'user', 'content': f"I saved code to.  Will test it now."}
         )
     st.toast("I updated the code.")
     st.toast("Chat window will close in 2 seconds.")
@@ -236,7 +260,7 @@ def save_code_to_file(code_str: str):
     st.session_state.chat_status.update(label="Expand to view chat", expanded=False)
     st.experimental_rerun()
     # Note the message will not be returned since we are rerunning the app here.
-    return "The code has been saved to the file.  It is ready to use now.  Ask the user to test the app and ask for modifications, if any is required."
+    return None
 
 def set_the_stage(stage_name):
     """
