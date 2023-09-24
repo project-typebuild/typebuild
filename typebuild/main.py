@@ -11,7 +11,10 @@ token = simple_auth.simple_auth()
 st.session_state.token = token
 
 import session_state_management
+
 from helpers import starter_code
+# Starter code has to run early.  Do not move.
+starter_code()
 
 session_state_management.main()
 
@@ -73,7 +76,6 @@ if st.session_state.show_developer_options:
 
 # Get the project file and data
 get_project_file_folder()
-starter_code()
 
 # Get selected project in title case
 selected_project = st.session_state.selected_project.replace('_', ' ').upper() + " PROJECT"

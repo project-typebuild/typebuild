@@ -191,8 +191,11 @@ def make_function_call(chat_key):
         # Run the function
         with st.spinner(f'Running {func_name}...'):
             func_res = globals()[func_name](**arguments)
+            
             # Remove the function call from the session state
-            del st.session_state['last_function_call']
+            # Note: This may have been deleted already
+            if 'last_function_call' in st.session_state:
+                del st.session_state['last_function_call']
             if func_res:
                 # Add the response to the chat
                 st.session_state[chat_key].append(
