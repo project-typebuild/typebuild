@@ -21,7 +21,6 @@ import sqlite3
 from streamlit_extras.stateful_button import button
 import json
 import toml 
-import pandas_profiling
 from streamlit_pandas_profiling import st_profile_report
 home_dir = os.path.expanduser("~")
 
