@@ -251,14 +251,14 @@ def save_code_to_file(code_str: str):
         )
     st.toast("I updated the code.")
     st.toast("Chat window will close in 2 seconds.")
-    time.sleep(2)
     # Delete the function call from the session state
     del st.session_state['last_function_call']
     # Delete the error from the session state
     if 'error' in st.session_state:
         del st.session_state['error']
     st.session_state.chat_status.update(label="Expand to view chat", expanded=False)
-    st.experimental_rerun()
+    time.sleep(2)
+    # st.experimental_rerun()
     # Note the message will not be returned since we are rerunning the app here.
     return None
 
@@ -281,40 +281,3 @@ def set_the_stage(stage_name):
         st.sidebar.warning(f"Current stage is {stage_name}")
     return f"We are now focussing on {stage_name} now."
 
-def fix_error_in_code():
-    """
-    Sends the error and the current code to the LLM to fix the error
-    """
-    prompts.get_prompt_to_fix_error()
-    messages = st.session_state.error_messages
-    with st.spinner('Fixing an error I ran into...'):
-        st.error(f"I got this error: {st.session_state.error}")
-        response = gpt_function_calling(messages, functions=funcs_available())
-
-    # If there is a function call, run it first
-    if 'last_function_call' in st.session_state:
-        call_status = make_function_call(st.session_state.chat_key)
-        del st.session_state['last_function_call']
-        del st.session_state['error']
-        st.toast("Fixed the error.  Rerunning the app...")
-        time.sleep(1)
-        st.session_state.chat_status.update("Fixed the error.  Rerunning the app...", expanded=False)
-        st.experimental_rerun()
-    
-    # If there is a response, add it to the chat
-    if response:
-        st.session_state[st.session_state.chat_key].append(
-            {'role': 'assistant', 'content': response}
-            )
-        # Also append it to error messages
-        st.session_state.error_messages.append(
-            {'role': 'assistant', 'content': response}
-            )
-        error_prompt = st.chat_input("Type your response to error resolution", key='error_prompt')
-        if error_prompt:
-            st.session_state[st.session_state.error_messages].append(
-                {'role': 'user', 'content': error_prompt}
-                )
-            # Restart the process that will invoke this function again
-            st.experimental_rerun()
-    return None

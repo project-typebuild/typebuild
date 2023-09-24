@@ -80,7 +80,6 @@ THINGS TO REMEMBER:
 - You need to create one function for each feature in the app
 - Do not use streamlit cache
 - You need to have a main function that calls all the other functions
-- Dont add the code 
     if __name__ == '__main__':
         main()
     
@@ -264,6 +263,11 @@ def from_requirements_to_code(chat_key, current_text="", prompt="", func_str=Non
         stage_info = "Note: Requirement and Code have not been generated yet.  Start by creating the functional requirement."
         current_stage = 'requirements'
 
+    str_about_stages = ""
+    if st.session_state.function_call:
+        str_about_stages = """
+        Work on one stage at a time.  When you move to a new stage call the set_the_stage function
+    to get specific instructions for that stage.  It will give you the instructions and required assets such as the current code."""
     
     system_instruction = f"""You are helping me in two stages of my software development process:
     1.  Gathering functional and technical requirements
@@ -275,10 +279,9 @@ def from_requirements_to_code(chat_key, current_text="", prompt="", func_str=Non
     You have to go through the stages in the order given above.  You cannot skip a stage.
     You can go back to a previous stage to make changes.
     If a change is made to one stage, we have to ensure that the changes are reflected in the other stages.
-    Anytime a change is made to requirements, confirm it with me and then write it to file.  Don't show the code to me, you can save it directly. 
+    Anytime a change is made to requirements, confirm it with me and then write it to file.
 
-    Work on one stage at a time.  When you move to a new stage call the set_the_stage function
-    to get specific instructions for that stage.  It will give you the instructions and required assets such as the current code.
+    {str_about_stages}
     {data_description}
     {current_text_string}"""
 
@@ -380,15 +383,12 @@ def get_code_instructions():
     - If the user has to edit the data, you can use the function display_editable_data(df, file_name) to display and edit the data.  You can import the function 'display_editable_data' using the following import statement: |||from data_widgets import display_editable_data|||
     - Use st.info, st.warning, st.success for clarity, if needed.  You can also use emojis to draw attention.
     - Create one function per feature, passing necessary data so that data is not loaded again and again.
-    - Create a function called "main" that calls all the other functions in the order they are needed.  I will only call main() to run this app.
-    - Do not call the main function.  It will be called by the system.
+    - Create a function called "main" that calls all the other functions in the order they are needed.
+    - IMPORTANT: Do not call the main function.  It will be called by the system.
 
     {error_msg}        
     Write concise code based on the instructions above.  Document it with detailed docstrings, and comments.
     """
-    # If the function calling type is auto, ask code to be saved to file.
-    if st.session_state.function_call:
-        system_instruction_to_code += """Strictly do not show the code to the user as they may have no programming background.  Save the code to file by calling the function save_code_to_file.  The system knows the file name."""
 
     return system_instruction_to_code
 

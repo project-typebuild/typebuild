@@ -104,7 +104,6 @@ def gpt_function_calling(messages, model='gpt-4-0613', max_tokens=3000, temperat
                     n=1,
                 )
     msg = response.choices[0].message
-    st.write(msg)
     content = msg.get('content', None)
     
     if content:
