@@ -108,7 +108,13 @@ def set_function_calling_availability(toggle=False):
         else:
             with open(secrets_file_path, 'r') as f:
                 config = toml.load(f)
-            st.session_state.function_call = config['function_call_availabilty']
+            if config != {}:
+                if 'function_call_availabilty' in config:
+                    st.session_state.function_call = config['function_call_availabilty']
+                else:
+                    st.session_state.function_call = False
+            else:
+                st.session_state.function_call = False
 
     # Toggle the function calling availability
     if toggle:

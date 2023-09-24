@@ -24,7 +24,8 @@ import session_state_management
 session_state_management.main()
 
 import sys
-sys.path.append('plugins')
+dir_path = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(dir_path + '/plugins')
 
 # Import the plugins
 from data_widgets import display_editable_data

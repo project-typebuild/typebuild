@@ -21,8 +21,13 @@ import sqlite3
 from streamlit_extras.stateful_button import button
 import json
 import toml 
+import sys
 home_dir = os.path.expanduser("~")
 
+# Append the dir_path to the sys path
+dir_path = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(dir_path)
+sys.path.append(dir_path + '/plugins')
 def get_project_database():
 
     """
