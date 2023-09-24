@@ -122,7 +122,10 @@ def get_column_info_for_df(df):
     ]
     res = get_llm_output(messages, model='gpt-3.5-turbo', max_tokens=2000, temperature=0)
     df_res = pd.DataFrame(eval(res))
-    
+    # if there are any missing values, fill them with object
+    df_res.column_type = df_res.column_type.fillna('object')
+    # There are some additional columns created by the LLM. we need the three columns we are interested in
+    df_res = df_res[['column_name', 'column_type', 'column_info']]    
     return df_res
 
 
@@ -247,7 +250,6 @@ def get_data_model():
     if 'column_info' not in st.session_state or generate_col_info:
         with st.spinner("Studying the data to understand it..."):
             get_column_info(data_model=data_model_df, new_files_only=generate_for_new_files_only)
-
     return None
 
 def update_colum_types_for_table(data_model, data_model_file):

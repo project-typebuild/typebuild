@@ -2,7 +2,7 @@
 Create projects, upload files, fetch file names in the project
 and other aspects of understanding and manageing assets in the project folder
 """
-
+import openai
 from glob import glob
 import os
 import time
@@ -21,7 +21,7 @@ import sqlite3
 from streamlit_extras.stateful_button import button
 import json
 import toml 
-# import pandas_profiling
+import pandas_profiling
 from streamlit_pandas_profiling import st_profile_report
 home_dir = os.path.expanduser("~")
 
@@ -785,48 +785,62 @@ def config_project():
     Save the api key to streamlit secrets.toml file
     
     """
-    # If the file already exists, show the config in the default values
-    config_file = st.session_state.project_folder + '/project_settings/config.json'
-    if os.path.exists(config_file):
-        with open(config_file, 'r') as f:
-            config = json.load(f)
-        st.session_state.config = config
-    else:
+    # Get the project folder from the session state
+    user_folder = st.session_state.user_folder
+    # Create the secrets.toml file if it does not exist
+    secrets_file_path = user_folder + '/secrets.toml'
+    if not os.path.exists(secrets_file_path):
+        with open(secrets_file_path, 'w') as f:
+            f.write('')
         st.session_state.config = {}
+    else:
+        with open(secrets_file_path, 'r') as f:
+            config = toml.load(f)
+            st.session_state.config = config
+
     # If the config exists in the session state, use the default values
     st.info('If you have a custom model, skip the API key and go to the next step')
-    
-    api_key = st.text_input('OpenAI API key', value=st.secrets.get('api_key', st.session_state.config.get('api_key', '')))
+    api_key = st.text_input('Enter the API key', value=st.session_state.config.get('openai', {}).get('key', ''))
+
     function_call_availabilty = st.checkbox(
         "(Expert setting) I have access to function calling", 
         value=st.session_state.config.get('function_call_availabilty', True),
         help="Do you have access to openai models ending in 0613? they have a feature called function calling.",
         )
-    
+        
     if st.button("Submit config"):
+        if api_key == '':
+            st.error('Enter the API key')
+            st.stop()
         # Save the config to the config.json file
         config = {}
-        config['api_key'] = api_key
+        # set the openai key
+        openai.api_key = api_key
+        # Save the API key in the secrets module
+        config['openai'] = {'key': api_key}
         config['function_call_availabilty'] = function_call_availabilty
+        if function_call_availabilty:
+            st.session_state.function_call_type = 'auto'
+        else:
+            st.session_state.function_call_type = 'manual'
         # Save the config to the config.json file
         with st.spinner('Saving config...'):
             time.sleep(2)
-        with open(config_file, 'w') as f:
-            json.dump(config, f)
-            st.toast('Hip!')
-            time.sleep(.5)
-            st.toast('Hip!')
-            time.sleep(.5)
-            st.toast('Hooray!', icon='🎉')
-        # Get the project folder from the session state
-        project_folder = st.session_state.project_folder
-        # Create the secrets.toml file if it does not exist
-        secrets_file_path = project_folder + '/secrets.toml'
+
         if not os.path.exists(secrets_file_path):
             with open(secrets_file_path, 'w') as f:
                 f.write('')
         with open(secrets_file_path, 'r') as f:
             config_ = toml.load(f)
-            config_['api_key'] = api_key
+
+        # Add the API key to the config dictionary
+        config_['openai'] = {'key': api_key}
+        config_['function_call_availabilty'] = function_call_availabilty
+        # Save the config to the secrets.toml file
         with open(secrets_file_path, 'w') as f:
             toml.dump(config_, f)
+            st.toast('Hip!')
+            time.sleep(.5)
+            st.toast('Hip!')
+            time.sleep(.5)
+            st.toast('Hooray!', icon='🎉')

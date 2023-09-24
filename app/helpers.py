@@ -1,7 +1,7 @@
 import streamlit as st
 import os
 from streamlit_ace import st_ace
-
+import toml
 def update_text_file(file, value):
     """
     On Change, this saves the current labels to a file called labels.md in the root folder.
@@ -95,19 +95,21 @@ def set_function_calling_availability(toggle=False):
     """
     # st.sidebar.warning(st.secrets.function_call_type)
     
+    # Get the project folder from the session state
+    user_folder = st.session_state.user_folder
+    # Create the secrets.toml file if it does not exist
+    secrets_file_path = user_folder + '/secrets.toml'
 
     
     # Look at the secrets if function_call is not in session state
-    
     if 'function_call' not in st.session_state:
-        if not os.path.exists('.streamlit/secrets.toml'):
+        if not os.path.exists(secrets_file_path):
             st.session_state.function_call = False
-        elif 'function_call_type' not in st.secrets:
-            st.session_state.function_call = False
-        elif st.secrets.function_call_type == 'auto':
-            st.session_state.function_call = True
         else:
-            st.session_state.function_call = False
+            with open(secrets_file_path, 'r') as f:
+                config = toml.load(f)
+            st.sidebar.warning(config)
+            st.session_state.function_call = config['function_call_availabilty']
 
     # Toggle the function calling availability
     if toggle:
@@ -123,7 +125,6 @@ def create_secrets_file():
     if not os.path.exists('.streamlit'):
         os.makedirs('.streamlit')
     if not os.path.exists('.streamlit/secrets.toml'):
-        
         with open('.streamlit/secrets.toml', 'w') as f:
             f.write('')
     return None

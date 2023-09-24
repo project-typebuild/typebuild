@@ -1,5 +1,5 @@
 import streamlit as st
-
+import openai
 import os
 import re
 import time
@@ -57,10 +57,6 @@ def get_gpt_output(messages, model='gpt-4', max_tokens=800, temperature=0.4):
     - max_tokens (int): The maximum number of tokens to generate, default 800
     - temperature (float): The temperature for the model. The higher the temperature, the more random the output
     """
-
-    import openai
-    openai.api_key = st.secrets.openai.key
-
     st.session_state.last_request = messages
     response = openai.ChatCompletion.create(
                 model=model,
@@ -89,8 +85,6 @@ def gpt_function_calling(messages, model='gpt-4-0613', max_tokens=3000, temperat
     - max_tokens (int): The maximum number of tokens to generate, default 800
     - temperature (float): The temperature for the model. The higher the temperature, the more random the output
     """
-    import openai
-    openai.api_key = st.secrets.openai.key
     st.session_state.last_request = messages
     if functions:
         response = openai.ChatCompletion.create(

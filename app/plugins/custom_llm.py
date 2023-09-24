@@ -1,6 +1,5 @@
 import streamlit as st
 import openai
-openai.api_key = st.secrets.openai.key
 from tenacity import (
     retry,
     stop_after_attempt,
