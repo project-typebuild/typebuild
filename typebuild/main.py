@@ -8,7 +8,6 @@ st.session_state.token = token
 import session_state_management
 from helpers import starter_code
 
-starter_code()
 session_state_management.main()
 
 from project_management import get_project_file_folder, get_project_df, manage_project
@@ -27,7 +26,6 @@ st.session_state.user_type = user_type
 
 from menu import get_menu, reset_menu
 new_menu = get_menu()
-
 
 # If new menu is toggle_developer_options, toggle the developer options
 if st.session_state.new_menu == 'toggle_developer_options':
@@ -68,6 +66,8 @@ if st.session_state.show_developer_options:
 
 # Get the project file and data
 get_project_file_folder()
+starter_code()
+
 # Get selected project in title case
 selected_project = st.session_state.selected_project.replace('_', ' ').upper() + " PROJECT"
 st.sidebar.header(f"{selected_project}", divider='rainbow')
