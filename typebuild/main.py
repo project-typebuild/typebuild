@@ -10,7 +10,7 @@ from helpers import starter_code
 
 session_state_management.main()
 
-from project_management import get_project_file_folder, get_project_df, manage_project
+from project_management import get_project_file_folder, get_project_df, manage_project, set_or_get_openai_api_key
 from function_management import create_run_menu, run_code_in_view_file
 from function_calling_spec_maker import main as fcsm
 from requirements_with_chat import technical_requirements_chat
@@ -26,6 +26,8 @@ st.session_state.user_type = user_type
 
 from menu import get_menu, reset_menu
 new_menu = get_menu()
+
+set_or_get_openai_api_key()
 
 # If new menu is toggle_developer_options, toggle the developer options
 if st.session_state.new_menu == 'toggle_developer_options':
@@ -89,8 +91,6 @@ project_option = st.sidebar.radio(
         'YouTube, search, and other external data'
         ]
     )
-
-
 
 if project_option == 'LLM generated text':
     analyze_with_llm()

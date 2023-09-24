@@ -179,15 +179,19 @@ def project_settings():
             reset_menu()
 
     options = [
-        # 'Project description',
-        'Upload data',
         'Config',
+        'Upload data',
         'Upload Custom LLM'
     ]
     
-    val = stx.stepper_bar(steps=options)
+    # if the openai api key exists in secrets.toml, set the default option to upload data
+    api_key = set_or_get_openai_api_key()
 
-    selected_option = options[val]
+    default_index = 0
+    if api_key:
+        default_index = 1
+
+    selected_option = st.radio("Select an option", options, horizontal=True, index=default_index)
 
     if selected_option == 'Upload data':
         file_upload_and_save()
@@ -837,3 +841,24 @@ def config_project():
             st.toast('Hip!')
             time.sleep(.5)
             st.toast('Hooray!', icon='🎉')
+
+def set_or_get_openai_api_key():
+
+    # Check if the user has a secrets file and openai key in the secrets.toml file. if yes, then set the openai key
+
+    # Get the project folder from the session state
+    user_folder = st.session_state.user_folder
+    # Create the secrets.toml file if it does not exist
+    secrets_file_path = user_folder + '/secrets.toml'
+    if not os.path.exists(secrets_file_path):
+        with open(secrets_file_path, 'w') as f:
+            f.write('')
+        st.session_state.config = {}
+    else:
+        with open(secrets_file_path, 'r') as f:
+            config = toml.load(f)
+            st.session_state.config = config
+    api_key = st.session_state.config.get('openai', {}).get('key', '')
+    if api_key != '':
+        openai.api_key = api_key
+    return api_key
