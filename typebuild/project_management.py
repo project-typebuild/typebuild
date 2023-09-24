@@ -21,7 +21,6 @@ import sqlite3
 from streamlit_extras.stateful_button import button
 import json
 import toml 
-from streamlit_pandas_profiling import st_profile_report
 home_dir = os.path.expanduser("~")
 
 def get_project_database():
@@ -498,11 +497,6 @@ def upload_data_file(uploaded_file, file_extension):
     # Show the dataframe
     
     st.dataframe(df)
-
-    if st.checkbox("Explore the data before saving"):
-        # Pandas profiler report
-        pr = df.profile_report()
-        st_profile_report(pr)
 
     # Get the name of the uploaded file
     file_name = uploaded_file.name
