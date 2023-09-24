@@ -143,11 +143,22 @@ def get_llm_key_or_function():
         st.warning("Please add your OpenAI key to secrets.toml")
         st.stop()
 
+def create_user_folder():
+    """
+    Creates a user folder in the .typebuild folder.
+    """
+    # Get the user folder from the session state
+    if 'user_folder' not in st.session_state:
+        home_dir = os.path.expanduser("~")
+        st.session_state.user_folder = os.path.join(home_dir, ".typebuild", 'users' ,st.session_state.token)
+    
+    return None
+
 def starter_code():
     """
     Functions that need to be run at hte top of the app.
     """
-    
+    create_user_folder()
     create_secrets_file()
     set_function_calling_availability()
 
