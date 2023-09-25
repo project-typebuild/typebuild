@@ -17,7 +17,6 @@ def create_destination_df(destination_df_name, consolidated=False):
     st.write("### Select the source data and column(s)")
     data_folder = st.session_state.project_folder + '/data'
     tables = glob(f"{data_folder}/*.parquet")
-    st.write(tables)
     # If there is more than one table, allow the user to select the table
     if len(tables) == 0:
         st.error("There should be some uploaded data for this to work.  Please upload some data from the project settings area.")

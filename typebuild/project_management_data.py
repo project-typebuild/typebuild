@@ -155,7 +155,7 @@ def get_column_info(data_model, new_files_only=True):
         df = pd.read_parquet(parquet_file_path)  
         df_col_info = get_column_info_for_df(df)
         df_col_info['file_name'] = parquet_file_path
-        st.dataframe(df_col_info)
+        # st.dataframe(df_col_info)
         save_data_model(df_col_info, file)
         df = convert_to_appropriate_dtypes(df, df_col_info)
         try:

@@ -17,7 +17,7 @@ def get_llm_output(messages, max_tokens=3000, temperature=0.4, model='gpt-4', fu
     # Check if there is a custom_llm.py in the plugins directory
     # If there is, use that
     progress_status = st.sidebar.empty()
-    progress_status.warning('Generating response from LLM...')
+    # progress_status.warning('Generating response from LLM...')
 
     if os.path.exists('plugins/custom_llm.py'):
         from plugins.custom_llm import custom_llm_output
@@ -55,7 +55,7 @@ def get_llm_output(messages, max_tokens=3000, temperature=0.4, model='gpt-4', fu
 
     # Stop ask llm
     st.session_state.ask_llm = False
-    progress_status.success('Response generated!')
+    # progress_status.success('Response generated!')
     return content
 
 
