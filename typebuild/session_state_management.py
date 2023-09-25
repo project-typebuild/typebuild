@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 
 def add_default_session_states():
@@ -11,6 +12,7 @@ def add_default_session_states():
         'ask_llm': False,
         'call_status': None,
         'stage_num': 0,
+        'dir_path': os.path.dirname(os.path.realpath(__file__)),
         }
 
     for key in ss_vars:

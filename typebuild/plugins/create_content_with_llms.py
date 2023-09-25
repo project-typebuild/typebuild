@@ -447,7 +447,7 @@ def row_by_row_llm_res(text_or_list, system_instruction, sample=True, frac=0.3, 
                 {"role": "system", "content": system_instruction},
                 {"role": "user", "content": chunk}]
             res = get_llm_output(
-                input=messages,
+                messages,
                 max_tokens=max_tokens,
                 model=model
                 )        

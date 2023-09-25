@@ -7,6 +7,7 @@ from tenacity import (
     stop_after_attempt,
     wait_random_exponential,
 ) 
+dir_path = os.path.dirname(os.path.realpath(__file__))
 
 def get_llm_output(messages, max_tokens=3000, temperature=0.4, model='gpt-4', functions=[]):
     """
@@ -18,8 +19,8 @@ def get_llm_output(messages, max_tokens=3000, temperature=0.4, model='gpt-4', fu
     # If there is, use that
     progress_status = st.sidebar.empty()
     # progress_status.warning('Generating response from LLM...')
-
-    if os.path.exists('plugins/custom_llm.py'):
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    if os.path.exists(f'{dir_path}/custom_llm.py'):
         from plugins.custom_llm import custom_llm_output
         content = custom_llm_output(messages, max_tokens=max_tokens, temperature=temperature, model=model, functions=functions)
     else:

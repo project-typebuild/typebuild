@@ -711,19 +711,19 @@ def verify_functions(file_path, function_dict):
 
     # Check if the get_llm_output function is present in the functions list
     # if get_llm_output function present and the args do not match, show an error
-        with open('plugins/llms.py', 'r') as f:
+        with open(f'{dir_path}/plugins/llms.py', 'r') as f:
             tree = f.read()
 
-    if 'get_llm_output' not in [i['function_name'] for i in functions]:
-        st.error('get_llm_output function not found in the file, you need to have a get_llm_output function in the file, for the reference, see the get_llm_output function in the code block below')
+    if 'custom_llm_output' not in [i['function_name'] for i in functions]:
+        st.error('custom_llm_output function not found in the file, you need to have a custom_llm_output function in the file, for the reference, see the custom_llm_output function in the code block below')
         st.code(tree, language='python')
         st.stop()
     else:
         # Get the args for the get_llm_output function
-        get_llm_output_args = [i['args'] for i in functions if i['function_name'] == 'get_llm_output'][0]
-        # If the args do not match, show an error
-        if get_llm_output_args != function_dict['args']:
-            st.error(f'get_llm_output function args do not match. Expected: {function_dict["args"]}, Actual: {get_llm_output_args}')
+        custom_llm_output_args = [i['args'] for i in functions if i['function_name'] == 'custom_llm_output'][0]
+        # If the args do not match, show an error.  use a set to compare the args
+        if set(custom_llm_output_args) != set(function_dict['args']):
+            st.error(f'custom_llm_output function args do not match. Expected: {function_dict["args"]}, Actual: {custom_llm_output_args}')
             st.code(tree, language='python')
             st.stop()
 
@@ -749,13 +749,13 @@ def upload_custom_llm_file():
             with open(tmp_file_path, 'wb') as f:
                 f.write(uploaded_file.getbuffer())
             # Verify the functions in the file
-            function_dict = {'function_name': 'get_llm_output', 'args': ['input', 'max_tokens', 'temperature', 'model']}
+            function_dict = {'function_name': 'custom_llm_output', 'args': ['input', 'max_tokens', 'temperature', 'model', 'functions']}
             if verify_functions(tmp_file_path, function_dict):
                 success_message = st.empty()
                 success_message.success('Functions verified successfully, you can now save the file by clicking the button below')
                 if button('Save Custom LLM', key='save_custom_llm'):
                     success_message.empty()
-                    file_path = 'plugins/custom_llm.py'
+                    file_path = f'{dir_path}/plugins/custom_llm.py'
                     # if the file already exists, ask the user if they want to overwrite it or not
                     if os.path.exists(file_path):
                         overwrite = st.radio('File already exists, do you want to overwrite it?', ['Yes', 'No'], index=1)
