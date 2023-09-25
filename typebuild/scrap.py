@@ -64,7 +64,7 @@ def fix_error_in_code():
         st.toast("Fixed the error.  Rerunning the app...")
         time.sleep(1)
         st.session_state.chat_status.update("Fixed the error.  Rerunning the app...", expanded=False)
-        st.experimental_rerun()
+        st.rerun()
     
     # If there is a response, add it to the chat
     if response:
@@ -81,7 +81,7 @@ def fix_error_in_code():
                 {'role': 'user', 'content': error_prompt}
                 )
             # Restart the process that will invoke this function again
-            st.experimental_rerun()
+            st.rerun()
     return None
 
 
@@ -236,7 +236,7 @@ def generate_code_from_user_requirements(df=None, mod_requirements=None, current
     
     if st.button("Generate the view"):
         get_code(user_requirements=user_requirements, mod_requirements=mod_requirements, current_code=current_code)
-        st.experimental_rerun()
+        st.rerun()
     return None
 
 def get_code(user_requirements="", mod_requirements=None, current_code=None):

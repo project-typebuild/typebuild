@@ -132,7 +132,7 @@ def rerun_app(save_header_state=True):
     if save_header_state:
         save_the_header_state()
         st.session_state.reset_session_state = True
-    st.experimental_rerun()
+    st.rerun()
     return None
 
 def save_the_header_state():

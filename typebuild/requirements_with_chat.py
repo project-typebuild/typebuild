@@ -127,7 +127,7 @@ def technical_requirements_chat(widget_label):
         # If there is a function call, run it
         st.session_state.call_status = make_function_call(chat_key)
         # Rerun the app
-        st.experimental_rerun()
+        st.rerun()
     
 
     # Display the messages
@@ -264,7 +264,7 @@ def save_code_to_file(code_str: str):
         del st.session_state['error']
     st.session_state.chat_status.update(label="Expand to view chat", expanded=False)
     time.sleep(2)
-    # st.experimental_rerun()
+    # st.rerun()
     # Note the message will not be returned since we are rerunning the app here.
     return None
 

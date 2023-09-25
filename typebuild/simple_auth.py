@@ -50,7 +50,7 @@ def delete_users():
                 pk.dump(p, f)
             st.success("Done")
             time.sleep(2)
-            st.experimental_rerun()
+            st.rerun()
             
     return None
 
@@ -189,7 +189,7 @@ def get_auth(cookie_manager):
                         set_key(token, pwd)
                         st.success("I've set the password for you.  Please contact admin if you have to reset it")
                         time.sleep(3)
-                        st.experimental_rerun()
+                        st.rerun()
                     else:
                         st.warning("The two passwords you typed do not match.  Please correct.")
                 st.stop()

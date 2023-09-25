@@ -80,7 +80,7 @@ def create_run_menu():
         st.session_state[f"selected_file_{st.session_state.ss_num}"] = file_name
         # Remove the response from the session state
         del st.session_state.response
-        st.experimental_rerun()
+        st.rerun()
 
 def run_code_in_view_file():
     """

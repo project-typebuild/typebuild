@@ -122,7 +122,7 @@ def create_destination_df(destination_df_name, consolidated=False):
 
         st.success("I created a new table with this data.  We are ready for the next step.")
         time.sleep(2)
-        st.experimental_rerun()
+        st.rerun()
     
     return df_for_llm
 

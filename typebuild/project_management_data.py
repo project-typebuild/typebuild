@@ -251,7 +251,7 @@ def get_data_model():
             get_column_info(data_model=data_model_df, new_files_only=generate_for_new_files_only)
             st.success("Done studying the data.  You can start using it now")
             time.sleep(3)
-            st.experimental_rerun()
+            st.rerun()
     return None
 
 def update_colum_types_for_table(data_model, data_model_file):

@@ -6,6 +6,7 @@ llama-index
 nx-altair
 openpyxl
 pip-chill
+pympler
 scikit-learn
 streamlit-ace
 streamlit-datalist

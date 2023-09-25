@@ -365,7 +365,7 @@ def get_code_instructions():
     AVAILABLE FUNCTIONS:
 
     - st.stop() - A streamlit function to stop the execution under the line
-    - st.experimental_rerun() - A streamlit function to rerun the app
+    - st.rerun() - A streamlit function to rerun the app
     - st.expander
     - st.columns
         

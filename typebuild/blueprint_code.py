@@ -96,7 +96,7 @@ def select_view():
             # Set the view name to the newly created view
             st.session_state[f'selected_file_{st.session_state.view_num}'] = selected_file
 
-            st.experimental_rerun()
+            st.rerun()
         st.stop()
     else:
         # Show the requirements, if user wants to see it
