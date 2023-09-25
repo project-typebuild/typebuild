@@ -6,7 +6,8 @@ to GPT to make function calls.
 from glob import glob
 import os
 from helpers import extract_python_code
-from llm_functions import get_llm_output
+# from llm_functions import get_llm_output
+from plugins.llms import get_llm_output
 import streamlit as st
 import prompts
 import ast
@@ -51,6 +52,7 @@ def create_function_dict(function):
     - function_dict (dict): A dictionary with the function name, arguments, and information on parameters.
     
     """
+    st.warning("This has to be redone to work with GPT-4 and not a function calling model.")
     # Show the source
     st.code(function['source'])
     func_info = {
@@ -59,7 +61,7 @@ def create_function_dict(function):
     }
     messages = prompts.get_parameter_info(function['source'])
     if st.button("Get info"):
-        res = get_llm_output(messages, model='gpt-4-0613')
+        res = get_llm_output(messages, model='gpt-4')
         # Add to session state
         st.session_state['function_info'] = res
     if 'function_info' in st.session_state:

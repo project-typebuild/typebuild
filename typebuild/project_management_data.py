@@ -10,7 +10,7 @@ import time
 import pandas as pd
 import streamlit as st
 import os
-from llm_functions import get_llm_output
+from plugins.llms import get_llm_output
 from helpers import text_areas
 from plugins.data_widgets import display_editable_data
 

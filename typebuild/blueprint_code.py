@@ -13,13 +13,7 @@ blueprint_text.py only deals with creating, editing, and deleting text.  It does
 import os
 import time
 import pandas as pd
-from blueprint_text import user_requirement_for_view
-from helpers import text_areas
 import streamlit as st
-from prompts import get_prompt_to_code, get_prompt_to_fix_error
-from llm_functions import get_llm_output, gpt_function_calling, parse_code_from_response, parse_modified_user_requirements_from_response
-from project_management import file_upload_and_save, get_project_df
-from glob import glob
 import session_state_management
 session_state_management.main()
 
@@ -33,80 +27,6 @@ from data_widgets import display_editable_data
 
 # Create a menu to run the app
 # create_run_menu()
-
-def generate_code_from_user_requirements(df=None, mod_requirements=None, current_code=None, confirmed=False):
-
-    """
-    The function that generates code from user requirements. 
-
-    Args:
-    - df: A pandas dataframe with sample data (optional, default None)
-
-    Returns:
-    - None
-
-    """
-
-    # Define the prompt
-    st.header("Your requirements")
-    user_requirements = user_requirement_for_view()
-    
-    if st.button("Generate the view"):
-        get_code(user_requirements=user_requirements, mod_requirements=mod_requirements, current_code=current_code)
-        st.experimental_rerun()
-    return None
-
-def get_code(user_requirements="", mod_requirements=None, current_code=None):
-
-    # Get data description
-    data_model_file = st.session_state.project_folder + '/data_model.txt'
-    with open(data_model_file, 'r') as f:
-        data_model = f.read()
-
-
-    messages = get_prompt_to_code(
-        user_requirements,
-        data_description=data_model,
-        mod_requirements=mod_requirements,
-        current_code=current_code,
-        )
-    with st.spinner('Generating code...'):
-        response = get_llm_output(messages)
-    
-    st.session_state.response = response
-    st.session_state.user_requirements = user_requirements
-    st.session_state.messages = messages
-    st.session_state.code = '\n\n'.join(parse_code_from_response(response))
-    
-    return None
-
-def modify_code():
-    """
-    The function that modifies code based on user requirements.
-
-    Args:
-    - user_requirements: initial user requirements. 
-    - all_function_descriptions: descriptions of all the functions available
-    - df: A pandas dataframe with sample data (optional, default None)
-
-    Returns:
-    - None
-
-    """
-
-    # Get the current code from the current file
-    file = st.session_state.file_path + '.py'
-    with open(file, 'r') as f:
-        current_code = f.read()
-    # Define the prompt
-    st.header("Modify requirements")
-    user_requirements = user_requirement_for_view()
-    st.info("If requirements are correct but the output is not as expected, tell us what changes you want to make to the function.")
-    change_requested = st.text_area("What changes do you want to make to the function?")
-    if st.button("Modify"):
-        get_code(mod_requirements=change_requested, current_code=current_code)
-    return None
-
 
 
 def select_view():

@@ -24,62 +24,6 @@ def parallel_process(func, items):
     # Return the results in the same order as the input list
     return [result for result in results]
 
-def get_llm_output(input, max_tokens=800, temperature=0, model='gpt-4'):
-
-    """
-    Given an input, get the output from the LLM.  Default is openai's gpt-4.
-
-    Args:
-    - input (list): A list of messages in the format                 
-                messages =[
-                {"role": "system", "content": system_instruction},
-                {"role": "user", "content": prompt}],
-
-                system_instruction is the instruction given to the system to generate the response using the prompt.
-                prompt is the input given by the user.
-
-    - model (str): The model to use.  Default is gpt-4.
-    - max_tokens (int): The maximum number of tokens to generate, default 800
-    - temperature (float): The temperature for the model. The higher the temperature, the more random the output
-
-    """
-    if 'gpt' in model:
-        res = get_gpt_output(messages=input, max_tokens=max_tokens, temperature=temperature, model=model)
-    else:
-        res = "Unknown model"
-    return res
-
-def get_genstudio_chat_with_tokensize(messages_tokens, temperature=0):
-
-    messages, max_tokens = messages_tokens
-    try:
-        res = genstudiopy.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=messages,
-            max_tokens=max_tokens,
-            temperature=temperature
-        )
-        return res['choices'][-1]['message']['content']
-    except Exception as e:
-        print(e)
-        return f"I got this error: {str(e)}"
-
-
-def get_genstudio_chat(messages, temperature=0, custom_max_tokens=None):
-    max_tokens = 3000
-    if custom_max_tokens:
-        max_tokens = custom_max_tokens
-    try:
-        res = genstudiopy.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=messages,
-            max_tokens=max_tokens,
-            temperature=temperature
-        )
-        return res['choices'][-1]['message']['content']
-    except Exception as e:
-        print(e)
-        return f"I got this error: {str(e)}"
 
 def chunk_text(text, max_chars=None, model_name='gpt-3.5-turbo', chunk_with=None):
     """

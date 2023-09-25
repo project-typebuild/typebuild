@@ -5,7 +5,8 @@ with the help of LLMs
 import json
 import os
 import time
-from llm_functions import get_gpt_output, get_llm_output, gpt_function_calling
+from plugins.llms import get_llm_output
+# from llm_functions import get_gpt_output, get_llm_output, gpt_function_calling
 import streamlit as st
 import prompts
 from helpers import text_areas
@@ -142,12 +143,12 @@ def get_llm_response(chat_key):
         # If we are using function calling, send functions
         # else, dont send functions
         if st.session_state.function_call:    
-            content = gpt_function_calling(
+            content = get_llm_output(
                 st.session_state[chat_key], 
                 functions=funcs_available(),
                 )
         else:
-            content = gpt_function_calling(st.session_state[chat_key])
+            content = get_llm_output(st.session_state[chat_key])
 
 
         # Add the response to the chat

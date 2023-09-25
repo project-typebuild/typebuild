@@ -7,7 +7,7 @@ from glob import glob
 import os
 import time
 from helpers import text_areas
-from llm_functions import get_llm_output
+from plugins.llms import get_llm_output
 from documents_management import create_document_chunk_df
 from menu import reset_menu
 from project_management_data import get_column_info, get_data_model
@@ -843,9 +843,7 @@ def config_project():
             toml.dump(config_, f)
             st.toast('Hip!')
             time.sleep(.5)
-            st.toast('Hip!')
-            time.sleep(.5)
-            st.toast('Hooray!', icon='🎉')
+            st.success('Config saved successfully')
 
 def set_or_get_openai_api_key():
 
