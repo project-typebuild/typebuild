@@ -10,6 +10,7 @@ def add_default_session_states():
         'show_developer_options': False,
         'ask_llm': False,
         'call_status': None,
+        'stage_num': 0,
         }
 
     for key in ss_vars:

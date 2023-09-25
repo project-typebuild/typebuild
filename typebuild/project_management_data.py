@@ -246,12 +246,12 @@ def get_data_model():
                     generate_col_info = True
                     generate_for_new_files_only = False
 
-    if 'column_info' not in st.session_state or generate_col_info:
-        with st.spinner("Studying the data to understand it..."):
-            get_column_info(data_model=data_model_df, new_files_only=generate_for_new_files_only)
-            st.success("Done studying the data.  You can start using it now")
-            time.sleep(3)
-            st.rerun()
+        if 'column_info' not in st.session_state or generate_col_info:
+            with st.spinner("Studying the data to understand it..."):
+                get_column_info(data_model=data_model_df, new_files_only=generate_for_new_files_only)
+                st.success("Done studying the data.  You can start using it now")
+                time.sleep(3)
+                st.rerun()
     return None
 
 def update_colum_types_for_table(data_model, data_model_file):

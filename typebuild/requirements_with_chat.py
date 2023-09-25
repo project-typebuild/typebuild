@@ -67,10 +67,12 @@ def technical_requirements_chat(widget_label):
         st.sidebar.radio(
             "Update code or requirements?", 
             ['requirements', 'code'], 
-            key='current_stage'
+            key=f'current_stage_{st.session_state.stage_num}'
             ) 
 
     if st.session_state.call_status:
+        st.sidebar.header("Call status")
+        st.sidebar.info(st.session_state.call_status)
         # st.session_state.chat_status.write("Got some extra information.  Working on it...")
         prompts.from_requirements_to_code(
             prompt=st.session_state.call_status,
@@ -112,6 +114,7 @@ def technical_requirements_chat(widget_label):
 
 
     if st.session_state.ask_llm:
+        st.sidebar.warning("Asking LLM for help...")
         # Get the response
         if st.session_state.function_call:    
             content = get_llm_output(
@@ -229,6 +232,9 @@ def save_requirements_to_file(content: str):
     with open(file_name, 'w') as f:
         f.write(content)
     st.toast(f"Saved requirements")
+    # Increase stage number to change the widget
+    st.session_state.stage_num += 1
+    st.session_state[f"current_stage_{st.session_state.stage_num}"] = 'code'
     return f"I saved the requirements.  Can you generate the code now based on the requirements?"
 
 def save_code_to_file(code_str: str):
@@ -263,7 +269,7 @@ def save_code_to_file(code_str: str):
         del st.session_state['error']
     st.session_state.chat_status.update(label="Expand to view chat", expanded=False)
     time.sleep(2)
-    # st.rerun()
+    st.rerun()
     # Note the message will not be returned since we are rerunning the app here.
     return None
 
@@ -281,7 +287,7 @@ def set_the_stage(stage_name):
     Success message: str
     """
     st.toast("Just set the stage")
-    st.session_state.current_stage = stage_name
+    st.session_state[f"current_stage_{st.session_state.stage_num}"] = stage_name
     if st.session_state.show_developer_options:
         st.sidebar.warning(f"Current stage is {stage_name}")
     return f"We are now focussing on {stage_name} now."

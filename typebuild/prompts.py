@@ -286,8 +286,8 @@ def from_requirements_to_code(chat_key, current_text="", prompt="", func_str=Non
     {current_text_string}"""
 
     # Get the current stage
-    if 'current_stage' in st.session_state:
-        current_stage = st.session_state.current_stage
+    if f'current_stage_{st.session_state.stage_num}' in st.session_state:
+        current_stage = st.session_state[f"current_stage_{st.session_state.stage_num}"]
     
     if current_stage == 'requirements':
         system_instruction += "WE ARE CURRENTLY IN THE REQUIREMENTS STAGE\n\n" + get_technical_requirements_instructions()
@@ -351,7 +351,7 @@ def get_code_instructions():
     error_msg = ""
     if 'error' in st.session_state:
         error_msg = f"""GOT THIS ERROR MESSAGE IN THE CURRENT CODE.  PLEASE FIX IT:
-        |||{st.session_state.error}|||
+        ```{st.session_state.error}```
         
         """
 
@@ -386,38 +386,8 @@ def get_code_instructions():
     - Create a function called "main" that calls all the other functions in the order they are needed.   Create it but do not call the main function.  It will be called by the system.
 
     {error_msg}        
-    Write concise code based on the instructions above.  Document it with detailed docstrings, and comments.
+    Write concise code based on the instructions above, fixing errors, if any.  Document it with detailed docstrings, and comments.
     """
 
     return system_instruction_to_code
 
-def get_prompt_to_fix_error(chat_key):
-    """
-    Sends the code and the error message to the LLM to get it fixed
-    """
-    py_file = st.session_state.file_path + ".py"
-    with open(py_file, 'r') as f:
-        code = f.read() 
-    system_instruction = f"""
-    I am getting an error message when I run the code below:
-    
-    CODE:
-    ```{code}```
-
-    THIS IS THE ERROR MESSAGE:
-    |||{st.session_state.error}|||
-
-    Please fix the error and save the code by calling the save_code_to_file function."""
-
-    prompt = """Please fix the error I am getting and give me the revised code.  
-    The message, current code, and other relevant information are in the instructions.
-    """
-
-    # If the chat is empty, add the system message
-    if len(st.session_state.error_messages) == 0:
-        st.session_state.error_messages.append({'role': 'system', 'content': system_instruction})
-
-    # Append the error
-    st.session_state[chat_key].append({'role': 'user', 'content': prompt})
-
-    return None

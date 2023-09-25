@@ -32,7 +32,6 @@ def get_llm_output(messages, max_tokens=3000, temperature=0.4, model='gpt-4', fu
     progress_status.info("Extracting information from response...")
     if content:
         st.session_state.last_response = content
-    st.write(content)    
     # We can get back code or requirements in multiple forms
     # Look for each form and extract the code or requirements
 
