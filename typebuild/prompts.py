@@ -328,7 +328,7 @@ def get_technical_requirements_instructions():
 
     Before you write the instructions:
 
-    1.  Look for ambiguities or missing information in my requirement.  If you need clarifications, wait for me to respond before going to step 2. 
+    1.  Look for ambiguities or missing information in my requirement.  If you need clarifications, wait for me to respond before going to step 2. Make sure you have something (table, chart, forms, etc.) to display on streamlit.
     2.  Write down step by step instructions for the developer.
     3.  Check the instructions to see if it will meet the functional requirement.  If not, revise.  
     4.  Remove unnecessary or totally obvious steps.
@@ -383,8 +383,7 @@ def get_code_instructions():
     - If the user has to edit the data, you can use the function display_editable_data(df, file_name) to display and edit the data.  You can import the function 'display_editable_data' using the following import statement: |||from data_widgets import display_editable_data|||
     - Use st.info, st.warning, st.success for clarity, if needed.  You can also use emojis to draw attention.
     - Create one function per feature, passing necessary data so that data is not loaded again and again.
-    - Create a function called "main" that calls all the other functions in the order they are needed.
-    - IMPORTANT: Do not call the main function.  It will be called by the system.
+    - Create a function called "main" that calls all the other functions in the order they are needed.   Create it but do not call the main function.  It will be called by the system.
 
     {error_msg}        
     Write concise code based on the instructions above.  Document it with detailed docstrings, and comments.

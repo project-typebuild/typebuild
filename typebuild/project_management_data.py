@@ -120,7 +120,7 @@ def get_column_info_for_df(df):
         {'role': 'system', 'content': system_instruction},
         {'role': 'user', 'content': prompt},
     ]
-    res = get_llm_output(messages, model='gpt-3.5-turbo', max_tokens=2000, temperature=0)
+    res = get_llm_output(messages, model='gpt-4', max_tokens=2000, temperature=0)
     df_res = pd.DataFrame(eval(res))
     # if there are any missing values, fill them with object
     df_res.column_type = df_res.column_type.fillna('object')
@@ -234,8 +234,7 @@ def get_data_model():
     # It the data model does not have information about all the files, generate the column info
     if files_to_process:
         generate_col_info = True
-        st.sidebar.warning("There are files to process")
-        st.sidebar.write(files_to_process)
+        
 
     if data_files:
         if st.checkbox(
@@ -250,6 +249,9 @@ def get_data_model():
     if 'column_info' not in st.session_state or generate_col_info:
         with st.spinner("Studying the data to understand it..."):
             get_column_info(data_model=data_model_df, new_files_only=generate_for_new_files_only)
+            st.success("Done studying the data.  You can start using it now")
+            time.sleep(3)
+            st.experimental_rerun()
     return None
 
 def update_colum_types_for_table(data_model, data_model_file):

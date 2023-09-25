@@ -125,6 +125,8 @@ def technical_requirements_chat(widget_label):
     if 'last_function_call' in st.session_state:
         # If there is a function call, run it
         st.session_state.call_status = make_function_call(chat_key)
+        # Rerun the app
+        st.experimental_rerun()
     
 
     # Display the messages
