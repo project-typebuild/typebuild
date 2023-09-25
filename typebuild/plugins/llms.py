@@ -1,3 +1,5 @@
+import os
+import re
 import streamlit as st
 
 from tenacity import (
@@ -14,12 +16,11 @@ def get_llm_output(messages, max_tokens=3000, temperature=0.4, model='gpt-4', fu
     """
     # Check if there is a custom_llm.py in the plugins directory
     # If there is, use that
-    try:
-        from plugins.custom_llm import get_llm_output
-        return get_llm_output(messages, max_tokens, temperature, model, functions)
-    except:
-        return get_openai_output(messages, max_tokens, temperature, model, functions)
-    
+    if os.path.exists('plugins/custom_llm.py'):
+        from plugins.custom_llm import custom_llm_output
+        return custom_llm_output(messages, max_tokens=max_tokens, temperature=temperature, model=model, functions=functions)
+    else:
+        return get_openai_output(messages, max_tokens=max_tokens, temperature=temperature, model=model, functions=functions)
 
 
 def get_openai_output(messages, max_tokens=3000, temperature=0.4, model='gpt-4', functions=[]):
@@ -94,3 +95,79 @@ def get_openai_output(messages, max_tokens=3000, temperature=0.4, model='gpt-4',
     return content
 
 
+def parse_code_or_requirements_from_response(response):
+    """
+    The LLM can return code or requirements in the content.  
+    Ideally, requirements come in triple pipe delimiters, 
+    but sometimes they come in triple backticks.
+
+    Figure out which one it is and return the extracted code or requirements.
+    """
+    # If there are ```, it could be code or requirements
+    code_or_requirement = None
+    if '```' in response:
+        # If it's python code, it should have at least one function in it
+        if 'def ' in response:
+            extracted = parse_code_from_response(response)
+            code_or_requirement = 'code'
+        # If it's not python code, it's probably requirements
+        else:
+            extracted = parse_modified_user_requirements_from_response(response)
+            code_or_requirement = 'requirements'
+    # If there are |||, it's probably requirements
+    elif '|||' in response:
+        extracted = parse_modified_user_requirements_from_response(response)
+        code_or_requirement = 'requirements'
+    else:
+        extracted = None
+    return extracted, code_or_requirement
+            
+
+
+
+def parse_code_from_response(response):
+
+    """
+    Returns the code from the response from LLM.
+    In the prompt to code, we have asked the LLM to return the code inside triple backticks.
+
+    Args:
+    - response (str): The response from LLM
+
+    Returns:
+    - matches (list): A list of strings with the code
+
+    """
+
+    pattern = r"```python([\s\S]*?)```"
+    matches = re.findall(pattern, response)
+    if len(matches) > 0:
+        matches = '\n'.join(matches)
+    else:
+        matches = matches[0]
+    return matches
+
+def parse_modified_user_requirements_from_response(response):
+    
+    """
+    Returns the modified user requirements from the response from LLM. 
+    In the prompt to modify, we have asked the LLM to return the modified user requirements inside triple pipe delimiters.
+
+    Args:
+    - response (str): The response from LLM
+
+    Returns:
+    - matches (list): A list of strings with the modified user requirements
+
+    """
+    if '|||' in response:
+        pattern = r"\|\|\|([\s\S]*?)\|\|\|"
+    # It shouldnt have ```python in it
+    pattern = r"```([\s\S]*?)```"
+    matches = re.findall(pattern, response)
+    # if there are multiple matches, join by new line
+    if len(matches) > 0:
+        matches = '\n'.join(matches)
+    else:
+        matches = matches[0]
+    return matches
