@@ -16,16 +16,18 @@ def get_llm_output(messages, max_tokens=3000, temperature=0.4, model='gpt-4', fu
     """
     # Check if there is a custom_llm.py in the plugins directory
     # If there is, use that
-    if os.path.exists('plugins/custom_llm.py'):
-        from plugins.custom_llm import custom_llm_output
-        content = custom_llm_output(messages, max_tokens=max_tokens, temperature=temperature, model=model, functions=functions)
-    else:
-        msg = get_openai_output(messages, max_tokens=max_tokens, temperature=temperature, model=model, functions=functions)
-        content = msg.get('content', None)
-        if 'function_call' in msg:
-            func_call = msg.get('function_call', None)
-            st.session_state.last_function_call = func_call
-    
+    with st.sidebar.spinner("LLM at work"):
+        if os.path.exists('plugins/custom_llm.py'):
+            from plugins.custom_llm import custom_llm_output
+            content = custom_llm_output(messages, max_tokens=max_tokens, temperature=temperature, model=model, functions=functions)
+        else:
+            msg = get_openai_output(messages, max_tokens=max_tokens, temperature=temperature, model=model, functions=functions)
+            content = msg.get('content', None)
+            if 'function_call' in msg:
+                func_call = msg.get('function_call', None)
+                st.session_state.last_function_call = func_call
+        
+
     if content:
         st.session_state.last_response = content
     st.write(content)    
