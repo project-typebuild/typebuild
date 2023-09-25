@@ -1,3 +1,4 @@
+streamlit==1.27.0
 anthropic
 chardet
 dataclasses-json
