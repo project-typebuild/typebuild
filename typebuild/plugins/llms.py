@@ -16,18 +16,20 @@ def get_llm_output(messages, max_tokens=3000, temperature=0.4, model='gpt-4', fu
     """
     # Check if there is a custom_llm.py in the plugins directory
     # If there is, use that
-    with st.sidebar.spinner("LLM at work"):
-        if os.path.exists('plugins/custom_llm.py'):
-            from plugins.custom_llm import custom_llm_output
-            content = custom_llm_output(messages, max_tokens=max_tokens, temperature=temperature, model=model, functions=functions)
-        else:
-            msg = get_openai_output(messages, max_tokens=max_tokens, temperature=temperature, model=model, functions=functions)
-            content = msg.get('content', None)
-            if 'function_call' in msg:
-                func_call = msg.get('function_call', None)
-                st.session_state.last_function_call = func_call
-        
+    progress_status = st.sidebar.empty()
+    progress_status.warning('Generating response from LLM...')
 
+    if os.path.exists('plugins/custom_llm.py'):
+        from plugins.custom_llm import custom_llm_output
+        content = custom_llm_output(messages, max_tokens=max_tokens, temperature=temperature, model=model, functions=functions)
+    else:
+        msg = get_openai_output(messages, max_tokens=max_tokens, temperature=temperature, model=model, functions=functions)
+        content = msg.get('content', None)
+        if 'function_call' in msg:
+            func_call = msg.get('function_call', None)
+            st.session_state.last_function_call = func_call
+    
+    progress_status.info("Extracting information from response...")
     if content:
         st.session_state.last_response = content
     st.write(content)    
@@ -53,6 +55,7 @@ def get_llm_output(messages, max_tokens=3000, temperature=0.4, model='gpt-4', fu
 
     # Stop ask llm
     st.session_state.ask_llm = False
+    progress_status.success('Response generated!')
     return content
 
 
@@ -166,8 +169,10 @@ def parse_modified_user_requirements_from_response(response):
     """
     if '|||' in response:
         pattern = r"\|\|\|([\s\S]*?)\|\|\|"
-    # It shouldnt have ```python in it
-    pattern = r"```([\s\S]*?)```"
+    if '```' in response:
+        # It shouldnt have ```python in it
+        pattern = r"```([\s\S]*?)```"
+
     matches = re.findall(pattern, response)
     # if there are multiple matches, join by new line
     if len(matches) > 0:

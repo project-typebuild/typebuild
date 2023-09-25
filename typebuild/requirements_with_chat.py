@@ -113,7 +113,19 @@ def technical_requirements_chat(widget_label):
 
     if st.session_state.ask_llm:
         # Get the response
-        get_llm_response(chat_key)
+        if st.session_state.function_call:    
+            content = get_llm_output(
+                st.session_state[chat_key], 
+                functions=funcs_available(),
+                )
+        else:
+            content = get_llm_output(st.session_state[chat_key])
+        
+                # Add the response to the chat
+        if content:
+            st.session_state[chat_key].append(
+                {'role': 'assistant', 'content': content}
+                )
         st.session_state.ask_llm = False
         if 'error' in st.session_state:
             del st.session_state['error']    
@@ -123,11 +135,11 @@ def technical_requirements_chat(widget_label):
         chat_container = st.container()
 
     # TODO: MAKE FUNCTION CALL GENERATE A PROMPT FOR NEXT ROUND.
+    # This has to be below the chat container so that the buttons 
+    # are displayed below the chat.
     if 'last_function_call' in st.session_state:
         # If there is a function call, run it
         st.session_state.call_status = make_function_call(chat_key)
-        # Rerun the app
-        st.rerun()
     
 
     # Display the messages
@@ -136,27 +148,14 @@ def technical_requirements_chat(widget_label):
     if st.session_state.token == 'admin':
         if st.sidebar.checkbox("Show chat messages"):
             st.sidebar.json(st.session_state[chat_key])
+
+    # If there is call status, rerun the app
+    if st.session_state.call_status:
+        # Delete call status
+        del st.session_state['call_status']
+        st.rerun()
     return None
 
-def get_llm_response(chat_key):
-    with st.spinner('Generating response...'):
-        # If we are using function calling, send functions
-        # else, dont send functions
-        if st.session_state.function_call:    
-            content = get_llm_output(
-                st.session_state[chat_key], 
-                functions=funcs_available(),
-                )
-        else:
-            content = get_llm_output(st.session_state[chat_key])
-
-
-        # Add the response to the chat
-        if content:
-            st.session_state[chat_key].append(
-                {'role': 'assistant', 'content': content}
-                )
-    return None
 
 def display_messages(chat_key):
     # Display the user and assistant messages
