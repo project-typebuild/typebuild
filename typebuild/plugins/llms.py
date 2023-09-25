@@ -18,9 +18,40 @@ def get_llm_output(messages, max_tokens=3000, temperature=0.4, model='gpt-4', fu
     # If there is, use that
     if os.path.exists('plugins/custom_llm.py'):
         from plugins.custom_llm import custom_llm_output
-        return custom_llm_output(messages, max_tokens=max_tokens, temperature=temperature, model=model, functions=functions)
+        content = custom_llm_output(messages, max_tokens=max_tokens, temperature=temperature, model=model, functions=functions)
     else:
-        return get_openai_output(messages, max_tokens=max_tokens, temperature=temperature, model=model, functions=functions)
+        msg = get_openai_output(messages, max_tokens=max_tokens, temperature=temperature, model=model, functions=functions)
+        content = msg.get('content', None)
+        if 'function_call' in msg:
+            func_call = msg.get('function_call', None)
+            st.session_state.last_function_call = func_call
+    
+    if content:
+        st.session_state.last_response = content
+    st.write(content)    
+    # We can get back code or requirements in multiple forms
+    # Look for each form and extract the code or requirements
+
+    # Recent GPT models return function_call as a separate json object
+    # Look for that first.
+    # If there are triple backticks, we expect code
+    if '```' in str(content) or '|||' in str(content):
+        # NOTE: THERE IS AN ASSUMPTION THAT WE CAN'T GET BOTH CODE AND REQUIREMENTS
+        extracted, code_or_requirement = parse_code_or_requirements_from_response(content)
+        
+        if code_or_requirement == 'code':
+            my_func = 'save_code_to_file'
+            func_call = {'name': my_func, 'arguments': {'code_str':extracted}}
+            st.session_state.last_function_call = func_call
+        
+        if code_or_requirement == 'requirements':
+            my_func = 'save_requirements_to_file'
+            func_call = {'name': my_func, 'arguments': {'content':extracted}}
+            st.session_state.last_function_call = func_call
+
+    # Stop ask llm
+    st.session_state.ask_llm = False
+    return content
 
 
 def get_openai_output(messages, max_tokens=3000, temperature=0.4, model='gpt-4', functions=[]):
@@ -60,39 +91,10 @@ def get_openai_output(messages, max_tokens=3000, temperature=0.4, model='gpt-4',
                     n=1,
                 )
     msg = response.choices[0].message
-    content = msg.get('content', None)
     
-    if content:
-        st.session_state.last_response = response.choices[0].message
-    
-    # We can get back code or requirements in multiple forms
-    # Look for each form and extract the code or requirements
-
-    # Recent GPT models return function_call as a separate json object
-    # Look for that first.
-    if 'function_call' in msg:
-        func_call = msg.get('function_call', None)
-        st.session_state.last_function_call = func_call
-    else:
-        # If there are triple backticks, we expect code
-        if '```' in str(content) or '|||' in str(content):
-            # NOTE: THERE IS AN ASSUMPTION THAT WE CAN'T GET BOTH CODE AND REQUIREMENTS
-            extracted, code_or_requirement = parse_code_or_requirements_from_response(content)
-            
-            if code_or_requirement == 'code':
-                my_func = 'save_code_to_file'
-                func_call = {'name': my_func, 'arguments': {'code_str':extracted}}
-                st.session_state.last_function_call = func_call
-            
-            if code_or_requirement == 'requirements':
-                my_func = 'save_requirements_to_file'
-                func_call = {'name': my_func, 'arguments': {'content':extracted}}
-                st.session_state.last_function_call = func_call
-
-
     # Stop ask llm
     st.session_state.ask_llm = False    
-    return content
+    return msg
 
 
 def parse_code_or_requirements_from_response(response):
