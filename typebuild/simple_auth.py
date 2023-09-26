@@ -92,7 +92,7 @@ def simple_auth():
     '''
 
     # Get the path to the profile dict
-    st.session_state['profile_dict_path'] = os.path.expanduser("~") + '/.typebuild/admin/profile_dict.pk'
+    st.session_state['profile_dict_path'] = os.path.expanduser("~") + '/.typebuild/users/admin/profile_dict.pk'
     
     # Create a logout button right on top.
     if 'new_menu' in st.session_state:

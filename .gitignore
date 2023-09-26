@@ -7,7 +7,7 @@
 */projects/*
 */users/*
 */session_states/*
-
+session_states/
 # Remove workspace files
 .vscode/
 *.code-workspace

@@ -369,7 +369,7 @@ def get_code_instructions():
     - st.expander - A streamlit function to create an expander
     - st.columns - A streamlit function to create columns
     - st.download_button - A streamlit function to create a download button, this allows the user to download images, csv, binary files, text, etc.
-
+    - st.session_state - A streamlit function to store data in the session state. This is useful when you want to store data across reruns. this is a dictionary. (make sure to import base64)
         
     approved_libraries = HERE ARE THE APPROVED LIBRARIES: {get_approved_libraries()}
     
