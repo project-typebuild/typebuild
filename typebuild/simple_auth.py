@@ -14,6 +14,8 @@ import datetime
 
 def create_auth_file():
     profile_dict = {'admin': None}
+    if not os.path.exists(st.session_state.profile_dict_path):
+        os.makedirs(os.path.dirname(st.session_state.profile_dict_path), exist_ok=True)
     with open(st.session_state.profile_dict_path, 'wb') as f:
         pk.dump(profile_dict, f)
     print("Created profile dict")
