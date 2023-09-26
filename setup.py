@@ -9,8 +9,8 @@ with open('README.md', 'r', encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name="datasmith",
-    version="0.0.4",
+    name="typebuild",
+    version="0.0.13",
     packages=find_packages(),
     install_requires=requirements,
     author="iRanadheer",
@@ -33,7 +33,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'datasmith = typebuild.app:run',
+            'typebuild = typebuild.app:run',
         ],
     },
 )

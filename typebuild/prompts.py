@@ -366,8 +366,10 @@ def get_code_instructions():
 
     - st.stop() - A streamlit function to stop the execution under the line
     - st.rerun() - A streamlit function to rerun the app
-    - st.expander
-    - st.columns
+    - st.expander - A streamlit function to create an expander
+    - st.columns - A streamlit function to create columns
+    - st.download_button - A streamlit function to create a download button, this allows the user to download images, csv, binary files, text, etc.
+
         
     approved_libraries = HERE ARE THE APPROVED LIBRARIES: {get_approved_libraries()}
     

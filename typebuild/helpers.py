@@ -159,7 +159,7 @@ def starter_code():
     Functions that need to be run at hte top of the app.
     """
     create_user_folder()
-    create_secrets_file()
+    # create_secrets_file()
     set_function_calling_availability()
 
     return None

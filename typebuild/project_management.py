@@ -186,7 +186,8 @@ def project_settings():
     options = [
         'Config',
         'Upload data',
-        'Upload Custom LLM'
+        'Upload Custom LLM',
+        'Project description (optional)',
     ]
     
     # if the openai api key exists in secrets.toml, set the default option to upload data
@@ -208,7 +209,7 @@ def project_settings():
     #     append_data_to_exisiting_file()
     #     st.stop()
 
-    if selected_option == 'Project description':
+    if selected_option == 'Project description (optional)':
         set_project_description()
         st.stop()
 

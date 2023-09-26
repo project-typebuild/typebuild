@@ -25,10 +25,8 @@ from blueprint_code import select_view
 
 from plugins.create_content_with_llms import analyze_with_llm
 
-if 'user_type' in st.secrets:
-    user_type = st.secrets.user_type
-else:
-    user_type = 'other_user'
+# Set the user type to developer for now.
+user_type = 'developer'
 st.session_state.user_type = user_type
 
 from menu import get_menu, reset_menu

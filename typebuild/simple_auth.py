@@ -14,14 +14,14 @@ import datetime
 
 def create_auth_file():
     profile_dict = {'admin': None}
-    with open('profile_dict.pk', 'wb') as f:
+    with open(st.session_state.profile_dict_path, 'wb') as f:
         pk.dump(profile_dict, f)
     print("Created profile dict")
     return None
 
 def reset_user_password():
 
-    with open('profile_dict.pk', 'rb') as f:
+    with open(st.session_state.profile_dict_path, 'rb') as f:
         p = pk.load(f)
     users = list(p)
     users.remove('admin')
@@ -31,13 +31,13 @@ def reset_user_password():
     if st.button("Reset this user's password"):
         p[reset_user] = None
 
-        with open('profile_dict.pk', 'wb') as f:
+        with open(st.session_state.profile_dict_path, 'wb') as f:
             pk.dump(p, f)
         st.success(f"Reset done. Ask {reset_user} to create a new password")
     return None
 
 def delete_users():
-    with open('profile_dict.pk', 'rb') as f:
+    with open(st.session_state.profile_dict_path, 'rb') as f:
         p = pk.load(f)
     users = list(p)
     users.remove('admin')
@@ -46,7 +46,7 @@ def delete_users():
         if st.button("Confirm deletion"):
             for t in to_delete:
                 del p[t]
-            with open('profile_dict.pk', 'wb') as f:
+            with open(st.session_state.profile_dict_path, 'wb') as f:
                 pk.dump(p, f)
             st.success("Done")
             time.sleep(2)
@@ -55,9 +55,9 @@ def delete_users():
     return None
 
 def get_profile_dict():
-    if not os.path.exists('profile_dict.pk'):
+    if not os.path.exists(st.session_state.profile_dict_path):
         create_auth_file()
-    with open('profile_dict.pk', 'rb') as f:
+    with open(st.session_state.profile_dict_path, 'rb') as f:
         profile_dict = pk.load(f)
     return profile_dict
 
@@ -70,7 +70,7 @@ def set_key(token, pwd):
     key = get_key(salt, pwd)
     profile_dict = get_profile_dict()
     profile_dict[token] = {salt: key}
-    with open('profile_dict.pk', 'wb') as f:
+    with open(st.session_state.profile_dict_path, 'wb') as f:
         pk.dump(profile_dict, f)
     
     return None
@@ -78,7 +78,7 @@ def set_key(token, pwd):
 def add_user(user):
     profile_dict = get_profile_dict()
     profile_dict[user] = None
-    with open('profile_dict.pk', 'wb') as f:
+    with open(st.session_state.profile_dict_path, 'wb') as f:
         pk.dump(profile_dict, f)
     
     return None
@@ -91,6 +91,8 @@ def simple_auth():
     It also creates a logout button.
     '''
 
+    # Get the path to the profile dict
+    st.session_state['profile_dict_path'] = os.path.expanduser("~") + '/.typebuild/admin/profile_dict.pk'
     
     # Create a logout button right on top.
     if 'new_menu' in st.session_state:

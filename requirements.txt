@@ -2,6 +2,7 @@ streamlit==1.27.0
 anthropic
 chardet
 dataclasses-json
+streamlit-extras
 extra-streamlit-components
 fsspec
 hydralit-components
