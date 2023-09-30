@@ -11,6 +11,9 @@ import streamlit as st
 import prompts
 from helpers import text_areas
 from available_functions import funcs_available
+import pandas as pd
+
+
 
 def get_text_and_code():
     """
@@ -135,7 +138,7 @@ def technical_requirements_chat(widget_label):
         if 'error' in st.session_state:
             del st.session_state['error']    
 
-    with st.status("Expand to view chat", expanded=True) as st.session_state.chat_status:
+    with st.status("Expand to view chat") as st.session_state.chat_status:
         # Create the chat
         chat_container = st.container()
 

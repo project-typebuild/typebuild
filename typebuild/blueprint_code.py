@@ -66,8 +66,8 @@ def select_view():
     file_path = os.path.join(dir, selected_file)
     st.session_state.file_path = file_path
     st.session_state.selected_view = selected_file
-    if st.checkbox("View sample data"):
-        show_sample_data()
+    
+    
     #--------GET A VIEW NAME FOR NEW VIEWS--------
     if selected_file == 'Create new view':
         new_view_name = st.text_input(
@@ -99,6 +99,7 @@ def select_view():
             st.rerun()
         st.stop()
     else:
+        select_data()
         # Show the requirements, if user wants to see it
         if st.sidebar.checkbox("View requirements"):
             # Show the requirements using text area
@@ -108,34 +109,101 @@ def select_view():
             st.sidebar.warning(requirements)    
     return None
 
-def show_sample_data():
+def save_selected_data():
     """
-    This function allows the user to select multiple data files from a data folder and shows
-    a sample of 5 rows for each selected file.
+    On change, save the selected data to the view meta file
     """
+    project_folder = st.session_state.project_folder
+    selected_view = st.session_state.selected_view
+    views_folder = project_folder + '/views'
+    key = f"selected_tables_{selected_view}"
+    selected_data = st.session_state[key]
+    view_meta_file = views_folder + '/' + selected_view + '_meta.pkl'
+    # Open the view meta file to read the data
+    if os.path.exists(view_meta_file):
+        with open(view_meta_file, 'rb') as f:
+            view_meta = pd.read_pickle(f)
+    else:
+        view_meta = {}
+
+
+    view_meta['selected_data'] = selected_data
+    with open(view_meta_file, 'wb') as f:
+        pd.to_pickle(view_meta, f)
+    return None
+
+
+def select_data():
+    """
+    If there are more than three tables, the data models gets large,
+    and we hit context limits often.  So, we will ask the user to select
+    relevant tables.  
+    
+    TODO: we should have a special agent that can
+    do the selection for us.
+    """
+    project_folder = st.session_state.project_folder
+    selected_view = st.session_state.selected_view
+    data_description_for_view = f"data_description_{selected_view}"
+    views_folder = project_folder + '/views'
+    key = f"selected_tables_{selected_view}"
+    # Check if there is a pickle file for the selected view
+    # called view meta
+    view_meta_file = views_folder + '/' + selected_view + '_meta.pkl'
     # Define the data folder
     data_folder = st.session_state.project_folder + '/data'
 
     # Get a list of all data files in the data folder
     data_files = [f for f in os.listdir(data_folder) if f.endswith('.parquet')]
 
-    if len(data_files) == 0:
-        st.warning("There are no data files in the data folder.  Please add data files.")
+    # If the selected data is not in the session state,
+    # then get the default value for the widget
+    if key not in st.session_state:
+        if os.path.exists(view_meta_file):
+            # Load the pickle file
+            with open(view_meta_file, 'rb') as f:
+                view_meta = pd.read_pickle(f)
+            default = view_meta.get('selected_data', [])
+        elif len(data_files) == 0:
+            st.warning("There are no data files in the data folder.  Please add data files.")
+            st.stop()
+        # If there is just one file, show it without selection
+        elif len(data_files) < 4:
+            default = data_files
+
+        else:
+            default = []
+        
+        st.session_state[key] = default
+
+    # Allow the user to select multiple data files
+    selected_files = st.multiselect(
+        'Select data files', 
+        data_files, 
+        key=key, 
+        on_change=save_selected_data
+        )
+
+    if not selected_files:
+        st.error("Please select at least one data file that you will use for analysis.")
         st.stop()
-    # If there is just one file, show it without selection
-    elif len(data_files) == 1:
-        file_path = os.path.join(data_folder, data_files[0])
-        df = pd.read_parquet(file_path)
-        st.write(f'Sample data from {data_files[0]}:')
-        st.dataframe(df.head(5))
 
-    else:
-        # Allow the user to select multiple data files
-        selected_files = st.multiselect('Select data files', data_files)
+    data_model_file = st.session_state.project_folder + "/data_model.parquet"
+    data_description = pd.read_parquet(data_model_file)
+    # Get the description of the selected files
+    # Add data directory to the file names
+    selected_files = [os.path.join(data_folder, i) for i in selected_files]
+    selected_description = data_description[data_description['file_name'].isin(selected_files)].to_markdown()
 
+    st.session_state[data_description_for_view] = selected_description
+
+    if st.checkbox("Show sample data"):
         # Show a sample of 5 rows for each selected file
         for file in selected_files:
             file_path = os.path.join(data_folder, file)
             df = pd.read_parquet(file_path)
             st.write(f'Sample data from {file}:')
             st.dataframe(df.head(5))
+
+    return None
+
