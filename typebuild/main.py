@@ -4,6 +4,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(dir_path)
 import simple_auth
 import streamlit as st
+from menu import get_menu, reset_menu
 # Make it full width
 st.set_page_config(layout="wide", page_title='TypeBuild')
 token = simple_auth.simple_auth()
@@ -11,13 +12,12 @@ st.session_state.token = token
 
 import session_state_management
 
-from helpers import starter_code
+from helpers import starter_code, set_or_get_openai_api_key, config_project 
+
 # Starter code has to run early.  Do not move.
 starter_code()
 
-session_state_management.main()
-
-from project_management import get_project_file_folder, get_project_df, manage_project, set_or_get_openai_api_key
+from project_management import get_project_file_folder, get_project_df, manage_project
 from function_management import create_run_menu, run_code_in_view_file
 from function_calling_spec_maker import main as fcsm
 from requirements_with_chat import technical_requirements_chat
@@ -28,11 +28,6 @@ from plugins.create_content_with_llms import analyze_with_llm
 # Set the user type to developer for now.
 user_type = 'developer'
 st.session_state.user_type = user_type
-
-from menu import get_menu, reset_menu
-new_menu = get_menu()
-
-set_or_get_openai_api_key()
 
 # If new menu is toggle_developer_options, toggle the developer options
 if st.session_state.new_menu == 'toggle_developer_options':
@@ -71,6 +66,15 @@ if st.session_state.show_developer_options:
         st.sidebar.markdown("---")
         st.stop()
 
+# Check if openai key exists in the secrets file or custom_llm.py exists in the .typebuild folder, if not, then run the config_project function
+api_key = set_or_get_openai_api_key()
+if api_key == '' and not os.path.exists(f'{st.session_state.typebuild_root}/custom_llm.py'):
+    st.session_state.new_menu = 'settings'
+if st.session_state.new_menu == 'settings':
+    config_project()
+    st.error("Please add your OpenAI key or upload a custom LLM to continue.")
+    st.stop()
+    
 # Get the project file and data
 get_project_file_folder()
 

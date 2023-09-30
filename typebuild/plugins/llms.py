@@ -1,13 +1,16 @@
 import os
 import re
 import streamlit as st
-
+import openai
 from tenacity import (
     retry,
     stop_after_attempt,
     wait_random_exponential,
 ) 
 dir_path = os.path.dirname(os.path.realpath(__file__))
+
+import sys
+sys.path.append(st.session_state.typebuild_root)
 
 def get_llm_output(messages, max_tokens=2500, temperature=0.4, model='gpt-4', functions=[]):
     """
@@ -19,9 +22,10 @@ def get_llm_output(messages, max_tokens=2500, temperature=0.4, model='gpt-4', fu
     # If there is, use that
     progress_status = st.sidebar.empty()
     # progress_status.warning('Generating response from LLM...')
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    if os.path.exists(f'{dir_path}/custom_llm.py'):
-        from plugins.custom_llm import custom_llm_output
+
+    typebuild_root = st.session_state.typebuild_root
+    if os.path.exists(f'{typebuild_root}/custom_llm.py'):
+        from custom_llm import custom_llm_output
         content = custom_llm_output(messages, max_tokens=max_tokens, temperature=temperature, model=model, functions=functions)
     else:
         msg = get_openai_output(messages, max_tokens=max_tokens, temperature=temperature, model=model, functions=functions)
@@ -30,7 +34,7 @@ def get_llm_output(messages, max_tokens=2500, temperature=0.4, model='gpt-4', fu
             func_call = msg.get('function_call', None)
             st.session_state.last_function_call = func_call
     
-    progress_status.info("Extracting information from response...")
+    # progress_status.info("Extracting information from response...")
     if content:
         st.session_state.last_response = content
     # We can get back code or requirements in multiple forms
@@ -75,8 +79,6 @@ def get_openai_output(messages, max_tokens=3000, temperature=0.4, model='gpt-4',
     - max_tokens (int): The maximum number of tokens to generate, default 800
     - temperature (float): The temperature for the model. The higher the temperature, the more random the output
     """
-    import openai
-    openai.key = st.secrets.openai.key
     st.session_state.last_request = messages
     if functions:
         response = openai.ChatCompletion.create(

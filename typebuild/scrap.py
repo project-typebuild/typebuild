@@ -290,3 +290,25 @@ def modify_code():
         get_code(mod_requirements=change_requested, current_code=current_code)
     return None
 
+
+def create_secrets_file():
+    """
+    If the secrets file does not exist, create it.
+    """
+    # Create directory if it doesn't exist
+    if not os.path.exists('.streamlit'):
+        os.makedirs('.streamlit')
+    if not os.path.exists('.streamlit/secrets.toml'):
+        with open('.streamlit/secrets.toml', 'w') as f:
+            f.write('')
+    return None
+
+
+def get_llm_key_or_function():
+    """
+    For this system to work, we need LLM keys or functions.
+    """
+    # Check if openai key is in secrets
+    if 'openai' not in st.secrets:
+        st.warning("Please add your OpenAI key to secrets.toml")
+        st.stop()

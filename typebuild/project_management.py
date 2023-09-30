@@ -16,9 +16,9 @@ import streamlit as st
 import pandas as pd
 import prompts
 from streamlit_option_menu import option_menu
+from streamlit_extras.add_vertical_space import add_vertical_space
 import extra_streamlit_components as stx
 import sqlite3
-from streamlit_extras.stateful_button import button
 import json
 import toml 
 import sys
@@ -154,11 +154,6 @@ def manage_project():
     show_settings = show_project_settings()
 
     if show_settings:
-        if st.sidebar.checkbox("Get data from YouTube"):
-            from tools.yt_search import main as yt_search
-            yt_search()
-            st.warning("Uncheck get data from YouTube to go to project settings")
-            st.stop()
         project_settings()
 
     return None
@@ -184,45 +179,31 @@ def project_settings():
             reset_menu()
 
     options = [
-        'Config',
         'Upload data',
-        'Upload Custom LLM',
+        'Augment data',
         'Project description (optional)',
     ]
-    
-    # if the openai api key exists in secrets.toml, set the default option to upload data
-    api_key = set_or_get_openai_api_key()
+
 
     default_index = 0
-    if api_key:
-        default_index = 1
 
     selected_option = st.radio("Select an option", options, horizontal=True, index=default_index)
-
+    add_vertical_space(2)
     if selected_option == 'Upload data':
         file_upload_and_save()
         get_data_model()
         st.stop()
 
-    # TODO: Confirm that we don't need this anymore
-    # if selected_option == 'Append data (optional)':
-    #     append_data_to_exisiting_file()
-    #     st.stop()
+    if selected_option == 'Augment data':
+        add_vertical_space(1)
+        if st.checkbox("Get data from YouTube"):
+            from tools.yt_search import main as yt_search
+            yt_search()
+            st.warning("Uncheck get data from YouTube to go to project settings")
+        st.stop()
 
     if selected_option == 'Project description (optional)':
         set_project_description()
-        st.stop()
-
-    if selected_option == 'Data Modelling':
-        get_data_model()
-        st.stop()
-    
-    if selected_option == 'Upload Custom LLM':
-        upload_custom_llm_file()
-        st.stop()
-    
-    if selected_option == 'Config':
-        config_project()
         st.stop()
 
     return None
@@ -480,8 +461,6 @@ def upload_data_file(uploaded_file, file_extension):
     # Rename the columns with the updated column names
     df.columns = col_names
 
-    # st.dataframe(df)
-
     # If there are duplicate col names, add _1, _2, etc. to the end of the col name
     # Get the list of col names
         
@@ -525,6 +504,7 @@ def upload_data_file(uploaded_file, file_extension):
         df = clean_col_formats(df)
         df.to_parquet(file_path, index=False)
         st.success(f'File saved successfully')
+        st.session_state.files_uploaded = False
 
     return None
 
@@ -629,6 +609,7 @@ def file_upload_and_save():
 
     file_extension = None
     if len(uploaded_files) ==1:
+        st.session_state.files_uploaded = True
         st.warning(f'Adding your new document(s) to the existing documents database')   
         uploaded_file = uploaded_files[0]
         # Get the file extension
@@ -744,179 +725,3 @@ def append_data_to_exisiting_file():
             st.success(f'Data appended successfully')
             uploaded_file = None
     return None
-
-import ast
-
-def verify_functions(file_path, function_dict):
-    # Parse the Python file using the ast library
-    with open(file_path, 'r') as f:
-        tree = ast.parse(f.read())
-
-
-    # Extract all function definitions from the parsed tree
-    functions = []
-    for node in ast.walk(tree):
-        tmp_dict = {}
-        if isinstance(node, ast.FunctionDef):
-            function_name = node.name
-            args = [arg.arg for arg in node.args.args]
-            tmp_dict['function_name'] = function_name
-            tmp_dict['args'] = args
-            functions.append(tmp_dict)
-
-    # Check if the get_llm_output function is present in the functions list
-    # if get_llm_output function present and the args do not match, show an error
-        with open(f'{dir_path}/plugins/llms.py', 'r') as f:
-            tree = f.read()
-
-    if 'custom_llm_output' not in [i['function_name'] for i in functions]:
-        st.error('custom_llm_output function not found in the file, you need to have a custom_llm_output function in the file, for the reference, see the custom_llm_output function in the code block below')
-        st.code(tree, language='python')
-        st.stop()
-    else:
-        # Get the args for the get_llm_output function
-        custom_llm_output_args = [i['args'] for i in functions if i['function_name'] == 'custom_llm_output'][0]
-        # If the args do not match, show an error.  use a set to compare the args
-        if set(custom_llm_output_args) != set(function_dict['args']):
-            st.error(f'custom_llm_output function args do not match. Expected: {function_dict["args"]}, Actual: {custom_llm_output_args}')
-            st.code(tree, language='python')
-            st.stop()
-
-        else:
-            return True
-    
-
-def upload_custom_llm_file():
-    """
-    This function allows the user to upload a custom LLM file.
-    """
-    # Ask the user to upload a file
-    uploaded_file = st.file_uploader("Upload a file", type=['py'])
-    # If a file was uploaded, create a df2 dataframe
-    if uploaded_file is not None:
-        # Get the file extension
-        file_extension = uploaded_file.name.split('.')[-1]
-        # Load the file as a dataframe
-        if file_extension == 'py':
-            # Save the file to the tmp folder
-            tmp_folder = '/tmp/'
-            tmp_file_path =  tmp_folder + uploaded_file.name
-            with open(tmp_file_path, 'wb') as f:
-                f.write(uploaded_file.getbuffer())
-            # Verify the functions in the file
-            function_dict = {'function_name': 'custom_llm_output', 'args': ['input', 'max_tokens', 'temperature', 'model', 'functions']}
-            if verify_functions(tmp_file_path, function_dict):
-                success_message = st.empty()
-                success_message.success('Functions verified successfully, you can now save the file by clicking the button below')
-                if button('Save Custom LLM', key='save_custom_llm'):
-                    success_message.empty()
-                    file_path = f'{dir_path}/plugins/custom_llm.py'
-                    # if the file already exists, ask the user if they want to overwrite it or not
-                    if os.path.exists(file_path):
-                        overwrite = st.radio('File already exists, do you want to overwrite it?', ['Yes', 'No'], index=1)
-                        if overwrite == 'Yes':
-                            with st.spinner('Saving file...'):
-                                time.sleep(2)
-                                # Save the file to the data folder
-                                with open(file_path, 'wb') as f:
-                                    f.write(uploaded_file.getbuffer())
-                                st.success(f'File saved successfully')
-                        else:
-                            st.warning('File not saved')
-                    else:
-                        # Save the file to the data folder
-                        with open(file_path, 'wb') as f:
-                            f.write(uploaded_file.getbuffer())
-                        st.success(f'File saved successfully')
-    st.stop()
-    return None
-
-def config_project():
-    """
-    For a new project, there should be a config.json file in the project_settings folder. if not, then this function will create one.
-    this config file should have the following keys:
-    - preferred model (str): The preferred model for the project, e.g. gpt-3.5-turbo-16k, gpt-3.5-turbo, gpt-4, etc.
-    - api key (str): The API key for the openai API, if preferred model is openai's
-    - function_call_availabilty (bool): Does the user have access to the 0613 models of openai?
-
-    Save the api key to streamlit secrets.toml file
-    
-    """
-    # Get the project folder from the session state
-    user_folder = st.session_state.user_folder
-    # Create the secrets.toml file if it does not exist
-    secrets_file_path = user_folder + '/secrets.toml'
-    if not os.path.exists(secrets_file_path):
-        with open(secrets_file_path, 'w') as f:
-            f.write('')
-        st.session_state.config = {}
-    else:
-        with open(secrets_file_path, 'r') as f:
-            config = toml.load(f)
-            st.session_state.config = config
-
-    # If the config exists in the session state, use the default values
-    st.info('If you have a custom model, skip the API key and go to the next step')
-    api_key = st.text_input('Enter the API key', value=st.session_state.config.get('openai', {}).get('key', ''))
-
-    function_call_availabilty = st.checkbox(
-        "(Expert setting) I have access to function calling", 
-        value=st.session_state.config.get('function_call_availabilty', True),
-        help="Do you have access to openai models ending in 0613? they have a feature called function calling.",
-        )
-        
-    if st.button("Submit config"):
-        if api_key == '':
-            st.error('Enter the API key')
-            st.stop()
-        # Save the config to the config.json file
-        config = {}
-        # set the openai key
-        openai.api_key = api_key
-        # Save the API key in the secrets module
-        config['openai'] = {'key': api_key}
-        config['function_call_availabilty'] = function_call_availabilty
-        if function_call_availabilty:
-            st.session_state.function_call_type = 'auto'
-        else:
-            st.session_state.function_call_type = 'manual'
-        # Save the config to the config.json file
-        with st.spinner('Saving config...'):
-            time.sleep(2)
-
-        if not os.path.exists(secrets_file_path):
-            with open(secrets_file_path, 'w') as f:
-                f.write('')
-        with open(secrets_file_path, 'r') as f:
-            config_ = toml.load(f)
-
-        # Add the API key to the config dictionary
-        config_['openai'] = {'key': api_key}
-        config_['function_call_availabilty'] = function_call_availabilty
-        # Save the config to the secrets.toml file
-        with open(secrets_file_path, 'w') as f:
-            toml.dump(config_, f)
-            st.toast('Hip!')
-            time.sleep(.5)
-            st.success('Config saved successfully')
-
-def set_or_get_openai_api_key():
-
-    # Check if the user has a secrets file and openai key in the secrets.toml file. if yes, then set the openai key
-
-    # Get the project folder from the session state
-    user_folder = st.session_state.user_folder
-    # Create the secrets.toml file if it does not exist
-    secrets_file_path = user_folder + '/secrets.toml'
-    if not os.path.exists(secrets_file_path):
-        with open(secrets_file_path, 'w') as f:
-            f.write('')
-        st.session_state.config = {}
-    else:
-        with open(secrets_file_path, 'r') as f:
-            config = toml.load(f)
-            st.session_state.config = config
-    api_key = st.session_state.config.get('openai', {}).get('key', '')
-    if api_key != '':
-        openai.api_key = api_key
-    return api_key

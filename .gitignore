@@ -14,6 +14,8 @@ session_states/
 
 # Remove all .7z files across the repo
 *.7z
+.DS_Store/
+*.DS_Store
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

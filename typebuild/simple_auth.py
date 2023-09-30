@@ -108,7 +108,7 @@ def simple_auth():
     # If logmeout is there, invoke logout.
     # The user has to close the browser tab to login again.  The new session will not have this variable in session state.
     if 'logmeout' in st.session_state:
-        logout()
+        pass
     # If there is authorization in the system, use it.
     elif 'token' in st.session_state:
         token = st.session_state['token']

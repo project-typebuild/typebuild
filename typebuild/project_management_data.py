@@ -13,6 +13,7 @@ import os
 from plugins.llms import get_llm_output
 from helpers import text_areas
 from plugins.data_widgets import display_editable_data
+from glob import glob
 
 def convert_to_appropriate_dtypes(df, data_model):
     
@@ -38,7 +39,8 @@ def convert_to_appropriate_dtypes(df, data_model):
             try:
                 df[col] = df[col].astype(dtype)
             except Exception as e:
-                st.error(f"Could not convert the column **{col}** to {dtype}.  Got the following error: {e}")    
+                st.error(f"Could not convert the column **{col}** to {dtype}.  Got the following error: {e}")  
+                pass  
     return df
     
 
@@ -136,27 +138,31 @@ def get_column_info(data_model, new_files_only=True):
     # Get the list of files in data model
 
     project_folder = st.session_state.project_folder
-    data_files = os.listdir(project_folder + '/data')
-    data_files = [i for i in data_files if i.endswith('.parquet')]
-    if new_files_only:
-        # Get the list of files that have already been processed
-        if data_model is None:
-            processed_files = []
-        else:
-            processed_files = data_model.file_name.unique().tolist()
+    data_folder = project_folder + '/data'
+    data_files = glob(data_folder + '/*.parquet')
+    # Get the list of files that have already been processed
+    if data_model is None:
+        processed_files = []
+    else:
+        processed_files = data_model.file_name.unique().tolist()
+
+    if 'filtered_files_for_data_model' in st.session_state:
+        data_files = st.session_state.filtered_files_for_data_model
+    else:
         data_files = [i for i in data_files if i not in processed_files]
+
     column_info = {}
     status = st.empty()
     all_col_infos = []
     all_col_info_markdown = ''
-    for file in data_files:
-        st.info(f"Getting column info for {file}")
-        parquet_file_path = project_folder + '/data/' + file
+    for parquet_file_path in data_files:
+        st.info(f"Getting column info for {parquet_file_path}")
+        # parquet_file_path = project_folder + '/data/' + file
         df = pd.read_parquet(parquet_file_path)  
         df_col_info = get_column_info_for_df(df)
         df_col_info['file_name'] = parquet_file_path
         # st.dataframe(df_col_info)
-        save_data_model(df_col_info, file)
+        save_data_model(df_col_info, parquet_file_path)
         df = convert_to_appropriate_dtypes(df, df_col_info)
         try:
             df.to_parquet(parquet_file_path, index=False)
@@ -201,6 +207,11 @@ def get_data_model():
     """
     Save the data model to the project folder.
     """
+
+    # Check if the files are being uploaded. in that case, dont display the data model
+    if 'files_uploaded' not in st.session_state:
+        st.session_state.files_uploaded = False
+
     generate_for_new_files_only = True
     # Save the column info to the project folder
     project_folder = st.session_state.project_folder
@@ -224,7 +235,8 @@ def get_data_model():
         generate_col_info = False
         processed_files = data_model_df.file_name.unique().tolist()
         files_to_process = [i for i in data_files if i not in processed_files]
-        update_colum_types_for_table(data_model_df, data_model_file)
+        if not st.session_state.files_uploaded:
+            update_colum_types_for_table(data_model_df, data_model_file)
 
     else:
         data_model_df = None
@@ -237,21 +249,22 @@ def get_data_model():
         
 
     if data_files:
-        if st.checkbox(
-            "🚨 Re-generate column info automatically 🚨",
-            help="The LLM will recreate column definitions.  Use this only if the table needs major changes.",
-            ):
-                st.warning("Use this only if the table needs major changes")
-                if st.button("Confirm regeneration"):
-                    generate_col_info = True
-                    generate_for_new_files_only = False
+        if not st.session_state.files_uploaded:
+            if st.checkbox(
+                "🚨 Re-generate column info automatically for the filtered files 🚨",
+                help="The LLM will recreate column definitions.  Use this only if the table needs major changes.",
+                ):
+                    st.warning("Use this only if the table needs major changes")
+                    if st.button("Confirm regeneration"):
+                        generate_col_info = True
+                        generate_for_new_files_only = True
 
-        if 'column_info' not in st.session_state or generate_col_info:
-            with st.spinner("Studying the data to understand it..."):
-                get_column_info(data_model=data_model_df, new_files_only=generate_for_new_files_only)
-                st.success("Done studying the data.  You can start using it now")
-                time.sleep(3)
-                st.rerun()
+            if 'column_info' not in st.session_state or generate_col_info:
+                with st.spinner("Studying the data to understand it..."):
+                    get_column_info(data_model=data_model_df, new_files_only=generate_for_new_files_only)
+                    st.success("Done studying the data.  You can start using it now")
+                    time.sleep(3)
+                    st.rerun()
     return None
 
 def update_colum_types_for_table(data_model, data_model_file):
@@ -259,6 +272,7 @@ def update_colum_types_for_table(data_model, data_model_file):
     Looks at the data model and converts
     the selected files
     """
+    st.markdown("""---""")
     st.subheader("Does this look right?")
     info = """Take a look at the column_info and see if it looks right.  Getting it right will help us a lot when we work with the data."""
     st.info(info)
@@ -275,6 +289,7 @@ def update_colum_types_for_table(data_model, data_model_file):
     if not selected_files:
         display_editable_data(data_model, data_model_file)
     else:
+        st.session_state.filtered_files_for_data_model = selected_files
         display_editable_data(data_model[data_model.file_name.isin(selected_files)], data_model_file)
         if st.button("Update the column types"):
             for file in selected_files:

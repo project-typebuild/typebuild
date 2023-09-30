@@ -82,8 +82,19 @@ def get_menu_data():
         "ttip": "Describe project, upload data, settings",
     }
 
+    settings = {
+        'id': 'settings',
+        'icon': "⚙️",
+        'label': "Settings",
+        'ttip': "Adding openai key, upload custom llm",
+    }
     
     menu_data.append(project_settings)
+    menu_data.append(settings)
+
+    if 'user_type' not in st.session_state:
+        st.session_state.user_type = 'developer'
+
     # If user type is developer, add developer options
     if st.session_state.user_type == 'developer':
         menu_data.append(developer_options)

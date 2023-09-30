@@ -13,6 +13,11 @@ def add_default_session_states():
         'call_status': None,
         'stage_num': 0,
         'dir_path': os.path.dirname(os.path.realpath(__file__)),
+        'home_dir' : os.path.expanduser("~"),
+        'typebuild_root' : os.path.join(os.path.expanduser("~"), '.typebuild'),
+        'user_folder': os.path.join(os.path.expanduser("~"), '.typebuild', 'users', st.session_state.token),
+        'secrets_file_path' : os.path.join(os.path.expanduser("~"), '.typebuild', 'users', st.session_state.token, 'secrets.toml'),
+        'profile_dict_path': os.path.join(os.path.expanduser("~"), '.typebuild', 'users', 'admin', 'profile_dict.pk'),
         }
 
     for key in ss_vars:

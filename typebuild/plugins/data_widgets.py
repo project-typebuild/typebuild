@@ -51,7 +51,6 @@ def get_data_config(df):
     # Loop through the columns to identify the datatypes
     # and add config
     config = {}
-    st.write(df)
 
     for col in df.columns:
         # Check if the column is an object
