@@ -17,6 +17,8 @@ session_states/
 .DS_Store/
 *.DS_Store
 
+*.pk
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
