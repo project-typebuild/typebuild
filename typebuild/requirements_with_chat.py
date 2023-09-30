@@ -114,7 +114,6 @@ def technical_requirements_chat(widget_label):
 
 
     if st.session_state.ask_llm:
-        st.sidebar.warning("Asking LLM for help...")
         # Get the response
         if st.session_state.function_call:    
             content = get_llm_output(
@@ -122,7 +121,10 @@ def technical_requirements_chat(widget_label):
                 functions=funcs_available(),
                 )
         else:
-            content = get_llm_output(st.session_state[chat_key])
+            content = get_llm_output(
+                st.session_state[chat_key],
+                model='gpt-4',
+                )
         
                 # Add the response to the chat
         if content:

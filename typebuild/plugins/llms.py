@@ -9,7 +9,7 @@ from tenacity import (
 ) 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
-def get_llm_output(messages, max_tokens=3000, temperature=0.4, model='gpt-4', functions=[]):
+def get_llm_output(messages, max_tokens=2500, temperature=0.4, model='gpt-4', functions=[]):
     """
     This checks if there is a custom_llm.py in the plugins directory 
     If there is, it uses that.
