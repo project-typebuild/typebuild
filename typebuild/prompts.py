@@ -122,85 +122,6 @@ def blueprint_prompt_structure(df=None, prompt=''):
     st.session_state.project_description_chat.append(msg)
     return None
 
-def blueprint_technical_requirements(prompt, current_text, chat_key, func_str=None):
-    """
-    Prompt and system message to help user generate the technical requirements.
-    """
-
-    # Get data description
-    data_model_file = st.session_state.project_folder + "/data_model.parquet"
-    data_description = pd.read_parquet(data_model_file).to_markdown()
-    st.session_state.data_description = data_description
-    
-    current_text_string = ""
-    if current_text:
-        current_text_string = f"""
-        THIS IS WHAT I HAVE SO FAR IN MY REQUIREMENTS FILE:
-        file_name: {st.session_state.file_path}.txt
-        |||{current_text}|||
-        """
-
-    if func_str:
-        func_str = f"""
-        THIS IS THE CURRENT FUNCTION BASED ON THE REQUIREMENTS: 
-        {func_str}
-        """
-
-    code_info = "If you need to access the current code base, you can call the function send_code_to_llm"
-    if 'code_str' in st.session_state:
-        code_info = f"""This is the current code:
-        |||{st.session_state.code_str}|||"""
-    
-
-    system_instruction = f"""You are helping me develop technical requirements for my project.
-    Start by offering to help.
-
-    Confirm function requirement if you know it, if not ask me what the functional requirement is.
-
-    Next, Help me create step-by-step instructions for my young developer so that they have every detail they need to code.
-    Do not worry about basic technical details like libraries or loading data.  The developer knows that.
-    I just have to tell them what to do with the data without any scope for doubt.
-
-    {data_description}
-    {current_text}
-
-    Before you write the instructions:
-
-    1.  Look for ambiguities or missing information in my requirement.  If you need clarifications, wait for me to respond before going to step 2. 
-    2.  Write down step by step instructions for the developer.
-    3.  Check the instructions to see if it will meet the functional requirement.  If not, revise.  
-    4.  Remove unnecessary or totally obvious steps.
-    5.  Make sure the steps are in non-technical language, so that I understand.
-    6.  Format the final instructions in markdown and give it to me in triple back ticks. 
-
-    The final instructions should be in the following format:
-    |||
-    FUNCTIONAL REQUIREMENT: <functional requirement>
-    TECHNICAL REQUIREMENTS:
-    <step by step instructions>
-    |||
-
-    When the I am happy with the requirements, offer to save the requirements to a file.
-
-    {code_info}
-    """
-
-    prompt = f"""{prompt}"""
-
-    chat = st.session_state[chat_key]
-
-
-    # If the chat is empty, add the system message
-    if len(chat) == 0:
-        chat.append({'role': 'system', 'content': system_instruction})
-    else:
-        # Replace the system message, since it may have been updated
-        chat[0] = {'role': 'system', 'content': system_instruction}
-
-    # Add the user message, if there is one
-    if prompt:
-        chat.append({'role': 'user', 'content': prompt})
-    return None
 
 def get_parameter_info(func_str):
     """
@@ -238,8 +159,9 @@ def from_requirements_to_code(chat_key, current_text="", prompt="", func_str=Non
 
     # Get data description
     data_model_file = st.session_state.project_folder + "/data_model.parquet"
-    data_description = pd.read_parquet(data_model_file).to_markdown()
-    
+    selected_view = st.session_state.selected_view
+    data_description = st.session_state[f"data_description_{selected_view}"]
+        
     current_text_string = ""
     if current_text:
         current_text_string = f"""
@@ -329,11 +251,11 @@ def get_technical_requirements_instructions():
     Before you write the instructions:
 
     1.  Look for ambiguities or missing information in my requirement.  If you need clarifications, wait for me to respond before going to step 2. Make sure you have something (table, chart, forms, etc.) to display on streamlit.
-    2.  Write down step by step instructions for the developer.
+    2.  Write down step by step instructions for the developer.  Include file path, field names and other information.
     3.  Check the instructions to see if it will meet the functional requirement.  If not, revise.  
     4.  Remove unnecessary or totally obvious steps.
     5.  Make sure the steps are in non-technical language, so that I understand.
-    6.  Format the final instructions in markdown and give it to me in triple back ticks. 
+    6.  Format the final instructions in markdown and give it to me within triple pipe. 
 
     The final instructions should be in the following format:
     |||
@@ -386,7 +308,7 @@ def get_code_instructions():
     - Use st.info, st.warning, st.success for clarity, if needed.  You can also use emojis to draw attention.
     - Create one function per feature, passing necessary data so that data is not loaded again and again.
     - Create a function called "main" that calls all the other functions in the order they are needed.   Create it but do not call the main function.  It will be called by the system.
-
+    - There should be only one code block and this should be the full code.  Explanations, tips, etc. should be in markdown and not in code blocks.
     {error_msg}        
     Write concise code based on the instructions above, fixing errors, if any.  Document it with detailed docstrings, and comments.
     """
