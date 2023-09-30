@@ -180,7 +180,7 @@ def project_settings():
 
     options = [
         'Upload data',
-        'Augment data',
+        'Generate data',
         'Project description (optional)',
     ]
 
@@ -188,14 +188,13 @@ def project_settings():
     default_index = 0
 
     selected_option = st.radio("Select an option", options, horizontal=True, index=default_index)
-    add_vertical_space(2)
+    st.markdown("---")
     if selected_option == 'Upload data':
         file_upload_and_save()
         get_data_model()
         st.stop()
 
-    if selected_option == 'Augment data':
-        add_vertical_space(1)
+    if selected_option == 'Generate data':
         if st.checkbox("Get data from YouTube"):
             from tools.yt_search import main as yt_search
             yt_search()
