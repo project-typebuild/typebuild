@@ -522,11 +522,65 @@ def upload_data_file(uploaded_file, file_extension):
         folder_name = os.path.dirname(file_path)
         if not os.path.exists(folder_name):
             os.makedirs(folder_name)
+        df = clean_col_formats(df)
         df.to_parquet(file_path, index=False)
         st.success(f'File saved successfully')
 
     return None
 
+def clean_col_formats(df):
+    """
+    Apache arrow requires clearn formatting.  Look at the 
+    column names and data types and clean them up.
+
+    Try saving as column type and see if it works. If not, save as string.
+
+    Args:
+    - df (dataframe): The dataframe to clean
+
+    Returns:
+    - df (dataframe): The cleaned dataframe
+    """
+
+    # Get the list of column names
+    col_names = df.columns.tolist()
+
+    # If there are duplicate column names, add _1, _2, etc. to the end of the column name
+    for i, col_name in enumerate(col_names):
+        if col_names.count(col_name) > 1:
+            col_names[i] = col_name + '_' + str(col_names[:i].count(col_name) + 1)
+
+    # Rename the columns with the updated column names
+    df.columns = col_names
+
+    # st.dataframe(df)
+
+    # If there are duplicate col names, add _1, _2, etc. to the end of the col name
+    # Get the list of col names
+        
+    # Get the column names and data types
+    all_col_infos = []
+    for column in df.columns:
+        column_info = {}
+        column_info['column_name'] = column
+        column_info['column_type'] = str(df[column].dtype)
+        column_info['column_info'] = ''
+        all_col_infos.append(column_info)
+
+    # Update the data types of the dataframe
+    for col_info in all_col_infos:
+        col_name = col_info['column_name']
+        col_type = col_info['column_type']
+        if col_type != 'object':
+            try:
+                df[col_name] = df[col_name].astype(col_type)
+            except:
+                df[col_name] = df[col_name].astype(str)
+        
+        if col_type == 'object':
+            df[col_name] = df[col_name].astype(str)
+
+    return df
 
 def upload_document_file(uploaded_file, file_extension):
     """

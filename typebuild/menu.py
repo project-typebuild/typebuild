@@ -88,7 +88,6 @@ def get_menu_data():
     if st.session_state.user_type == 'developer':
         menu_data.append(developer_options)
     menu_data.append(logout)
-
     return menu_data
 
 def get_theme():
