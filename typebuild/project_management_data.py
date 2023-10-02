@@ -149,24 +149,6 @@ def get_column_info(data_model, new_files_only=True):
 
     data_model.column_info = data_model.column_info.fillna('')
 
-    missing_cols = data_model[
-        (data_model.file_name.isin(data_files)) &
-        (data_model.column_info == '')
-        ].column_name.tolist()
-
-    if 'filtered_files_for_data_model' in st.session_state:
-        data_files = st.session_state.filtered_files_for_data_model
-    else:
-        data_files = [i for i in data_files if i not in processed_files]
-
-    if not data_files:
-        # Check if there are any missing column info in the data model and get the files
-
-        if missing_cols:
-            data_files = data_model[data_model.column_info == ''].file_name.unique().tolist()
-        else:
-            st.success("All files have column info")
-            return None
 
     column_info = {}
     status = st.empty()
@@ -175,15 +157,18 @@ def get_column_info(data_model, new_files_only=True):
 
     for parquet_file_path in data_files:
         df = pd.read_parquet(parquet_file_path)  
-        st.dataframe(data_model[data_model.file_name == parquet_file_path])
-        missing_col_info_for_file = [i for i in missing_cols if i in df.columns.tolist()]
-        st.info(f"Getting column info for {missing_col_info_for_file} in {parquet_file_path}")
-
+        # Check which columns have col info
+        avbl_col_info_for_file = data_model[
+            (data_model.file_name == parquet_file_path) &
+            (data_model.column_info != '')
+            ].column_name.tolist()
+        # Get missing cols
+        missing_col_info_for_file = [i for i in df.columns.tolist() if i not in avbl_col_info_for_file]
         all_missing_dfs = []
         if len(missing_col_info_for_file) > 0:
+            st.info(f"Getting column info for {missing_col_info_for_file} in {parquet_file_path}")
             df_missing = df[missing_col_info_for_file]
             df_col_info_missing = get_column_info_for_df(df_missing)
-            df_col_info_missing['file_name'] = parquet_file_path
             all_missing_dfs.append(df_col_info_missing)
             df_col_info = df_col_info_missing
         else:
@@ -198,7 +183,6 @@ def get_column_info(data_model, new_files_only=True):
             st.error(f"Could not save the file.  Got the following error: {e}")
         
         status.warning("Pausing for 5 secs to avoid rate limit")
-        time.sleep(5)
         cols = df_col_info.columns.tolist()
         cols = cols[-1:] + cols[:-1]
         df_col_info = df_col_info[cols]
@@ -277,9 +261,7 @@ def get_data_model():
             cols_not_in_data_model = [i for i in cols_in_file if i not in cols_in_data_model]
             if cols_not_in_data_model:
                 files_to_process.append(file)
-                generate_col_info = True
-
-
+            
         if not st.session_state.files_uploaded:
             update_colum_types_for_table(data_model_df, data_model_file)
 
@@ -303,14 +285,14 @@ def get_data_model():
                     if st.button("Confirm regeneration"):
                         generate_col_info = True
                         generate_for_new_files_only = True
-                        # TODO: Delete col info for the files that are being regenerated
+                        # Set col info as null for selected files
+                        data_model_df.loc[data_model_df.file_name.isin(files_to_process), 'column_info'] = ''
 
-                        if 'column_info' not in st.session_state or generate_col_info:
-                            with st.spinner("Studying the data to understand it..."):
-                                get_column_info(data_model=data_model_df, new_files_only=generate_for_new_files_only)
-                                st.success("Done studying the data.  You can start using it now")
-                                time.sleep(3)
-                                st.rerun()
+    if 'column_info' not in st.session_state or generate_col_info:
+        with st.spinner("Studying the data to understand it..."):
+            get_column_info(data_model=data_model_df, new_files_only=generate_for_new_files_only)
+            st.success("Done studying the data.  You can start using it now")
+            time.sleep(3)
     return None
 
 def update_colum_types_for_table(data_model, data_model_file):
@@ -336,7 +318,11 @@ def update_colum_types_for_table(data_model, data_model_file):
         display_editable_data(data_model, data_model_file)
     else:
         st.session_state.filtered_files_for_data_model = selected_files
-        display_editable_data(data_model[data_model.file_name.isin(selected_files)], data_model_file)
+        display_editable_data(
+            df=data_model,
+            filtered_df=data_model[data_model.file_name.isin(selected_files)], 
+            file_name=data_model_file
+            )
         if st.button("Update the column types"):
             for file in selected_files:
                 df = pd.read_parquet(file)
