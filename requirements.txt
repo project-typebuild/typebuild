@@ -1,9 +1,8 @@
-streamlit==1.27.0
 anthropic
 chardet
 dataclasses-json
-streamlit-extras
 extra-streamlit-components
+faker-commerce
 fsspec
 hydralit-components
 langsmith
