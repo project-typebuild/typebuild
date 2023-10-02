@@ -85,7 +85,7 @@ def get_menu_data():
     settings = {
         'id': 'settings',
         'icon': "⚙️",
-        'label': "Settings",
+        'label': "LLM Settings",
         'ttip': "Adding openai key, upload custom llm",
     }
     

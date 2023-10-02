@@ -6,6 +6,8 @@ import toml
 from streamlit_extras.stateful_button import button
 from streamlit_extras.add_vertical_space import add_vertical_space
 from simple_auth import logout
+import openai
+import time
 
 def update_text_file(file, value):
     """
@@ -297,14 +299,14 @@ def create_user_folder():
     return None
 
 def display_home_page():
-
+    from helpers import set_or_get_openai_api_key
     # Text to display on the home page in a markdown block
-    st.subheader('Welcome to Typebuild!', divider=True, anchor='welcome')
-    text = """
-    ### Typebuild is a tool to help you build your next project.  It is a work in progress.  If you have any feedback, please reach out to us!
-
-    """
-
+    api_key = set_or_get_openai_api_key()
+    if api_key == '' and not os.path.exists(f'{st.session_state.typebuild_root}/custom_llm.py'):
+        st.subheader('TypeBuild', divider=True, anchor='welcome')
+        text = """**TypeBuild is built to work with language models.  Give us an OpenAI API key or upload a custom LLM to continue.**"""
+    else:
+        text = ""
     # Display the text
     st.markdown(text)
 
@@ -343,7 +345,6 @@ def starter_code():
     new_menu = get_menu()
     if st.session_state.new_menu =='Home':
         display_home_page()
-        st.stop()
     if st.session_state.new_menu == 'logout':
         logout()
     create_user_folder()

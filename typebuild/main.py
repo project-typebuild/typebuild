@@ -68,6 +68,7 @@ if st.session_state.show_developer_options:
 
 # Check if openai key exists in the secrets file or custom_llm.py exists in the .typebuild folder, if not, then run the config_project function
 api_key = set_or_get_openai_api_key()
+
 if api_key == '' and not os.path.exists(f'{st.session_state.typebuild_root}/custom_llm.py'):
     st.session_state.new_menu = 'settings'
 if st.session_state.new_menu == 'settings':
