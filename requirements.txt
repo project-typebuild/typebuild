@@ -5,8 +5,6 @@ extra-streamlit-components
 faker-commerce
 fsspec
 hydralit-components
-langsmith
-nest-asyncio
 numexpr
 nx-altair
 openai

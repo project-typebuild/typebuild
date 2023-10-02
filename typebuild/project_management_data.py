@@ -140,37 +140,56 @@ def get_column_info(data_model, new_files_only=True):
     project_folder = st.session_state.project_folder
     data_folder = project_folder + '/data'
     data_files = glob(data_folder + '/*.parquet')
+
     # Get the list of files that have already been processed
     if data_model is None:
         processed_files = []
     else:
         processed_files = data_model.file_name.unique().tolist()
 
+    data_model.column_info = data_model.column_info.fillna('')
+
+    missing_cols = data_model[
+        (data_model.file_name.isin(data_files)) &
+        (data_model.column_info == '')
+        ].column_name.tolist()
+
     if 'filtered_files_for_data_model' in st.session_state:
         data_files = st.session_state.filtered_files_for_data_model
     else:
         data_files = [i for i in data_files if i not in processed_files]
-    data_model.column_info = data_model.column_info.fillna('')
+
+    if not data_files:
+        # Check if there are any missing column info in the data model and get the files
+
+        if missing_cols:
+            data_files = data_model[data_model.column_info == ''].file_name.unique().tolist()
+        else:
+            st.success("All files have column info")
+            return None
+
     column_info = {}
     status = st.empty()
     all_col_infos = []
     all_col_info_markdown = ''
+
     for parquet_file_path in data_files:
-        st.info(f"Getting column info for {parquet_file_path}")
-        # parquet_file_path = project_folder + '/data/' + file
         df = pd.read_parquet(parquet_file_path)  
-        
-        # Get data only if col_info ''.
-        missing_cols = data_model[
-            (data_model.file_name == parquet_file_path) &
-            (data_model.column_info == '')
-            ].column_name.tolist()
-        
         st.dataframe(data_model[data_model.file_name == parquet_file_path])
-        st.info(f"Getting column info for {missing_cols}")
-        df_col_info = get_column_info_for_df(df)
+        missing_col_info_for_file = [i for i in missing_cols if i in df.columns.tolist()]
+        st.info(f"Getting column info for {missing_col_info_for_file} in {parquet_file_path}")
+
+        all_missing_dfs = []
+        if len(missing_col_info_for_file) > 0:
+            df_missing = df[missing_col_info_for_file]
+            df_col_info_missing = get_column_info_for_df(df_missing)
+            df_col_info_missing['file_name'] = parquet_file_path
+            all_missing_dfs.append(df_col_info_missing)
+            df_col_info = df_col_info_missing
+        else:
+            df_col_info = data_model[data_model.file_name == parquet_file_path]
+            
         df_col_info['file_name'] = parquet_file_path
-        # st.dataframe(df_col_info)
         save_data_model(df_col_info, parquet_file_path)
         df = convert_to_appropriate_dtypes(df, df_col_info)
         try:
@@ -180,7 +199,6 @@ def get_column_info(data_model, new_files_only=True):
         
         status.warning("Pausing for 5 secs to avoid rate limit")
         time.sleep(5)
-        # put the file_name as the first column
         cols = df_col_info.columns.tolist()
         cols = cols[-1:] + cols[:-1]
         df_col_info = df_col_info[cols]
@@ -188,7 +206,7 @@ def get_column_info(data_model, new_files_only=True):
         column_info = df_col_info.to_markdown(index=False)
         all_col_info_markdown += column_info + '\n\n'
         status.empty()
-    # Add column info to the session state
+
     st.session_state.column_info = all_col_info_markdown
 
     return None
@@ -232,10 +250,7 @@ def get_data_model():
     data_model_file = project_folder + '/data_model.parquet'
 
     # Get a list of parquet data files
-    data_files = os.listdir(data_folder)
-    data_files = [i for i in data_files if i.endswith('.parquet')]
-    # Add data folder path to the file names
-    data_files = [data_folder + '/' + i for i in data_files]
+    data_files = glob(data_folder + '/*.parquet')
     # See which files have already been processed
     processed_files = []
     files_to_process = data_files
@@ -282,7 +297,7 @@ def get_data_model():
         if not st.session_state.files_uploaded:
             if st.checkbox(
                 "🚨 Re-generate column info automatically for the filtered files 🚨",
-                help="The LLM will recreate column definitions.  Use this only if the table needs major changes.",
+                help="The LLM will recreate column definitions.  Use this only if the table needs major changes. If No files are selected, it will go get the column info for the missing columns.",
                 ):
                     st.warning("Use this only if the table needs major changes")
                     if st.button("Confirm regeneration"):
@@ -290,12 +305,12 @@ def get_data_model():
                         generate_for_new_files_only = True
                         # TODO: Delete col info for the files that are being regenerated
 
-            if 'column_info' not in st.session_state or generate_col_info:
-                with st.spinner("Studying the data to understand it..."):
-                    get_column_info(data_model=data_model_df, new_files_only=generate_for_new_files_only)
-                    st.success("Done studying the data.  You can start using it now")
-                    time.sleep(3)
-                    st.rerun()
+                        if 'column_info' not in st.session_state or generate_col_info:
+                            with st.spinner("Studying the data to understand it..."):
+                                get_column_info(data_model=data_model_df, new_files_only=generate_for_new_files_only)
+                                st.success("Done studying the data.  You can start using it now")
+                                time.sleep(3)
+                                st.rerun()
     return None
 
 def update_colum_types_for_table(data_model, data_model_file):

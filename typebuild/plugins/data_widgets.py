@@ -152,10 +152,13 @@ def update_data_to_file(df, edited_df, file_name, filtered_df):
             elif file_name.endswith('.csv'):
                 df.to_csv(file_name, index=False)
                 st.success("Data saved")
+                
             else:
                 file_type = os.path.splitext(file_name)[1]
                 st.warning(f"You are trying to save a file with an unknown extension {file_type}")
-
+            
+            time.sleep(1)
+            st.rerun()
     return None
 
 
