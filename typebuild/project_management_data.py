@@ -150,7 +150,7 @@ def get_column_info(data_model, new_files_only=True):
         data_files = st.session_state.filtered_files_for_data_model
     else:
         data_files = [i for i in data_files if i not in processed_files]
-
+    data_model.column_info = data_model.column_info.fillna('')
     column_info = {}
     status = st.empty()
     all_col_infos = []
@@ -159,6 +159,15 @@ def get_column_info(data_model, new_files_only=True):
         st.info(f"Getting column info for {parquet_file_path}")
         # parquet_file_path = project_folder + '/data/' + file
         df = pd.read_parquet(parquet_file_path)  
+        
+        # Get data only if col_info ''.
+        missing_cols = data_model[
+            (data_model.file_name == parquet_file_path) &
+            (data_model.column_info == '')
+            ].column_name.tolist()
+        
+        st.dataframe(data_model[data_model.file_name == parquet_file_path])
+        st.info(f"Getting column info for {missing_cols}")
         df_col_info = get_column_info_for_df(df)
         df_col_info['file_name'] = parquet_file_path
         # st.dataframe(df_col_info)
@@ -194,11 +203,13 @@ def save_data_model(data_model_for_file, file_name):
     if os.path.exists(data_model_file):
         current_model = pd.read_parquet(data_model_file)
         # Remove information about file_name from the current model
-        current_model = current_model[current_model.file_name != file_name]
+        # current_model = current_model[current_model.file_name != file_name]
         all_dfs.append(current_model)
 
     all_dfs.append(data_model_for_file)
     df_all_col_infos = pd.concat(all_dfs)
+    # Remove duplicates for given file name and column name, keeping the last one
+    df_all_col_infos = df_all_col_infos.drop_duplicates(subset=['file_name', 'column_name'], keep='last')
     df_all_col_infos.to_parquet(data_model_file, index=False)
     return None
 
@@ -234,7 +245,17 @@ def get_data_model():
         st.session_state.column_info = data_model_df.to_markdown(index=False)
         generate_col_info = False
         processed_files = data_model_df.file_name.unique().tolist()
+        
+        # If a parquet file does not exist in the data model, add it to the list of files to process
         files_to_process = [i for i in data_files if i not in processed_files]
+        
+        # If a parquet file has a column that is not in the data model, add it to the list of files to process
+        # for file in processed_files:
+        #     df = pd.read_parquet(file)
+        #     if not set(df.columns).issubset(set(data_model_df[data_model_df.file_name == file].column_name.tolist())):
+        #         st.warning(f"Adding {file} to the list of files to process because it has columns that are not in the data model.")
+        #         files_to_process.append(file)
+
         if not st.session_state.files_uploaded:
             update_colum_types_for_table(data_model_df, data_model_file)
 
@@ -258,6 +279,7 @@ def get_data_model():
                     if st.button("Confirm regeneration"):
                         generate_col_info = True
                         generate_for_new_files_only = True
+                        # TODO: Delete col info for the files that are being regenerated
 
             if 'column_info' not in st.session_state or generate_col_info:
                 with st.spinner("Studying the data to understand it..."):
