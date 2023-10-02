@@ -88,6 +88,8 @@ def technical_requirements_chat(widget_label):
         
     prompt = st.chat_input("Type here for help", key=f'chat_input_{widget_label}')
     if prompt:
+        # Expand the chat window
+        st.session_state.chat_status.update(label="Chat", expanded=True)
         # Create the messages from the prompts file
         prompts.from_requirements_to_code(
             prompt=prompt,
@@ -138,7 +140,7 @@ def technical_requirements_chat(widget_label):
         if 'error' in st.session_state:
             del st.session_state['error']    
 
-    with st.status("Expand to view chat") as st.session_state.chat_status:
+    with st.status("View chat", expanded=True) as st.session_state.chat_status:
         # Create the chat
         chat_container = st.container()
 

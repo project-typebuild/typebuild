@@ -251,7 +251,7 @@ def extract_python_code(text):
     return correct_code
 
 def get_approved_libraries():
-    return "import streamlit as st\nimport pandas as pd\nimport numpy as np\nimport matplotlib.pyplot as plt\nimport seaborn as sns\nfrom glob import glob\nimport datetime"
+    return "import streamlit as st\nimport pandas as pd\nimport numpy as np\nimport matplotlib.pyplot as plt\nimport seaborn as sns\nfrom glob import glob\nimport datetime\nimport faker\nfrom faker import Faker, import faker-commerce"
 
 #--------------CODE TO RUN AT THE START OF THE APP----------------
 def set_function_calling_availability(toggle=False):
