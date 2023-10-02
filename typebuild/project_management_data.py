@@ -143,11 +143,14 @@ def get_column_info(data_model, new_files_only=True):
 
     # Get the list of files that have already been processed
     if data_model is None:
-        processed_files = []
-    else:
-        processed_files = data_model.file_name.unique().tolist()
+        # Create an empty dataframe
+        data_model = pd.DataFrame(columns=['column_name', 'column_type', 'column_info', 'file_name'])
+        data_model.to_parquet(project_folder + '/data_model.parquet', index=False)
 
-    data_model.column_info = data_model.column_info.fillna('')
+    processed_files = data_model.file_name.unique().tolist()
+
+    if data_model is not None:
+        data_model.column_info = data_model.column_info.fillna('')
 
 
     column_info = {}
