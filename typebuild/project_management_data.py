@@ -250,11 +250,20 @@ def get_data_model():
         files_to_process = [i for i in data_files if i not in processed_files]
         
         # If a parquet file has a column that is not in the data model, add it to the list of files to process
-        # for file in processed_files:
-        #     df = pd.read_parquet(file)
-        #     if not set(df.columns).issubset(set(data_model_df[data_model_df.file_name == file].column_name.tolist())):
-        #         st.warning(f"Adding {file} to the list of files to process because it has columns that are not in the data model.")
-        #         files_to_process.append(file)
+        for file in processed_files:
+            df = pd.read_parquet(file)
+            cols_in_file = df.columns.tolist()
+            # Check if all the columns are in the data model
+            data_model_df.column_info = data_model_df.column_info.fillna('')
+            cols_in_data_model = data_model_df[
+                (data_model_df.file_name == file) &
+                (data_model_df.column_info != '')
+                ].column_name.tolist()
+            cols_not_in_data_model = [i for i in cols_in_file if i not in cols_in_data_model]
+            if cols_not_in_data_model:
+                files_to_process.append(file)
+                generate_col_info = True
+
 
         if not st.session_state.files_uploaded:
             update_colum_types_for_table(data_model_df, data_model_file)
