@@ -432,7 +432,8 @@ def row_by_row_llm_res(text_or_list, system_instruction, sample=True, frac=0.3, 
     if not text:
         return ""
     else:
-        chunks = chunk_text(text, max_chars=20000)
+        chunks = chunk_text(text, max_chars=10000)
+        st.sidebar.error("Changed chunking")
         output = []
         if sample:
             chunks = chunks[:2]

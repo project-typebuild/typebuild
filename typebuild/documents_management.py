@@ -25,8 +25,9 @@ def create_document_chunk_df(documents_folder):
         tmp_dict = {}
         with open(document, 'r') as f:
             contents = f.read()
-            encoding = chardet.detect(contents)['encoding']
-            contents = contents.decode(encoding)
+            # encoding = chardet.detect(contents.encode('utf-8'))['encoding']
+            # # encoding = chardet.detect(contents)['encoding']
+            # contents = contents.decode('utf-8')
             tmp_dict['text'] = contents
 
         tmp_dict['filename'] = document.split('/')[-1]

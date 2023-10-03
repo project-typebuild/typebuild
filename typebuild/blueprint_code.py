@@ -186,24 +186,24 @@ def select_data():
 
     if not selected_files:
         st.error("Please select at least one data file that you will use for analysis.")
-        st.stop()
+        st.session_state[data_description_for_view] = None
+    else:
+        data_model_file = st.session_state.project_folder + "/data_model.parquet"
+        data_description = pd.read_parquet(data_model_file)
+        # Get the description of the selected files
+        # Add data directory to the file names
+        selected_files = [os.path.join(data_folder, i) for i in selected_files]
+        selected_description = data_description[data_description['file_name'].isin(selected_files)].to_markdown()
 
-    data_model_file = st.session_state.project_folder + "/data_model.parquet"
-    data_description = pd.read_parquet(data_model_file)
-    # Get the description of the selected files
-    # Add data directory to the file names
-    selected_files = [os.path.join(data_folder, i) for i in selected_files]
-    selected_description = data_description[data_description['file_name'].isin(selected_files)].to_markdown()
+        st.session_state[data_description_for_view] = selected_description
 
-    st.session_state[data_description_for_view] = selected_description
-
-    if st.checkbox("Show sample data"):
-        # Show a sample of 5 rows for each selected file
-        for file in selected_files:
-            file_path = os.path.join(data_folder, file)
-            df = pd.read_parquet(file_path)
-            st.write(f'Sample data from {file}:')
-            st.dataframe(df.head(5))
+        if st.checkbox("Show sample data"):
+            # Show a sample of 5 rows for each selected file
+            for file in selected_files:
+                file_path = os.path.join(data_folder, file)
+                df = pd.read_parquet(file_path)
+                st.write(f'Sample data from {file}:')
+                st.dataframe(df.head(5))
 
     return None
 

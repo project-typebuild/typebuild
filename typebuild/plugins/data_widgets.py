@@ -61,9 +61,10 @@ def get_data_config(df):
                 config[col] = st.column_config.DateColumn(col)
             else:
                 # If cardinality is less than 20%, make it a select box
-                if df[col].nunique() / len(df) < 0.2:
-                    options = df[col].unique().tolist()
-                    config[col] = st.column_config.SelectboxColumn(col, options=options)
+                if len(df) > 0:
+                    if df[col].nunique() / len(df) < 0.2:
+                        options = df[col].unique().tolist()
+                        config[col] = st.column_config.SelectboxColumn(col, options=options)
     return config
 
 def get_modified_columns_and_rows(orig, new):

@@ -78,7 +78,7 @@ THINGS TO REMEMBER:
 - Do not write unnecessary print, st.write and success, info and warning messages in the functions.
 - Do not return the available functions in the response. Your response should include only the newly generated functions
 - You need to create one function for each feature in the app
-- Do not use streamlit cache
+- IMPORTANT: DO NOT USE STREAMLIT CACHE
 - You need to have a main function that calls all the other functions
     if __name__ == '__main__':
         main()
@@ -292,7 +292,7 @@ def get_code_instructions():
     - st.columns - A streamlit function to create columns
     - st.download_button - A streamlit function to create a download button, this allows the user to download images, csv, binary files, text, etc.
     - st.session_state - A streamlit function to store data in the session state. This is useful when you want to store data across reruns. this is a dictionary. (make sure to import base64)
-        
+    
     approved_libraries = HERE ARE THE APPROVED LIBRARIES: {get_approved_libraries()}
     
     THINGS TO REMEMBER:

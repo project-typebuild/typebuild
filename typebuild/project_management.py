@@ -599,7 +599,7 @@ def file_upload_and_save():
     data_folder = st.session_state.project_folder + '/data'
     # Define the allowed file types
     allowed_data_file_types = ['csv', 'parquet', 'xlsx' , 'tsv', 'sqlite', 'db', 'sqlite3']
-    allowed_document_file_types = ['pdf', 'txt']
+    allowed_document_file_types = ['pdf', 'txt', 'vtt']
     # Ask the user to upload a file
     uploaded_files = st.file_uploader(
         "Upload a file", 
