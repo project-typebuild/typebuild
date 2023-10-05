@@ -304,13 +304,13 @@ def create_llm_output(df, output_col_name, selected_table):
                 c2.markdown(row[1], unsafe_allow_html=True)
                 st.markdown("---")
 
+    remaining_rows = len(df[df[output_col_name].isna()])
+    if remaining_rows == 0:
+        st.success("All rows have been analyzed.")
+    else:
+        st.warning(f"There are {remaining_rows} rows remaining to be analyzed.")
+        # Show input and output cols
     if c2.button("💯 Analyze all the rows", help="This will run the LLM on rows where the output is empty."):
-        remaining_rows = len(df[df[output_col_name].isna()])
-        if remaining_rows == 0:
-            st.success("All rows have been analyzed.")
-        else:
-            st.warning(f"There are {remaining_rows} rows remaining to be analyzed.")
-            # Show input and output cols
 
             update_data_model(
                 file_name=selected_table, 
@@ -433,7 +433,6 @@ def row_by_row_llm_res(text_or_list, system_instruction, sample=True, frac=0.3, 
         return ""
     else:
         chunks = chunk_text(text, max_chars=10000)
-        st.sidebar.error("Changed chunking")
         output = []
         if sample:
             chunks = chunks[:2]
