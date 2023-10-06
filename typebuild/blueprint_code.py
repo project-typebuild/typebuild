@@ -62,6 +62,7 @@ def select_view():
         on_change=session_state_management.change_view,
         help="These are the views you created.  Select one to run it.  You can also create a new view."
         )
+    
     # Set the file path to the session state
     file_path = os.path.join(dir, selected_file)
     st.session_state.file_path = file_path
@@ -99,6 +100,9 @@ def select_view():
             st.rerun()
         st.stop()
     else:
+        if st.sidebar.checkbox("Delete selected view", key=f"delete_selected_view_{st.session_state.selected_view}"):
+            delete_selected_view()
+            st.stop()
         select_data()
         # Show the requirements, if user wants to see it
         if st.sidebar.checkbox("View requirements"):
@@ -107,6 +111,25 @@ def select_view():
             with open(txt_file, 'r') as f:
                 requirements = f.read()
             st.sidebar.warning(requirements)    
+    return None
+
+def delete_selected_view():
+    """
+    Delete the requirement
+    """
+    # Add a warning
+    st.sidebar.warning("Are you sure you want to delete this view?  This action cannot be undone.")
+    project_folder = st.session_state.project_folder
+    selected_view = st.session_state.selected_view
+    views_folder = project_folder + '/views'
+    view_file = views_folder + '/' + selected_view + '.txt'
+    if st.sidebar.button("Delete"):
+        if os.path.exists(view_file):
+            os.remove(view_file)
+            st.success(f"View {selected_view} deleted!")
+        else:
+            st.error(f"View {selected_view} does not exist!")
+        st.rerun()
     return None
 
 def save_selected_data():

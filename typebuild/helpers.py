@@ -352,3 +352,17 @@ def starter_code():
 
     return None
     
+def extract_list_of_dicts_from_string(res):
+    """
+    Extracts a list of dictionaries from a string.
+    """
+    # Remove the new line characters
+    res = res.replace('\n', ' ')
+
+    # assuming `res` is the string with the list of dicts
+    start_index = res.index('[') 
+    end_index = res.rindex(']') + 1
+    list_of_dicts_str = res[start_index:end_index]
+
+    
+    return eval(list_of_dicts_str)

@@ -11,7 +11,7 @@ import pandas as pd
 import streamlit as st
 import os
 from plugins.llms import get_llm_output
-from helpers import text_areas
+from helpers import extract_list_of_dicts_from_string, text_areas
 from plugins.data_widgets import display_editable_data
 from glob import glob
 
@@ -123,7 +123,9 @@ def get_column_info_for_df(df):
         {'role': 'user', 'content': prompt},
     ]
     res = get_llm_output(messages, model='gpt-4', max_tokens=2000, temperature=0)
-    df_res = pd.DataFrame(eval(res))
+    # Get the list of dicts from the string
+    list_of_dicts = extract_list_of_dicts_from_string(res)
+    df_res = pd.DataFrame(list_of_dicts)
     # if there are any missing values, fill them with object
     df_res.column_type = df_res.column_type.fillna('object')
     # There are some additional columns created by the LLM. we need the three columns we are interested in

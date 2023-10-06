@@ -12,6 +12,20 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 import sys
 sys.path.append(st.session_state.typebuild_root)
 
+def last_few_messages(messages):
+    """
+    Long messages get rejected by the LLM.  So,
+    - Will keep the system message, which is the first message
+    - Will keep the last 3 user and system messages
+    """
+    last_messages = []
+    last_messages.append(messages[0])
+    # Get the last 3 user or assistant messages
+    user_assistant_messages = [i for i in messages if i['role'] in ['user', 'assistant']]
+    last_messages.extend(user_assistant_messages[-3:])
+    return last_messages
+
+
 def get_llm_output(messages, max_tokens=2500, temperature=0.4, model='gpt-4', functions=[]):
     """
     This checks if there is a custom_llm.py in the plugins directory 
@@ -20,8 +34,9 @@ def get_llm_output(messages, max_tokens=2500, temperature=0.4, model='gpt-4', fu
     """
     # Check if there is a custom_llm.py in the plugins directory
     # If there is, use that
-    progress_status = st.sidebar.empty()
-    # progress_status.warning('Generating response from LLM...')
+    
+    # Get just the last few messages
+    messages = last_few_messages(messages)
 
     typebuild_root = st.session_state.typebuild_root
     if os.path.exists(f'{typebuild_root}/custom_llm.py'):
