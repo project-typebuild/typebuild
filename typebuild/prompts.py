@@ -79,9 +79,7 @@ THINGS TO REMEMBER:
 - Do not return the available functions in the response. Your response should include only the newly generated functions
 - You need to create one function for each feature in the app
 - IMPORTANT: DO NOT USE STREAMLIT CACHE
-- You need to have a main function that calls all the other functions
-    if __name__ == '__main__':
-        main()
+- You must always provide a function called 'main' that calls all the other functions.  I will call this function, and so do not call it like 'main()'
     
 based on the above requirements, write concise code and don't forget to write the detailed docstrings, including the args, return etc
 """
