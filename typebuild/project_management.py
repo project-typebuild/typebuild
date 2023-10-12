@@ -199,6 +199,10 @@ def project_settings():
             from tools.yt_search import main as yt_search
             yt_search()
             st.warning("Uncheck get data from YouTube to go to project settings")
+        if st.checkbox("Get data from Google"):
+            from tools.google_search import main as google_search
+            google_search()
+            st.warning("Uncheck get data from Google to go to project settings")
         st.stop()
 
     if selected_option == 'Project description (optional)':
