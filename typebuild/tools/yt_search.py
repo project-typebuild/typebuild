@@ -239,7 +239,6 @@ def get_yt_info(search_term, max_results=10):
         # info = {**info, **v}
         info['search_term'] = search_term
         video_details.append(info)    
-    
     return video_details
 
 def save_youtube_data(file_name):
