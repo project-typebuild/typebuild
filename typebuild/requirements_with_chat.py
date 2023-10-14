@@ -2,6 +2,7 @@
 Generating functional and technical requirements 
 with the help of LLMs
 """
+import inspect
 import json
 import os
 import time
@@ -9,6 +10,8 @@ from plugins.llms import get_llm_output
 # from llm_functions import get_gpt_output, get_llm_output, gpt_function_calling
 import streamlit as st
 import prompts
+import agents
+from agents import *
 from helpers import text_areas
 from available_functions import funcs_available
 import pandas as pd
@@ -55,10 +58,14 @@ def technical_requirements_chat(widget_label):
     st.subheader("Create, update or understand")
     st.info("Use the chat below to create, update or understand the technical requirements and the code of this view.")
 
+    # Call the agent coordinator first
+
     current_code, current_text = get_text_and_code()
     # Generate key from file name, after removing directory and extension
     chat_key = "chat_" + st.session_state.file_path.split('/')[-1].split('.')[0]
     st.session_state.chat_key = chat_key
+    
+    agents.coordinator(chat_key, current_text=current_text, func_str=current_code)
 
     # If there is no project description chat in the session state, create one
     if chat_key not in st.session_state:
@@ -77,7 +84,7 @@ def technical_requirements_chat(widget_label):
         st.sidebar.header("Call status")
         st.sidebar.info(st.session_state.call_status)
         # st.session_state.chat_status.write("Got some extra information.  Working on it...")
-        prompts.from_requirements_to_code(
+        agents.from_requirements_to_code(
             prompt=st.session_state.call_status,
             current_text=current_text,
             chat_key=chat_key,
@@ -91,7 +98,7 @@ def technical_requirements_chat(widget_label):
         # Expand the chat window
         st.session_state.chat_status.update(label="Chat", expanded=True)
         # Create the messages from the prompts file
-        prompts.from_requirements_to_code(
+        agents.from_requirements_to_code(
             prompt=prompt,
             current_text=current_text,
             chat_key=chat_key,
@@ -107,7 +114,7 @@ def technical_requirements_chat(widget_label):
         if st.button("Fix the error"):
             st.session_state.chat_status.info("I ran into an error.  Fixing it...")
             st.sidebar.warning(chat_key)
-            prompts.from_requirements_to_code(
+            agents.from_requirements_to_code(
                 prompt=prompt,
                 current_text=current_text,
                 chat_key=chat_key,
@@ -164,6 +171,53 @@ def technical_requirements_chat(widget_label):
         # Delete call status
         del st.session_state['call_status']
         st.rerun()
+
+    # If requirements exist, have a button to code
+    if st.session_state.file_path:
+        button_name = None
+        if os.path.exists(st.session_state.file_path + '.txt'):
+            with open(st.session_state.file_path + '.txt', 'r') as f:
+                requirements = f.read()
+            if 'technical requirements' in requirements.lower():
+                button_name = ":keyboard: Generate code"
+            # Check if the .py file exists
+            if os.path.exists(st.session_state.file_path + '.py'):
+                # If it does, show the code
+                with open(st.session_state.file_path + '.py', 'r') as f:
+                    code = f.read()
+                button_name = "🔄 Update code"
+                            # Give option to delete code
+                if st.sidebar.button("❌ Delete code"):
+                    os.remove(st.session_state.file_path + '.py')
+                    st.session_state.stage_num += 1
+                    st.session_state[f"current_stage_{st.session_state.stage_num}"] = 'requirements'
+                    st.rerun()
+
+            else:
+                code = None
+            if 'error' in st.session_state:
+                button_name = "🔄 Fix error"
+            if button_name:
+                if st.button(button_name):
+                    sysetm_instruction = agents.get_code_instructions(requirements, code)
+                    prompt = "Generate code by following the requirements carefully and completely and return full code only."
+                    messages = [
+                        {"role": "system", "content": sysetm_instruction},
+                        {"role": "user", "content": prompt},
+                        ]
+                    content = get_llm_output(messages, model='gpt-4')
+
+                    # Add the input to the chat
+                    st.session_state[chat_key].append({'role': 'user', 'content': prompt})
+                    # Add the response to the chat
+                    st.session_state[chat_key].append(
+                        {'role': 'assistant', 'content': content}
+                        )
+                    st.session_state.stage_num += 1
+                    st.session_state[f"current_stage_{st.session_state.stage_num}"] = 'code'
+                    
+                    st.rerun()
+
     return None
 
 
@@ -199,9 +253,14 @@ def make_function_call(chat_key):
     res = None
     # Ask the user if they want to run the function
     button_label = func_name.replace('_', ' ').upper()
+    st.sidebar.info(arguments)
     if st.button(f":fire: {button_label} :fire:"):
         # Run the function
         with st.spinner(f'Running {func_name}...'):
+            func = globals()[func_name]
+            argspec = inspect.getfullargspec(func)
+            # Isolate the arguments that are needed
+            arguments = {k: v for k, v in arguments.items() if k in argspec.args}
             func_res = globals()[func_name](**arguments)
             
             # Remove the function call from the session state
@@ -214,6 +273,7 @@ def make_function_call(chat_key):
                     {'role': 'system', 'content': func_res}
                     )
                 res = func_res
+            st.rerun()
         
     return res
 
@@ -244,7 +304,7 @@ def save_requirements_to_file(content: str):
     st.session_state[f"current_stage_{st.session_state.stage_num}"] = 'code'
     return f"I saved the requirements.  Can you generate the code now based on the requirements?"
 
-def save_code_to_file(code_str: str):
+def save_code_to_file(content: str):
     """
     Saves the based on the user requirement to the file.  
     File name and path is taken from the selected view, and so only 
@@ -252,7 +312,7 @@ def save_code_to_file(code_str: str):
     
     Parameters:
     -----------
-    code_str: str
+    content: str
         The code based on user requirements to save to the file.
     Returns:
     --------
@@ -262,7 +322,7 @@ def save_code_to_file(code_str: str):
     file_path = st.session_state.file_path + '.py'
     # Save the code to the file
     with open(file_path, 'w') as f:
-        f.write(code_str)
+        f.write(content)
     # Add the message on saving to the chat and then rerun the app
     st.session_state[st.session_state.chat_key].append(
         {'role': 'user', 'content': f"I saved code to.  Will test it now."}

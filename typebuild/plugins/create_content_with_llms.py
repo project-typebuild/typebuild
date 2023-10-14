@@ -175,11 +175,16 @@ def analyze_with_llm():
 
     data_folder = st.session_state.project_folder + '/data'
     tables = glob(f"{data_folder}/*.parquet")
-
+    # Get just the file name
+    tables = [table.split('/')[-1] for table in tables]
+    # Remove .parquet
+    tables = [t.replace('.parquet', '') for t in tables]
     c1, c2 = st.columns(2)
     # Select the source dataframe
-    selected_table = c1.selectbox("Select the source data", tables)
+    selected_table = c1.selectbox("Select the source data", tables, key='input_table_name')
     
+    # Get full file name
+    selected_table = f"{data_folder}/{selected_table}.parquet"
     # Get the column names
     df = pd.read_parquet(selected_table)
     if c1.checkbox("Show input data"):
@@ -188,11 +193,7 @@ def analyze_with_llm():
     with c2:
         # Select the output column
         output_col_name = select_output_col(df)
-    if c2.checkbox(
-        "New analysis with LLM",
-        help="Summarize or extract insights from an input column",  
-        ):
-        create_llm_output(df, output_col_name, selected_table)
+    create_llm_output(df, output_col_name, selected_table)
     show_output(df, output_col_name)
     
     return None
@@ -219,11 +220,14 @@ def create_llm_output(df, output_col_name, selected_table):
         )
     if selected_column == 'SELECT':
         st.error("Please select a column.")
-        st.stop()
         
     # Get the system instruction
     txt_file = f"{st.session_state.project_folder}/{output_col_name}_system_instruction.txt"
-    
+    # Check if this file exists (old system path), else, create with the new sysetm path
+    if not os.path.exists(txt_file):
+        txt_file = f"{st.session_state.project_folder}/{st.session_state.input_table_name}_{output_col_name}_sys_ins.txt"
+        
+        
     # Save this as the system instruction path
     st.session_state.system_instruction_path = txt_file
     system_instruction = text_areas(

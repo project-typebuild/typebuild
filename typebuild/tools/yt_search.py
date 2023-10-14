@@ -210,8 +210,9 @@ def search_youtube_and_save_results(search_term, num_videos=10):
         st.write("Getting video metadata...")
         time.sleep(1)
         results = get_yt_info(search_term, max_results=num_videos)
+        st.write(f"Got {len(results)} videos!")
         st.session_state.yt_info = results
-        time.sleep(1)
+        time.sleep(2)
         st.write("Data downloaded!")
         time.sleep(1)
         st.write("Saving data...")
@@ -229,6 +230,7 @@ def search_youtube_and_save_results(search_term, num_videos=10):
 def get_yt_info(search_term, max_results=10):
     results = YoutubeSearch(search_term, max_results=max_results)
     videos = results.to_dict()
+    st.warning(f"Search returned {len(videos)} videos!")
     video_details = []
     for i,v in enumerate(videos):
         print(f"Starting {i}")

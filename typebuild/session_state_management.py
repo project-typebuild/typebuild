@@ -18,6 +18,7 @@ def add_default_session_states():
         'user_folder': os.path.join(os.path.expanduser("~"), '.typebuild', 'users', st.session_state.token),
         'secrets_file_path' : os.path.join(os.path.expanduser("~"), '.typebuild', 'users', st.session_state.token, 'secrets.toml'),
         'profile_dict_path': os.path.join(os.path.expanduser("~"), '.typebuild', 'users', 'admin', 'profile_dict.pk'),
+        'message_to_agent': None,
         }
 
     for key in ss_vars:
@@ -34,12 +35,15 @@ def change_view():
     # Clear the session state of key variables
     key_vars = ['code', 'code_str', 'response', 
                 'user_requirements', 'messages', 'data_description',
-                'error'
+                'error', 'message_to_agent',
+                'last_function_call',
                 ]
     for key in key_vars:
         if key in st.session_state:
             del st.session_state[key]
 
+    # Set ask llm as false
+    st.session_state.ask_llm = False
     return None
 
 def change_ss_for_project_change():

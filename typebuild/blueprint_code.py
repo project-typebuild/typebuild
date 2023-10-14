@@ -123,13 +123,25 @@ def delete_selected_view():
     selected_view = st.session_state.selected_view
     views_folder = project_folder + '/views'
     view_file = views_folder + '/' + selected_view + '.txt'
+    py_file = views_folder + '/' + selected_view + '.py'
+    pkl_file = views_folder + '/' + selected_view + '_meta.pkl'
     if st.sidebar.button("Delete"):
         if os.path.exists(view_file):
             os.remove(view_file)
             st.success(f"View {selected_view} deleted!")
-        else:
-            st.error(f"View {selected_view} does not exist!")
+        # Remove the py file
+        if os.path.exists(py_file):
+            os.remove(py_file)
+        # Remove the pkl file
+        if os.path.exists(pkl_file):
+            os.remove(pkl_file)
+        # Also remove chat_key
+        chat_key = st.session_state.chat_key
+        del st.session_state[chat_key]
+        st.sidebar.warning("View deleted!")
+        time.sleep(1)
         st.rerun()
+
     return None
 
 def save_selected_data():

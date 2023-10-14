@@ -174,7 +174,11 @@ def project_settings():
         st.session_state.data_description = pd.read_parquet(data_model_file).to_markdown(index=False)
     
         # Close project settings button
-        if st.sidebar.button('🛑 Close project settings 🛑'):
+        if st.button('🛑 :red[Close project settings] 🛑'):
+            st.warning("You have to close project settings to work on other aspects of the project.")
+            reset_menu()
+        # Close project settings button
+        if st.sidebar.button('🛑 Close project settings 🛑', key="close settings sidebar"):
             st.warning("You have to close project settings to work on other aspects of the project.")
             reset_menu()
 
@@ -187,7 +191,13 @@ def project_settings():
 
     default_index = 0
 
-    selected_option = st.radio("Select an option", options, horizontal=True, index=default_index)
+    selected_option = st.radio(
+        "Select an option", 
+        options, 
+        captions=["CSV, XLSX, TXT, VTT, etc.", "YouTube only", "Project description"],
+        horizontal=True, 
+        index=default_index
+        )
     st.markdown("---")
     if selected_option == 'Upload data':
         file_upload_and_save()
@@ -198,13 +208,12 @@ def project_settings():
         if st.checkbox("Get data from YouTube"):
             from tools.yt_search import main as yt_search
             yt_search()
-            st.warning("Uncheck get data from YouTube to go to project settings")
         st.stop()
 
     if selected_option == 'Project description (optional)':
         set_project_description()
         st.stop()
-
+    
     return None
 
 def set_project_description():

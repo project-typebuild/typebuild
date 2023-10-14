@@ -238,6 +238,7 @@ def from_requirements_to_code(chat_key, current_text="", prompt="", func_str=Non
         chat.append({'role': 'user', 'content': prompt})
     return None
 
+
 def get_technical_requirements_instructions():
     return f"""You are helping me develop technical requirements for my project.
     Start by offering to help.

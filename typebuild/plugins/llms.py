@@ -19,12 +19,31 @@ def last_few_messages(messages):
     - Will keep the last 3 user and system messages
     """
     last_messages = []
-    last_messages.append(messages[0])
+    if messages:
+        # Get the first message
+        last_messages.append(messages[0])
     # Get the last 3 user or assistant messages
     user_assistant_messages = [i for i in messages if i['role'] in ['user', 'assistant']]
-    last_messages.extend(user_assistant_messages[-3:])
+    last_messages.extend(user_assistant_messages[-7:])
     return last_messages
 
+def extract_message_to_agent(content):
+    """
+    Extracts the message to the agent from the content.
+    This is found within <<< and >>>.
+    There will at least be one set of triple angle brackets
+    for this function to be invoked.
+    """
+    pattern = r"<<<([\s\S]*?)>>>"
+    matches = re.findall(pattern, content)
+    if len(matches) == 1:
+        message_to_agent = matches[0].strip()
+    else:
+        message_to_agent = '\n'.join(matches)
+    
+    # Add it to the session state
+    st.session_state.message_to_agent = message_to_agent
+    return message_to_agent
 
 def get_llm_output(messages, max_tokens=2500, temperature=0.4, model='gpt-4', functions=[]):
     """
@@ -48,6 +67,8 @@ def get_llm_output(messages, max_tokens=2500, temperature=0.4, model='gpt-4', fu
         if 'function_call' in msg:
             func_call = msg.get('function_call', None)
             st.session_state.last_function_call = func_call
+            st.sidebar.info("Got a function call from LLM")
+            content = func_call.get('content', None)
     
     # progress_status.info("Extracting information from response...")
     if content:
@@ -60,17 +81,10 @@ def get_llm_output(messages, max_tokens=2500, temperature=0.4, model='gpt-4', fu
     # If there are triple backticks, we expect code
     if '```' in str(content) or '|||' in str(content):
         # NOTE: THERE IS AN ASSUMPTION THAT WE CAN'T GET BOTH CODE AND REQUIREMENTS
-        extracted, code_or_requirement = parse_code_or_requirements_from_response(content)
-        
-        if code_or_requirement == 'code':
-            my_func = 'save_code_to_file'
-            func_call = {'name': my_func, 'arguments': {'code_str':extracted}}
-            st.session_state.last_function_call = func_call
-        
-        if code_or_requirement == 'requirements':
-            my_func = 'save_requirements_to_file'
-            func_call = {'name': my_func, 'arguments': {'content':extracted}}
-            st.session_state.last_function_call = func_call
+        extracted, function_name = parse_func_call_info(content)
+        func_call = {'name': function_name, 'arguments': {'content':extracted}}
+        st.session_state.last_function_call = func_call
+
 
     # Stop ask llm
     st.session_state.ask_llm = False
@@ -119,7 +133,7 @@ def get_openai_output(messages, max_tokens=3000, temperature=0.4, model='gpt-4',
     return msg
 
 
-def parse_code_or_requirements_from_response(response):
+def parse_func_call_info(response):
     """
     The LLM can return code or requirements in the content.  
     Ideally, requirements come in triple pipe delimiters, 
@@ -128,23 +142,26 @@ def parse_code_or_requirements_from_response(response):
     Figure out which one it is and return the extracted code or requirements.
     """
     # If there are ```, it could be code or requirements
-    code_or_requirement = None
+    function_name = None
     if '```' in response:
         # If it's python code, it should have at least one function in it
         if 'def ' in response:
             extracted = parse_code_from_response(response)
-            code_or_requirement = 'code'
+            function_name = 'save_code_to_file'
+        elif 'data_agent' in response:
+            extracted = parse_modified_user_requirements_from_response(response)
+            function_name = 'data_agent'
         # If it's not python code, it's probably requirements
         else:
             extracted = parse_modified_user_requirements_from_response(response)
-            code_or_requirement = 'requirements'
+            function_name = 'save_requirements_to_file'
     # If there are |||, it's probably requirements
     elif '|||' in response:
         extracted = parse_modified_user_requirements_from_response(response)
-        code_or_requirement = 'requirements'
+        function_name = 'save_requirements_to_file'
     else:
         extracted = None
-    return extracted, code_or_requirement
+    return extracted, function_name
             
 
 

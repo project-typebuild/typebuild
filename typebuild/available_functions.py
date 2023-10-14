@@ -41,32 +41,34 @@ def funcs_available():
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "code_str": {
+                    "content": {
                         "type": "string",
                         "description": "The code based on user requirements to save to the file."
                     }
             }},
-            "required": ["code_str"]
+            "required": ["content"]
             },
-        {
-            "name": "set_the_stage",
-            "description": stage_description,
-            "parameters": {
-                "type": "object",
-                "properties": {
-                "stage_name": {
-                    "type": "string",
-                    "description": "The name of the stage. Possible values are: 'requirements', 'code'.",
-                    "enum": [
-                    "requirements",
-                    "code"
-                    ]
-                }
-                }
-            },
-            "required": [
-                "stage_name"
-            ]
-            }
+        
+            {
+                "name": "data_agent",
+                "description": "The data agent understands the data structure and\ncan answer questions about the data.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                    "content": {
+                        "type": "string",
+                        "description": """A detailed question about existing data that the data assistant can answer.  
+                            The question should convey what the user is trying to do so that the data agent can fetch table names, fields, and other information."""
+                    },
+                    "function_name": {
+                        "type": "string",
+                        "description": "The name of the data agent."
+                    }
+                    }
+                },
+                "required": [
+                    "content"
+                ]
+                },
     ]
     return f
