@@ -65,6 +65,9 @@ def data_agent(content, name='data_agent'):
     # Add the response to the chat
     res = f"**Response from data agent:** {res}"
     st.session_state[chat_key].append({'role': 'assistant', 'content': res})
+
+    # Set ask llm to true
+    st.session_state.ask_llm = True
     return None
 
 def from_requirements_to_code(chat_key, current_text="", prompt="", func_str=None):

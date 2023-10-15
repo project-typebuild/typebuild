@@ -4,6 +4,7 @@ dataclasses-json
 extra-streamlit-components
 faker-commerce
 fsspec
+googlesearch-python
 hydralit-components
 numexpr
 nx-altair
@@ -20,5 +21,6 @@ streamlit-pandas-profiling
 tabulate
 threadpoolctl
 tiktoken
+tldextract
 youtube-search
 youtube-transcript-api

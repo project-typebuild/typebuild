@@ -246,15 +246,27 @@ def make_function_call(chat_key):
     # If function call is returned by openai, the arguments will be a string
     # Convert that to a dict
     if isinstance(func_info['arguments'], str):
-        arguments = json.loads(func_info['arguments'])
+        try:
+            arguments = eval(func_info['arguments'])
+        except:
+            arguments = json.loads(func_info['arguments'])
     else:
         arguments = func_info['arguments']
 
     res = None
     # Ask the user if they want to run the function
     button_label = func_name.replace('_', ' ').upper()
+    
+    # Do not run the code by default
+    run_code = False
+    if func_name in ['data_agent']:
+        run_code = True
     st.sidebar.info(arguments)
-    if st.button(f":fire: {button_label} :fire:"):
+    if not run_code:
+        if st.button(f":fire: {button_label} :fire:"):
+            run_code = True
+    
+    if run_code:
         # Run the function
         with st.spinner(f'Running {func_name}...'):
             func = globals()[func_name]
@@ -320,6 +332,15 @@ def save_code_to_file(content: str):
     """
     # Get the file path
     file_path = st.session_state.file_path + '.py'
+    # If the main function is called, comment it out
+    if 'main()' in content:
+        content = content.replace('main()', '# main()')
+    
+    # If there is a line with __name__ in it, comment it out
+    if "if __name__ == '__main__':" in content:
+        content = content.replace("if __name__ == '__main__':", "# if __name__ == '__main__':")
+
+
     # Save the code to the file
     with open(file_path, 'w') as f:
         f.write(content)
