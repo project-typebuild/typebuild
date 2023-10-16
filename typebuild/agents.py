@@ -79,23 +79,25 @@ def from_requirements_to_code(chat_key, current_text="", prompt="", func_str=Non
     that information to the system instruction.
     """
 
+    selected_view = st.session_state.selected_view
+    data_description = st.session_state[f"data_description_{selected_view}"]
         
     system_instruction = f"""You are helping in my software development process by creating:
     1.  Functional requirement
     2.  Detailed technical requirements that will be sent to the developer.
+    3.  Changes: What is the the latest change to the requirements based on which code should be updated.
 
     The developer will only use the technical requirements and nothing else, and so it should have 
     very detailed instructions.
 
     Anytime I wish to make a change, write the new requirements for to the developer, making only the required change, keeping the rest as is.
 
-    You have agents available to help you with different things.
+    HERE IS INFORMATION ON THE DATA:
+    {data_description}
     
-    data_agent: Ask this agent any question about data, including what data is available and where to get data.  Be sure to ask the data agent any questions about data before askign the user.
-
-    If you ask questions to an agent, it has to be in this format:
-    ```{{'function_name': <function_name>, 'content': <question>}}```
-"""
+    When you create requirements, be sure to mention the data source, selected fields, information about joins (if any), and any other information the developer should know about the data.
+    Anytime you update requirements, be sure to provide the full requirement and add the latest change in the bottom.
+    """
 
     # Add the technical requirements instructions
     system_instruction = f"""{system_instruction} {get_technical_requirements_instructions()}"""

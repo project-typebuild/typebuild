@@ -15,7 +15,7 @@ from agents import *
 from helpers import text_areas
 from available_functions import funcs_available
 import pandas as pd
-
+import re
 
 
 def get_text_and_code():
@@ -332,9 +332,21 @@ def save_code_to_file(content: str):
     """
     # Get the file path
     file_path = st.session_state.file_path + '.py'
-    # If the main function is called, comment it out
-    if 'main()' in content:
-        content = content.replace('main()', '# main()')
+    
+    # If the main function is called in the start of any line, comment it out
+    content_lines = content.split('\n')
+    for i, line in enumerate(content_lines):
+        if line.strip().startswith('main('):
+            content_lines[i] = '# ' + line
+        elif "if __name__" in line:
+            content_lines[i] = '# ' + line
+        else:
+            content_lines[i] = line
+
+    # join the lines back into a string
+    content = '\n'.join(content_lines)
+    
+    
     
     # If there is a line with __name__ in it, comment it out
     if "if __name__ == '__main__':" in content:

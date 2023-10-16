@@ -298,20 +298,6 @@ def create_user_folder():
     
     return None
 
-def display_home_page():
-    from helpers import set_or_get_openai_api_key
-    # Text to display on the home page in a markdown block
-    api_key = set_or_get_openai_api_key()
-    if api_key == '' and not os.path.exists(f'{st.session_state.typebuild_root}/custom_llm.py'):
-        st.subheader('TypeBuild', divider=True, anchor='welcome')
-        text = """**TypeBuild is built to work with language models.  Give us an OpenAI API key or upload a custom LLM to continue.**"""
-    else:
-        text = ""
-    # Display the text
-    st.markdown(text)
-
-    return None 
-
 def set_or_get_openai_api_key():
 
     # Check if the user has a secrets file and openai key in the secrets.toml file. if yes, then set the openai key
@@ -341,10 +327,9 @@ def starter_code():
     session_state_management.main()
 
     # Menu bar and other settings
-    from menu import get_menu, reset_menu
+    from menu import get_menu
     new_menu = get_menu()
-    if st.session_state.new_menu =='Home':
-        display_home_page()
+    
     if st.session_state.new_menu == 'logout':
         logout()
     create_user_folder()

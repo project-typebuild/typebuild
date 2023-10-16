@@ -22,6 +22,8 @@ import sqlite3
 import json
 import toml 
 import sys
+from home_page import home_page, what_can_you_do
+
 home_dir = os.path.expanduser("~")
 
 # Append the dir_path to the sys path
@@ -85,7 +87,7 @@ def get_project_file_folder():
     # Make the first project the default
 
     default_index = 0
-
+    
     # If no project is selected, select the first project
     if 'selected_project' not in st.session_state:
         st.session_state.selected_project = project_names[default_index]
@@ -98,7 +100,11 @@ def get_project_file_folder():
         if selected_project != st.session_state.selected_project:
             st.session_state.selected_project = selected_project
             change_ss_for_project_change()
-    
+        if selected_project != 'Create new project':
+            project_name = selected_project.replace('_', ' ').upper() + ' PROJECT'
+            st.header(project_name, divider='rainbow')
+            st.info(f"Please go to 'Functionalities' in the menu above and select what you want to do next.  Your options are given below.")
+            what_can_you_do()    
     selected_project = st.session_state.selected_project
     manage_project_toggle = False
     if selected_project == 'Create new project':
@@ -135,7 +141,7 @@ def add_llm_data_model(data_model_pkl_file):
 
 def show_project_settings():
     show_settings = False
-    if st.session_state.new_menu == 'project_settings':
+    if st.session_state.new_menu == 'data':
         show_settings = True
     
     project_folder = st.session_state.project_folder
@@ -173,19 +179,10 @@ def project_settings():
         # Add data description to session state
         st.session_state.data_description = pd.read_parquet(data_model_file).to_markdown(index=False)
     
-        # Close project settings button
-        if st.button('🛑 :red[Close project settings] 🛑'):
-            st.warning("You have to close project settings to work on other aspects of the project.")
-            reset_menu()
-        # Close project settings button
-        if st.sidebar.button('🛑 Close project settings 🛑', key="close settings sidebar"):
-            st.warning("You have to close project settings to work on other aspects of the project.")
-            reset_menu()
 
     options = [
-        'Upload data',
-        'Generate data',
-        'Project description (optional)',
+        'Upload your data',
+        'Fetch data',
     ]
 
 
@@ -194,12 +191,12 @@ def project_settings():
     selected_option = st.radio(
         "Select an option", 
         options, 
-        captions=["CSV, XLSX, TXT, VTT, etc.", "YouTube only", "Project description"],
+        captions=["CSV, XLSX, TXT, VTT, etc.", "YouTube, Google Search"],
         horizontal=True, 
         index=default_index
         )
     st.markdown("---")
-    if selected_option == 'Upload data':
+    if selected_option == 'Upload your data':
         file_upload_and_save()
         get_data_model()
         st.stop()
@@ -216,12 +213,12 @@ def project_settings():
         st.stop()
 
     if selected_option == 'Project description (optional)':
-        set_project_description()
+        ideate_project()
         st.stop()
     
     return None
 
-def set_project_description():
+def ideate_project():
     """
     This stores the user requirement for the given view,
     based on the selected menu. 
@@ -234,18 +231,18 @@ def set_project_description():
     # Save to session state
     st.session_state.project_description = project_description
 
-    project_description_chat()
+    ideation_chat()
     return None
 
 
-def project_description_chat():
+def ideation_chat():
     """
     A chat on the project description.
     That could be exported to the project description file.
     """
     # If there is no project description chat in the session state, create one
-    if 'project_description_chat' not in st.session_state:
-        st.session_state.project_description_chat = []
+    if 'ideation_chat' not in st.session_state:
+        st.session_state.ideation_chat = []
     
     chat_container = st.container()
     prompt = st.chat_input("Enter your message", key='project_description_chat_input')
@@ -254,15 +251,15 @@ def project_description_chat():
         prompts.blueprint_prompt_structure(prompt=prompt)
         with st.spinner('Generating response...'):
             res = get_llm_output(
-                st.session_state.project_description_chat, 
+                st.session_state.ideation_chat, 
                 model='gpt-3.5-turbo-16k'
                 )
             # Add the response to the chat
-            st.session_state.project_description_chat.append({'role': 'assistant', 'content': res})
+            st.session_state.ideation_chat.append({'role': 'assistant', 'content': res})
     
     # Display the user and assistant messages
     with chat_container:
-        for msg in st.session_state.project_description_chat:
+        for msg in st.session_state.ideation_chat:
             if msg['role'] in ['user', 'assistant']:
                 with st.chat_message(msg['role']):
                     st.markdown(msg['content'])

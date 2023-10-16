@@ -8,6 +8,28 @@ requirements stage: Sends detailed information on how to create the requirements
 code stage: Sends the current code, if any. Also sends information on how create or modify the code.
 """ 
 
+data_agent =  {
+                "name": "data_agent",
+                "description": "The data agent understands the data structure and\ncan answer questions about the data.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                    "content": {
+                        "type": "string",
+                        "description": """A detailed question about existing data that the data assistant can answer.  
+                            The question should convey what the user is trying to do so that the data agent can fetch table names, fields, and other information."""
+                    },
+                    "function_name": {
+                        "type": "string",
+                        "description": "The name of the data agent."
+                    }
+                    }
+                },
+                "required": [
+                    "content"
+                ]
+                }
+
 def funcs_available():
     """
     Returns a list of functions available for the user to call.
@@ -49,26 +71,6 @@ def funcs_available():
             "required": ["content"]
             },
         
-            {
-                "name": "data_agent",
-                "description": "The data agent understands the data structure and\ncan answer questions about the data.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                    "content": {
-                        "type": "string",
-                        "description": """A detailed question about existing data that the data assistant can answer.  
-                            The question should convey what the user is trying to do so that the data agent can fetch table names, fields, and other information."""
-                    },
-                    "function_name": {
-                        "type": "string",
-                        "description": "The name of the data agent."
-                    }
-                    }
-                },
-                "required": [
-                    "content"
-                ]
-                },
     ]
     return f
+

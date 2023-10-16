@@ -58,47 +58,71 @@ def get_menu_data():
 
     # Logout
     logout = {'id':'logout', 'icon': "🚪", 'label':"Logout"}
-    # Toggle developer options
-    developer_options = {
-        'id':'doptions',
-        'icon': "🛠️", 
-        'label':"Developer", 
-        "ttp": "Toggle developer options",
-        "submenu": [
-            # Toggle the developer options
-            {"label": "Toggle developer options", "id": "toggle_developer_options"},
-            # Toggle function calling mode
-            {"label": "Toggle function calling mode", "id": "toggle_function_calling_mode"},
-            # Close menu
-            close_menu
-            ]
-        }
-
-    # Project settings
-    project_settings = {
-        "id": "project_settings",
-        "icon": "⚙️",
-        "label": "Project settings",
-        "ttip": "Describe project, upload data, settings",
-    }
-
+    
+    
+    developer_options = {"label": "Toggle developer options", "id": "toggle_developer_options", "icon": "🛠️"}
+    function_calling_mode = {"label": "Toggle function calling mode", "id": "toggle_function_calling_mode", "icon": "🛠️"}
+    
     settings = {
         'id': 'settings',
         'icon': "⚙️",
-        'label': "LLM Settings",
+        'label': "Settings",
         'ttip': "Adding openai key, upload custom llm",
+        'submenu': [
+            {"label": "LLM Access", "id": "llm_access"},
+            developer_options,
+            function_calling_mode,
+            logout,
+            close_menu
+        ]
     }
-    
-    menu_data.append(project_settings)
+    data = {
+        "id": "data",
+        "icon": "📊",
+        "label": "Data",
+        "ttip": "Upload or import data",
+    }
+
+    ideate = {
+        "id": "ideate",
+        "icon": "🧠",
+        "label": "Ideate",
+        "ttip": "Ideate",
+    }
+
+    apps_analysis = {
+        "id": "apps_analysis",
+        "icon": "💻",
+        "label": "Apps & analysis",
+        "ttip": "Forms, mini-apps, data analysis",
+    }
+    llm_analysis = {
+        "id": "llm_analysis",
+        "icon": "🤖",
+        "label": "LLM Analysis",
+        "ttip": "Analyze data with LLM",
+    }
+
+    functionalities = {
+        "id": "functionalities",
+        "icon": "📌",
+        "label": "Functionalities",
+        "ttip": "Add functionalities",
+        "submenu": [
+            data,
+            ideate,
+            apps_analysis,
+            llm_analysis,
+        ],
+    }
+
+
+    menu_data.append(functionalities)
     menu_data.append(settings)
 
     if 'user_type' not in st.session_state:
         st.session_state.user_type = 'developer'
 
-    # If user type is developer, add developer options
-    if st.session_state.user_type == 'developer':
-        menu_data.append(developer_options)
-    menu_data.append(logout)
     return menu_data
 
 def get_theme():
@@ -153,4 +177,19 @@ def save_the_header_state():
     # First save the key session states
     with open(f'session_states/{st.session_state.token}.pk', 'wb') as f:
         pk.dump(header_states, f)
+    return None
+
+def load_header_states():
+    """
+    Load the header states and add them to session state
+    if variables do not exist
+    """
+    file = f'session_states/{st.session_state.token}.pk'
+
+    if file:
+        with open(file, 'rb') as f:
+            header_states = pk.load(f)
+        for key in header_states:
+            if key not in st.session_state:
+                st.session_state[key] = header_states[key]
     return None

@@ -1,5 +1,6 @@
 import os
 import streamlit as st
+from menu import load_header_states
 
 def add_default_session_states():
     # Add a dict with session state variables
@@ -61,5 +62,6 @@ def change_ss_for_project_change():
 
 
 def main():
+    load_header_states()
     add_default_session_states()
     return None
