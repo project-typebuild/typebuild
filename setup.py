@@ -1,3 +1,4 @@
+from glob import glob
 from setuptools import setup, find_packages
 
 # Read requirements from requirements.txt
@@ -8,6 +9,7 @@ with open('requirements.txt') as f:
 with open('README.md', 'r', encoding='utf-8') as f:
     long_description = f.read()
 
+images_list = glob('images/*.*')
 
 setup(
     name="typebuild",
@@ -15,10 +17,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     package_data={
-        'typebuild': ['images/bookworm.jpg',
-        'images/build.png','images/ideate.png',
-        'images/language_model.png','images/llm.png',
-        'images/owl.png','images/reader.png', 'images/spider.png', 'images/upload_data.png',],
+        'typebuild': images_list,
     },
     install_requires=requirements,
     author="iRanadheer",
