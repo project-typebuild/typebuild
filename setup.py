@@ -13,7 +13,7 @@ images_list = glob('images/*.*')
 
 setup(
     name="typebuild",
-    version="0.0.21",
+    version="0.0.22",
     packages=find_packages(),
     include_package_data=True,
     package_data={
