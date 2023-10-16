@@ -184,7 +184,7 @@ def load_header_states():
     Load the header states and add them to session state
     if variables do not exist
     """
-    dir_path = st.session_state.dir_path
+    dir_path = os.path.dirname(os.path.realpath(__file__))
     file = f'{dir_path}/session_states/{st.session_state.token}.pk'
 
     if os.path.exists(file):
