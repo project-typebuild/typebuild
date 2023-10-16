@@ -8,10 +8,18 @@ with open('requirements.txt') as f:
 with open('README.md', 'r', encoding='utf-8') as f:
     long_description = f.read()
 
+
 setup(
     name="typebuild",
-    version="0.0.20",
+    version="0.0.21",
     packages=find_packages(),
+    include_package_data=True,
+    package_data={
+        'typebuild': ['images/bookworm.jpg',
+        'images/build.png','images/ideate.png',
+        'images/language_model.png','images/llm.png',
+        'images/owl.png','images/reader.png', 'images/spider.png', 'images/upload_data.png',],
+    },
     install_requires=requirements,
     author="iRanadheer",
     author_email="neneranadheer@gmail.com",
