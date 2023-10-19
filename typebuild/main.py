@@ -1,6 +1,5 @@
 import sys
 import os
-from func_research_with_llm import research_with_llm
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(dir_path)
 import simple_auth
@@ -24,6 +23,7 @@ from function_management import create_run_menu, run_code_in_view_file
 from function_calling_spec_maker import main as fcsm
 from requirements_with_chat import technical_requirements_chat
 from blueprint_code import select_view
+from func_research_with_llm import research_with_llm
 
 from plugins.create_content_with_llms import analyze_with_llm
 # Set the user type to developer for now.
@@ -77,7 +77,7 @@ if api_key == '' and not os.path.exists(os.path.join(st.session_state.typebuild_
     st.session_state.new_menu = 'llm_access'
 if st.session_state.new_menu == 'llm_access':
     config_project()
-    st.error("Please add your OpenAI key or upload a custom LLM to continue.")
+    # st.error("Please add your OpenAI key or upload a custom LLM to continue.")
     st.stop()
     
 # Get the project file and data

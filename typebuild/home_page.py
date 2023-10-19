@@ -6,7 +6,7 @@ Currently focusing on the home page for logged in users.
 """
 import streamlit as st
 from menu import reset_menu
-
+import os
 
 def home_page():
     st.header("What you can do with TypeBuild", divider='rainbow')
@@ -44,7 +44,7 @@ def what_can_you_do():
     with c1:
         # Build mini-apps, forms, and data analysis
         st.image(
-            os.path.join(dir_path, 'images', 'apps.png'),
+            os.path.join(dir_path, 'images', 'build.png'),
         )
         caption='''**APPS & ANALYSIS**: Build mini-apps, create forms, or analyze data using natural language.
             This is great for creating prototypes, simple workflows, and to analyze data.
