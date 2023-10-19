@@ -327,7 +327,8 @@ def create_llm_output(df, output_col_name, selected_table):
                 if consolidated:
                     # Get the full text and the res for it.  Add it to the first row.
                     full_text = df[selected_column].str.cat(sep='\n\n')
-                    res_text = row_by_row_llm_res(full_text, system_instruction, frac=frac, model='gpt-3.5-turbo')
+                    
+                    res_text = row_by_row_llm_res(full_text, system_instruction, frac=frac, model='gpt-3.5-turbo-16k')
                     # res_text = '\n\n'.join(res)
                     df.iloc[0, df.columns.get_loc(output_col_name)] = res_text
                 else:
@@ -436,7 +437,7 @@ def row_by_row_llm_res(text_or_list, system_instruction, sample=True, frac=0.3, 
     if not text:
         return ""
     else:
-        chunks = chunk_text(text, max_chars=10000)
+        chunks = chunk_text(text, max_chars=8000)
         output = []
         if sample:
             chunks = chunks[:2]

@@ -1,6 +1,5 @@
 """
-Generating functional and technical requirements 
-with the help of LLMs
+Generating code with the help of LLMs.
 """
 import inspect
 import json
@@ -18,31 +17,7 @@ import pandas as pd
 import re
 
 
-def get_text_and_code():
-    """
-    Returns the current requirement text and code
-    for the selected view.
-    """
-    # Get requirements text
-    txt_file_path = st.session_state.file_path + '.txt'
-    # If the file exists, read it
-    if os.path.exists(txt_file_path):
-        with open(txt_file_path, 'r') as f:
-            current_text = f.read()
-    else:
-        current_text = ""
-
-    # Get python file string
-    py_file_path = st.session_state.file_path + '.py'
-    # If the file exists, read it
-    if os.path.exists(py_file_path):
-        with open(py_file_path, 'r') as f:
-            current_code = f.read()
-    else:
-        current_code = ""
-    return current_code, current_text
-
-def technical_requirements_chat(widget_label):
+def code_coordinator(widget_label):
     """
     A chat on the technical requirements.
     That could be exported to the project description file.
@@ -221,6 +196,32 @@ def technical_requirements_chat(widget_label):
                     st.rerun()
 
     return None
+
+
+
+def get_text_and_code():
+    """
+    Returns the current requirement text and code
+    for the selected view.
+    """
+    # Get requirements text
+    txt_file_path = st.session_state.file_path + '.txt'
+    # If the file exists, read it
+    if os.path.exists(txt_file_path):
+        with open(txt_file_path, 'r') as f:
+            current_text = f.read()
+    else:
+        current_text = ""
+
+    # Get python file string
+    py_file_path = st.session_state.file_path + '.py'
+    # If the file exists, read it
+    if os.path.exists(py_file_path):
+        with open(py_file_path, 'r') as f:
+            current_code = f.read()
+    else:
+        current_code = ""
+    return current_code, current_text
 
 
 def display_messages(chat_key):

@@ -108,3 +108,4 @@ if st.session_state.new_menu == 'apps_analysis':
     #     st.write(st.session_state.data_description)
     run_code_in_view_file()
     technical_requirements_chat(widget_label='Test requirement')
+
