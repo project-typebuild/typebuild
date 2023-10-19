@@ -15,8 +15,8 @@ def create_destination_df(destination_df_name, consolidated=False):
     """
     # Select the source dataframe and column
     st.write("### Select the source data and column(s)")
-    data_folder = st.session_state.project_folder + '/data'
-    tables = glob(f"{data_folder}/*.parquet")
+    data_folder = os.path.join(st.session_state.project_folder, 'data')
+    tables = glob(os.path.join(data_folder, '*.parquet'))
     # If there is more than one table, allow the user to select the table
     if len(tables) == 0:
         st.error("There should be some uploaded data for this to work.  Please upload some data from the project settings area.")
@@ -60,7 +60,7 @@ def create_destination_df(destination_df_name, consolidated=False):
     id_col = [col for col in df.columns if col.endswith('_id')]
     # If there is no id column, create sequential ids starting with 1
     if len(id_col) == 0:
-        id_col_name = source_df.split('/')[-1].split('.')[0] + '_tbid'
+        id_col_name = os.path.splitext(os.path.basename(source_df))[0] + '_tbid'
         df[id_col_name] = range(1, len(df) + 1)
         id_col = [id_col_name]        
         df.to_parquet(source_df)
@@ -82,8 +82,7 @@ def create_destination_df(destination_df_name, consolidated=False):
         id_col = id_col[0]
         df_for_llm = df[[id_col, 'text_for_llm']]
         # Create an id for this dataframe
-        dest_id_name = destination_df_name.split('/')[-1].split('.')[0] + '_tbid'
-        
+        dest_id_name = os.path.splitext(os.path.basename(destination_df_name))[0] + '_tbid'
         # Col info to save to the data model file
 
         all_col_info = []
@@ -171,19 +170,19 @@ def select_output_col(df):
 
 
 def analyze_with_llm():
+    data_folder = os.path.join(st.session_state.project_folder, 'data')
+    tables = glob(os.path.join(data_folder, '*.parquet'))
 
     data_folder = st.session_state.project_folder + '/data'
     tables = glob(f"{data_folder}/*.parquet")
     # Get just the file name
-    tables = [table.split('/')[-1] for table in tables]
-    # Remove .parquet
-    tables = [t.replace('.parquet', '') for t in tables]
+    tables = [os.path.splitext(os.path.basename(table))[0] for table in tables]
     c1, c2 = st.columns(2)
     # Select the source dataframe
     selected_table = c1.selectbox("Select the source data", tables, key='input_table_name')
     
     # Get full file name
-    selected_table = f"{data_folder}/{selected_table}.parquet"
+    selected_table = os.path.join(data_folder, f"{selected_table}.parquet")
     # Get the column names
     df = pd.read_parquet(selected_table)
     if c1.checkbox("Show input data"):
@@ -221,12 +220,11 @@ def create_llm_output(df, output_col_name, selected_table):
         st.error("Please select a column.")
         
     # Get the system instruction
-    txt_file = f"{st.session_state.project_folder}/{output_col_name}_system_instruction.txt"
-    # Check if this file exists (old system path), else, create with the new sysetm path
+    txt_file = os.path.join(st.session_state.project_folder, f"{output_col_name}_system_instruction.txt")
+    # Check if this file exists (old system path), else, create with the new system path
     if not os.path.exists(txt_file):
-        txt_file = f"{st.session_state.project_folder}/{st.session_state.input_table_name}_{output_col_name}_sys_ins.txt"
-        
-        
+        txt_file = os.path.join(st.session_state.project_folder, f"{st.session_state.input_table_name}_{output_col_name}_sys_ins.txt") 
+            
     # Save this as the system instruction path
     st.session_state.system_instruction_path = txt_file
     system_instruction = text_areas(
@@ -382,7 +380,7 @@ def update_data_model(file_name, column_name, column_type, column_info):
         None
     """
     # If the data model file exists, read it
-    data_model_file = st.session_state.project_folder + '/data_model.parquet'
+    data_model_file = os.path.join(st.session_state.project_folder, 'data_model.parquet')
     if os.path.exists(data_model_file):
         data_model = pd.read_parquet(data_model_file)
     else:
@@ -498,7 +496,7 @@ def write_to_data_model(file_name, col_info_df):
     as a part of the data model.  In this approach, we will be able to do it.
     """
     system_instruction_path = st.session_state.system_instruction_path
-    data_model_file = st.session_state.project_folder + '/data_model.parquet'
+    data_model_file = os.path.join(st.session_state.project_folder, 'data_model.parquet')
     # If the data model file exists, read it
     if os.path.exists(data_model_file):
         data_model = pd.read_parquet(data_model_file)

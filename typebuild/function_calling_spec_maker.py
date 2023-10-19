@@ -113,7 +113,7 @@ def main():
     Main function to run the script.
     """
     # Get files from root folder and subfolders
-    files = glob('**/*.py', recursive=True)
+    files = glob(os.path.join('**', '*.py'), recursive=True)
     # Select a file
     selected_file = st.selectbox('Select a file', files)
     # Get the functions

@@ -104,7 +104,7 @@ def get_views():
     """
     project_folder = st.session_state.project_folder
     # Get all the python files in the project folder
-    files = glob(f'{project_folder}/*.py')
+    files = glob(os.path.join(project_folder, '*.py'))
 
     # Ignore files that start with __
     files = [i for i in files if not i.startswith('__')]

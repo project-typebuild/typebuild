@@ -54,12 +54,12 @@ def get_google_search_results(search_term, sleep_interval=2, num_results=10):
     # Limit the length of the filename to 500 characters
     if len(cleaned_search_term_for_filename) > 500:
         cleaned_search_term_for_filename = cleaned_search_term_for_filename[:500]
-    file_name = st.session_state.project_folder + f'/data/google_{cleaned_search_term_for_filename}.parquet'
+    file_name = os.path.join(st.session_state.project_folder, 'data', f'google_{cleaned_search_term_for_filename}.parquet')
 
     df_data_model['file_name'] = file_name
 
     # Save the data model to the project folder, append to the existing data model
-    data_model_file = st.session_state.project_folder + '/data_model.parquet'
+    data_model_file = os.path.join(st.session_state.project_folder, 'data_model.parquet')
     all_dfs = []
     if os.path.exists(data_model_file):
         current_model = pd.read_parquet(data_model_file)

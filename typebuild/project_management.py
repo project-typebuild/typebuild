@@ -29,7 +29,8 @@ home_dir = os.path.expanduser("~")
 # Append the dir_path to the sys path
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(dir_path)
-sys.path.append(dir_path + '/plugins')
+plugins_path = os.path.join(dir_path, 'plugins')
+sys.path.append(plugins_path)
 def get_project_database():
 
     """
@@ -44,7 +45,7 @@ def get_project_database():
     """
 
     # Get the list of tables in the database
-    con = sqlite3.connect(f'{st.session_state.project_folder}/data.db')
+    con = sqlite3.connect(os.path.join(st.session_state.project_folder, 'data.db'))
     st.session_state.con = con
     tables = pd.read_sql_query("SELECT name FROM sqlite_master WHERE type='table'", con=st.session_state.con)
     table_names = tables['name'].tolist()
@@ -145,7 +146,7 @@ def show_project_settings():
         show_settings = True
     
     project_folder = st.session_state.project_folder
-    data_model_file = project_folder + '/data_model.parquet'
+    data_model_file = os.path.join(project_folder, 'data_model.parquet')
     if not os.path.exists(data_model_file):
         show_settings = True
     
@@ -174,7 +175,7 @@ def project_settings():
     # Get the project folder
     project_folder = st.session_state.project_folder
     # If the file called data_model.parquet is missing, toggle the manage project button
-    data_model_file = project_folder + '/data_model.parquet'
+    data_model_file = os.path.join(project_folder, 'data_model.parquet')
     if os.path.exists(data_model_file):
         # Add data description to session state
         st.session_state.data_description = pd.read_parquet(data_model_file).to_markdown(index=False)
@@ -223,7 +224,7 @@ def ideate_project():
     This stores the user requirement for the given view,
     based on the selected menu. 
     """
-    file_path = st.session_state.project_folder + '/project_settings/project_description.txt'
+    file_path = os.path.join(st.session_state.project_folder, 'project_settings', 'project_description.txt')
     key = 'Project Description'
     widget_label = 'Project Description'
     st.subheader('Project description')
@@ -271,7 +272,7 @@ def set_user_requirements():
     This stores the user requirement for the given view,
     based on the selected menu. 
     """
-    file_path = st.session_state.project_folder + '/project_settings/user_requirements.txt'
+    file_path = os.path.join(st.session_state.project_folder, 'project_settings', 'user_requirements.txt')
     key = 'User Requirements'
     widget_label = 'User Requirements'
     st.subheader('User requirements')
@@ -344,7 +345,7 @@ def create_new_project():
     st.session_state.user_folder = user_folder
 
     # Project folder is project name inside the user folder
-    project_folder = f"{user_folder}/{project_name}"
+    project_folder = os.path.join(user_folder, project_name)
     if os.path.exists(project_folder):
         st.write('Project already exists, please rename')
         st.stop()
@@ -390,11 +391,10 @@ def get_project_df():
 
     """
 
-    files = glob(f'{st.session_state.project_folder}/data/*.parquet')
-
+    files = glob(os.path.join(st.session_state.project_folder, 'data', '*.parquet'))
     if len(files) > 0:
         # Get the list of files in the project folder
-        files = glob(f'{st.session_state.project_folder}/data/*.parquet')
+        files = glob(os.path.join(st.session_state.project_folder, 'data', '*.parquet'))
         # Ask the user to select a file to append data to
         selected_file = st.selectbox("Select a file to append data to", files)
         # Load the file as a dataframe
@@ -407,16 +407,15 @@ def get_project_df():
 
 def export_sqlite_to_parquet(uploaded_file, output_dir):
     
-    tmp_folder = st.session_state.project_folder + '/documents/'
+    tmp_folder = os.path.join(st.session_state.project_folder, 'documents')
     # Create the tmp folder if it does not exist
     if not os.path.exists(tmp_folder):
         os.makedirs(tmp_folder)
     
-    with open(tmp_folder + "tmp.sqlite", 'wb') as f:
+    with open(os.path.join(tmp_folder, 'tmp.sqlite'), 'wb') as f:
         f.write(uploaded_file.read())
     # Connect to the SQLite database
-    conn = sqlite3.connect(f'{tmp_folder}/tmp.sqlite')
-
+    conn = sqlite3.connect(os.path.join(tmp_folder, 'tmp.sqlite'))
     # Get the list of all tables in the database
     query = "SELECT name FROM sqlite_master WHERE type='table';"
     tables = conn.execute(query).fetchall()
@@ -442,7 +441,7 @@ def upload_data_file(uploaded_file, file_extension):
     """
     Upload data files to import them into the project.
     """
-    data_folder = st.session_state.project_folder + '/data'
+    data_folder = os.path.join(st.session_state.project_folder, 'data')
     # Load the file as a dataframe
     if file_extension == 'csv':
         df = pd.read_csv(uploaded_file)
@@ -506,7 +505,7 @@ def upload_data_file(uploaded_file, file_extension):
     if st.button('Save Data'):
         
         # Save the file to the data folder
-        file_path = st.session_state.project_folder + '/data/' + file_name + '.parquet'
+        file_path = os.path.join(data_folder, file_name + '.parquet')
         # Create folder if it does not exist
         folder_name = os.path.dirname(file_path)
         if not os.path.exists(folder_name):
@@ -582,7 +581,7 @@ def upload_document_file(uploaded_file, file_extension):
     Returns:
     - None
     """
-    tmp_folder = st.session_state.project_folder + '/documents/'
+    tmp_folder = os.path.join(st.session_state.project_folder, 'documents')
     # Create the tmp folder if it does not exist
     if not os.path.exists(tmp_folder):
         os.makedirs(tmp_folder)
@@ -607,7 +606,7 @@ def file_upload_and_save():
     This function allows the user to upload a CSV or a parquet file, load it as a dataframe,
     and provides a button to save the file as a parquet file with the same name.
     """
-    data_folder = st.session_state.project_folder + '/data'
+    data_folder = os.path.join(st.session_state.project_folder, 'data')
     # Define the allowed file types
     allowed_data_file_types = ['csv', 'parquet', 'xlsx' , 'tsv', 'sqlite', 'db', 'sqlite3']
     allowed_document_file_types = ['pdf', 'txt', 'vtt']
@@ -644,7 +643,7 @@ def file_upload_and_save():
                 upload_document_file(uploaded_file, file_extension)
     if file_extension:
         if file_extension in allowed_document_file_types:
-            tmp_folder = st.session_state.project_folder + '/documents/'
+            tmp_folder = os.path.join(st.session_state.project_folder, 'documents')
             # Create chunks of the document and save it to the data folder
             df_chunks = create_document_chunk_df(tmp_folder)
             # Add documents_tbid to the dataframe
@@ -661,7 +660,7 @@ def file_upload_and_save():
             # If the parquet file already exists, append the data to the existing file
             if st.button('Save Document'):
                 # Save the file to the data folder
-                file_path = st.session_state.project_folder + '/data/documents.parquet'
+                file_path = os.path.join(data_folder, 'documents.parquet')
                 # If the file already exists, append the data to the existing file
                 if os.path.exists(file_path):
                     # Load the existing file as a dataframe
@@ -692,10 +691,10 @@ def append_data_to_exisiting_file():
 
     """
 
-    file_path = os.path.join(st.session_state.project_folder + '/data/')
+    file_path = os.path.join(st.session_state.project_folder, 'data')
 
     # Get the list of files in the project folder
-    files = glob(f'{file_path}/*.parquet')
+    files = glob(os.path.join(file_path, '*.parquet'))
 
     # Ask the user to select a file to append data to
     selected_file = st.selectbox("Select a file to append data to", files)

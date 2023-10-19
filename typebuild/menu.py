@@ -183,7 +183,7 @@ def save_the_header_state():
     if not os.path.exists('session_states'):
         os.makedirs('session_states')
     # First save the key session states
-    with open(f'session_states/{st.session_state.token}.pk', 'wb') as f:
+    with open(os.path.join('session_states', f'{st.session_state.token}.pk'), 'wb') as f:
         pk.dump(header_states, f)
     return None
 
@@ -193,7 +193,7 @@ def load_header_states():
     if variables do not exist
     """
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    file = f'{dir_path}/session_states/{st.session_state.token}.pk'
+    file = os.path.join(dir_path, 'session_states', f'{st.session_state.token}.pk')
 
     if os.path.exists(file):
         with open(file, 'rb') as f:

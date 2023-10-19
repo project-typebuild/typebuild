@@ -18,7 +18,7 @@ def create_document_chunk_df(documents_folder):
     documents_folder : str
         The path to the folder with the documents
     """
-    available_documents = glob(f'{documents_folder}/*')
+    available_documents = glob(os.path.join(documents_folder, '*'))
     # read all text files in the folder
     documents = []
     for document in available_documents:
@@ -30,7 +30,7 @@ def create_document_chunk_df(documents_folder):
             # contents = contents.decode('utf-8')
             tmp_dict['text'] = contents
 
-        tmp_dict['filename'] = document.split('/')[-1]
+        tmp_dict['filename'] = os.path.basename(document)
         documents.append(tmp_dict)
     
     return pd.DataFrame(documents)

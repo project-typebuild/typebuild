@@ -58,7 +58,7 @@ def get_llm_output(messages, max_tokens=2500, temperature=0.4, model='gpt-4', fu
     messages = last_few_messages(messages)
 
     typebuild_root = st.session_state.typebuild_root
-    if os.path.exists(f'{typebuild_root}/custom_llm.py'):
+    if os.path.exists(os.path.join(typebuild_root, 'custom_llm.py')):
         from custom_llm import custom_llm_output
         content = custom_llm_output(messages, max_tokens=max_tokens, temperature=temperature, model=model, functions=functions)
     else:

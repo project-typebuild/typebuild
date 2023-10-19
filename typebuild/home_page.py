@@ -17,9 +17,7 @@ def what_can_you_do():
     dir_path = st.session_state.dir_path
     c1, c2 = st.columns([1, 1])
     with c1:
-        st.image(
-            f'{dir_path}/images/upload_data.png',
-            )
+        st.image(os.path.join(dir_path, 'images', 'upload_data.png'))
         caption='''**DATA**: Upload your own data or fetch data from the web.
             ***You should have some data to use other functionalities.***
             '''
@@ -27,7 +25,7 @@ def what_can_you_do():
     
     with c2:
         st.image(
-            f'{dir_path}/images/ideate.png',
+            os.path.join(dir_path, 'images', 'ideate.png'),
             )
         caption='''**IDEATE**: Ideate using the language model.  Useful to identify personas and to create user journeys'''
         st.warning(caption) 
@@ -36,8 +34,8 @@ def what_can_you_do():
     # Add a button to go to the ideate page
     with c2:
         st.image(
-            f'{dir_path}/images/llm.png',
-            )
+            os.path.join(dir_path, 'images', 'llm.png'),
+        )
         caption='''**LLM ANALYSIS**: Analyze your data using a language model.  
             Useful to synthesize research, categorize data, and to extract specific insights from documents.
             '''
@@ -46,8 +44,8 @@ def what_can_you_do():
     with c1:
         # Build mini-apps, forms, and data analysis
         st.image(
-            f'{dir_path}/images/build.png',
-            )
+            os.path.join(dir_path, 'images', 'apps.png'),
+        )
         caption='''**APPS & ANALYSIS**: Build mini-apps, create forms, or analyze data using natural language.
             This is great for creating prototypes, simple workflows, and to analyze data.
             '''
