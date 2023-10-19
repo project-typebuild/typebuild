@@ -1,5 +1,6 @@
 import sys
 import os
+from func_research_with_llm import research_with_llm
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(dir_path)
 import simple_auth
@@ -100,6 +101,9 @@ if st.session_state.new_menu == 'llm_analysis':
     analyze_with_llm()
     st.stop()
 
+if st.session_state.new_menu == 'research':
+    research_with_llm()
+
 # If menu is apps_analysis, show the apps analysis
 if st.session_state.new_menu == 'apps_analysis':
     # Select the view from the menu
@@ -108,3 +112,4 @@ if st.session_state.new_menu == 'apps_analysis':
     #     st.write(st.session_state.data_description)
     run_code_in_view_file()
     technical_requirements_chat(widget_label='Test requirement')
+

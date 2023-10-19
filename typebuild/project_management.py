@@ -202,7 +202,7 @@ def project_settings():
         get_data_model()
         st.stop()
 
-    if selected_option == 'Generate data':
+    if selected_option == 'Fetch data':
         if st.checkbox("Get data from YouTube"):
             from tools.yt_search import main as yt_search
             yt_search()

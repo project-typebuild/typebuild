@@ -62,7 +62,7 @@ def technical_requirements_chat(widget_label):
 
     current_code, current_text = get_text_and_code()
     # Generate key from file name, after removing directory and extension
-    chat_key = "chat_" + os.path.basename(st.session_state.file_path).split('.')[0]
+    chat_key = "chat_" + st.session_state.file_path.split('/')[-1].split('.')[0]
     st.session_state.chat_key = chat_key
     
     agents.coordinator(chat_key, current_text=current_text, func_str=current_code)
