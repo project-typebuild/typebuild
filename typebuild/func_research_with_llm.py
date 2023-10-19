@@ -22,7 +22,6 @@ from streamlit_extras.dataframe_explorer import dataframe_explorer
 from helpers import text_areas
 from plugins.llms import get_llm_output
 
-
 def select_output_col(df):
     """
     Allow the user to select the output column.
@@ -71,36 +70,74 @@ def select_output_col(df):
 
 def research_with_llm():
 
-    new_project_name = st.text_input(
-        "Give your project a name", 
-        key='new_project_name',
-        help="Name your reserach so that you can find it later."
-        )
-    if not new_project_name:
-        st.error("Please give your project a name.")
-        st.stop()
+    # Create a parquet file to store the research projects and the last session state
+    st.session_state.research_projects_with_llm_path = os.path.join(st.session_state.project_folder, 'research_projects_with_llm.parquet')
+    if not os.path.exists(st.session_state.research_projects_with_llm_path):
+        res_projects = pd.DataFrame(columns=['project_name', 'file_name', 'input_col', 'output_col', 'word_limit', 'row_by_row', 'system_instruction'])
+        res_projects.to_parquet(st.session_state.research_projects_with_llm_path, index=False)
     else:
-        if st.button("Confirm project name"):
-            st.info("COnfirmed")
-            
+        res_projects = pd.read_parquet(st.session_state.research_projects_with_llm_path)
+        st.session_state.res_projects = res_projects
 
-    data_folder = st.session_state.project_folder + '/data'
-    tables = glob(f"{data_folder}/*.parquet")
+    # Get all the research projects from the research_projects_with_llm.parquet file
+    all_projects = res_projects['project_name'].unique().tolist()
+    all_projects.append('Create new project')
+
+    project_name = st.selectbox(
+        "New research or view prior research?", 
+        all_projects,
+        help="Select new research to create a new research project.  Select view prior research to view prior research projects."
+        )
+
+    if project_name == 'Create new project':
+        project_name = st.text_input(
+            "Give your project a name", 
+            key='project_name',
+            help="Name your reserach so that you can find it later."
+            )
+        if not project_name:
+            st.error("Please give your project a name and click Enter.")
+            st.stop()
+        elif project_name in all_projects:
+            st.error("This project name already exists.  Give it a different name.")
+            st.stop()
+        else:
+            tmp_dict = {}
+            tmp_dict['project_name'] = project_name.capitalize()
+            tmp_dict['file_name'] = np.nan
+            tmp_dict['input_col'] = np.nan
+            tmp_dict['output_col'] = np.nan
+            tmp_dict['word_limit'] = np.nan
+            tmp_dict['row_by_row'] = False
+            tmp_dict['system_instruction'] = np.nan
+            tmp_df = pd.DataFrame([tmp_dict], index=[0])
+            # Filter the DataFrame to select the row(s) where 'project_name' matches the value
+            res_projects = pd.concat([res_projects, tmp_df])
+            res_projects.to_parquet(st.session_state.research_projects_with_llm_path, index=False)
+            st.info("Confirmed, {} is the name of your project.".format(project_name))
+
+    st.session_state.research_project_name = project_name
+
+    data_folder = os.path.join(st.session_state.project_folder, 'data')
+    tables = glob(os.path.join(data_folder, '*.parquet'))
     # Get just the file name
-    tables = [table.split('/')[-1] for table in tables]
+    tables = [os.path.basename(table) for table in tables]
     # Remove .parquet
-    tables = [t.replace('.parquet', '') for t in tables]
+    tables = [os.path.splitext(table)[0] for table in tables]
     c1, c2 = st.columns(2)
     # Select the source dataframe
     selected_table = c1.selectbox("Select the source data", tables, key='input_table_name')
     
     # Get full file name
-    selected_table = f"{data_folder}/{selected_table}.parquet"
+    selected_table = os.path.join(data_folder, selected_table + '.parquet')
+    
+    st.session_state.file_name = selected_table
     # Get the column names
     df = pd.read_parquet(selected_table)
+    
     if c1.checkbox("Show input data"):
         st.dataframe(df.head())
-    
+
     with c2:
         # Select the output column
         output_col_name = select_output_col(df)
@@ -115,11 +152,19 @@ def create_llm_output(df, output_col_name, selected_table):
     # If consolidated, see if there is a column called consolidated_text_for_llm
     columns = df.columns.to_list()
 
+    res_projects = st.session_state.res_projects
+    
+    # Get all the details for this project to pre-populate the widgets
+    default_col_name = res_projects[res_projects['project_name'] == st.session_state.research_project_name]['input_col'].unique().tolist()[0]
+    default_word_limit = res_projects[res_projects['project_name'] == st.session_state.research_project_name]['word_limit'].unique().tolist()[0]
+    default_row_by_row = res_projects[res_projects['project_name'] == st.session_state.research_project_name]['row_by_row'].unique().tolist()[0]
+    st.session_state.default_row_by_row = default_row_by_row
+    
     # Add SELECT to the columns
     columns = ['SELECT'] + columns
     # Default column should be text_for_llm, if it exists
-    if 'text_for_llm' in columns:
-        default_index = columns.index('text_for_llm')
+    if default_col_name in columns:
+        default_index = columns.index(default_col_name)
     else:
         default_index = 0
     # Select the column to use
@@ -131,12 +176,13 @@ def create_llm_output(df, output_col_name, selected_table):
         )
     if selected_column == 'SELECT':
         st.error("Please select a column.")
+        st.stop()
         
     # Get the system instruction
-    txt_file = f"{st.session_state.project_folder}/{output_col_name}_system_instruction.txt"
+    txt_file = os.path.join(st.session_state.project_folder, f"{st.session_state.input_table_name}_{output_col_name}_sys_ins.txt")
     # Check if this file exists (old system path), else, create with the new sysetm path
     if not os.path.exists(txt_file):
-        txt_file = f"{st.session_state.project_folder}/{st.session_state.input_table_name}_{output_col_name}_sys_ins.txt"
+        txt_file = os.path.join(st.session_state.project_folder, f"{st.session_state.input_table_name}_{output_col_name}_sys_ins.txt")
         
         
     # Save this as the system instruction path
@@ -176,17 +222,21 @@ def create_llm_output(df, output_col_name, selected_table):
         df[output_col_name] = np.nan
     
     # Ask the user to set a fraction value on how far to reduce the text
+    c1, c2, c3 = st.columns(3)
 
-    frac = st.number_input(
-        "How big should your output be compared to input",
-        min_value=0.1,
-        max_value=1.0,
-        value=0.3,
-        step=0.1,
+    if not default_word_limit:
+        default_word_limit = 100
+    
+    frac = c1.number_input(
+        "What's the word limit for the response?",
+        min_value=100,
+        max_value=6000,
+        value=int(default_word_limit),
+        step=500,
         help="This will be set as max tokens for the LLM."
         )
     
-    c1, c2 = st.columns(2)
+    c1, c2, c3, c4, c5 = st.columns(5)
     # Sample or full run
     if c1.button(
         "🌓 Run a sample analysis 🌓",
@@ -226,7 +276,23 @@ def create_llm_output(df, output_col_name, selected_table):
         st.warning(f"There are {remaining_rows} rows remaining to be analyzed.")
         # Show input and output cols
     if c2.button("💯 Analyze all the rows", help="This will run the LLM on rows where the output is empty."):
-
+            tmp_dict = {}
+            tmp_dict['project_name'] = st.session_state.research_project_name
+            tmp_dict['file_name'] = st.session_state.file_name
+            tmp_dict['input_col'] = selected_column
+            tmp_dict['output_col'] = output_col_name
+            tmp_dict['word_limit'] = frac
+            tmp_dict['row_by_row'] = consolidated
+            tmp_dict['system_instruction'] = system_instruction
+            res_projects = st.session_state.res_projects
+            # Filter the DataFrame to select the row(s) where 'project_name' matches the value
+            mask = res_projects['project_name'] == tmp_dict['project_name']
+            res_projects.loc[mask, ['file_name','input_col', 'output_col', 'word_limit', 'row_by_row', 'system_instruction']] = [tmp_dict['file_name'],tmp_dict['input_col'], tmp_dict['output_col'], tmp_dict['word_limit'], tmp_dict['row_by_row'], tmp_dict['system_instruction']]
+            # res_projects.to_parquet(st.session_state.research_projects_with_llm_path, index=False)
+            st.write(res_projects)
+            res_projects.to_parquet(st.session_state.research_projects_with_llm_path, index=False)
+            st.stop()
+            
             update_data_model(
                 file_name=selected_table, 
                 column_name=output_col_name, 
@@ -294,7 +360,7 @@ def update_data_model(file_name, column_name, column_type, column_info):
         None
     """
     # If the data model file exists, read it
-    data_model_file = st.session_state.project_folder + '/data_model.parquet'
+    data_model_file = os.path.join(st.session_state.project_folder, 'data_model.parquet')
     if os.path.exists(data_model_file):
         data_model = pd.read_parquet(data_model_file)
     else:
@@ -410,7 +476,7 @@ def write_to_data_model(file_name, col_info_df):
     as a part of the data model.  In this approach, we will be able to do it.
     """
     system_instruction_path = st.session_state.system_instruction_path
-    data_model_file = st.session_state.project_folder + '/data_model.parquet'
+    data_model_file = os.path.join(st.session_state.project_folder, 'data_model.parquet')
     # If the data model file exists, read it
     if os.path.exists(data_model_file):
         data_model = pd.read_parquet(data_model_file)
@@ -446,11 +512,17 @@ def row_by_row():
     """
 # Replace indents in each line (indents will introduce code blocks when streamlit displays the text)
     row_by_row_desc = '\n'.join([line.strip() for line in row_by_row_desc.split('\n')])    
-  
+    
+    default_row_by_row_bool = st.session_state.default_row_by_row
+    if default_row_by_row_bool:
+        default_index = 1
+    else:
+        default_index = 0
+
     step = st.radio(
         "How would you like to analyze",
         ['Row by row', 'Consolidated'],
-        
+        index = default_index,
         horizontal=True,
         help=row_by_row_desc,
         )

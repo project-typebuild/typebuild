@@ -363,16 +363,48 @@ def temp_upgrade():
     Use this for upgrades
     """
     user_folder = st.session_state.user_folder
-    if user_folder.endswith('/'):
+    if user_folder.endswith(os.path.sep):
         user_folder = user_folder[:-1]
 
-    projects = glob(f"{user_folder}/**/**/")
-
+    projects = glob(os.path.join(user_folder, '**', ''))
     for project in projects:
-        project_research_file = f"{project}research_projects_with_llm.parquet"
+        project_research_file = os.path.join(project, 'research_projects_with_llm.parquet')
         if not os.path.exists(project_research_file):
             create_research_data_file(project)
     return None
+
+def x(arr):
+    file, col = arr
+    file = os.path.basename(file).replace('.parquet', '').replace('_', ' ').title()
+    col = col.replace('llm_', '').replace('_', ' ').upper()
+    return f"{col} {file}"
+
+def sys_ins_get(row):
+    col, file = row
+    file = file.split('/')[-1].replace('.parquet', '')
+    project = ('/').join(file.replace('data/', '').split('/')[0:-1])
+    sys_ins = f"{project}{file}_{col}_sys_ins.txt"
+    if os.path.exists(sys_ins):
+        with open(sys_ins, 'r') as f:
+            text = f.read()
+    else:
+        text = ''
+    return text
+
+def sys_ins_get(row):
+    col, file = row
+    file_name = os.path.basename(file)
+    file_name_without_extension = os.path.splitext(file_name)[0]
+    project_path = os.path.dirname(file_name_without_extension)
+    sys_ins = os.path.normpath(os.path.join(project_path, f"{file_name_without_extension}_{col}_sys_ins.txt"))
+
+    if os.path.exists(sys_ins):
+        with open(sys_ins, 'r') as f:
+            text = f.read()
+    else:
+        text = ''
+    return text
+
 
 def create_research_data_file(project):
     """
@@ -381,6 +413,8 @@ def create_research_data_file(project):
 
     data_model = f"{project}data_model.parquet"
     
+    if not os.path.exists(data_model):
+        return None
     df = pd.read_parquet(data_model)
     
     res_projects = df[df.column_name.str.contains('llm')][['column_name', 'file_name']]
