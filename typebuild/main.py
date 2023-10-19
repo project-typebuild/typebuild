@@ -1,5 +1,6 @@
 import sys
 import os
+from func_research_with_llm import research_with_llm
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(dir_path)
 import simple_auth
@@ -99,6 +100,9 @@ manage_project()
 if st.session_state.new_menu == 'llm_analysis':
     analyze_with_llm()
     st.stop()
+
+if st.session_state.new_menu == 'research':
+    research_with_llm()
 
 # If menu is apps_analysis, show the apps analysis
 if st.session_state.new_menu == 'apps_analysis':

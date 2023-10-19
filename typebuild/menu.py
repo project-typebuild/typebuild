@@ -103,6 +103,13 @@ def get_menu_data():
         "ttip": "Analyze data with LLM",
     }
 
+    research = {
+        "id": "research",
+        "icon": "🔍",
+        "label": "Research",
+        "ttip": "Research",
+    }
+
     functionalities = {
         "id": "functionalities",
         "icon": "📌",
@@ -113,6 +120,7 @@ def get_menu_data():
             ideate,
             apps_analysis,
             llm_analysis,
+            research,
         ],
     }
 

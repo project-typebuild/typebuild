@@ -1,3 +1,17 @@
+"""
+Chat driven research with LLMs
+
+- New research or do you want to view prior research?
+- Select table (by showing the tables in the data folder)
+- Select input column (by showing the columns in the table)
+- Select output column
+- Select if row by row or consolidated
+- Write the system instruction
+- Sample the output
+- Analyze all the rows
+"""
+
+
 import numpy as np
 import streamlit as st
 from glob import glob
@@ -8,122 +22,6 @@ from streamlit_extras.dataframe_explorer import dataframe_explorer
 from helpers import text_areas
 from plugins.llms import get_llm_output
 
-def create_destination_df(destination_df_name, consolidated=False):
-    """
-    To analyze data with LLM, we need to create a new dataframe
-    with the name of the view.
-    """
-    # Select the source dataframe and column
-    st.write("### Select the source data and column(s)")
-    data_folder = st.session_state.project_folder + '/data'
-    tables = glob(f"{data_folder}/*.parquet")
-    # If there is more than one table, allow the user to select the table
-    if len(tables) == 0:
-        st.error("There should be some uploaded data for this to work.  Please upload some data from the project settings area.")
-        st.stop()
-    if len(tables) == 1:
-        source_df = tables[0]
-    else:
-        source_df = st.selectbox("Select the source dataframe", tables)
-    
-    # Read the source dataframe
-    df = pd.read_parquet(source_df)
-
-    
-    # Get the column names
-    columns = df.columns
-
-    # Select the column to use
-    how_to_select = """If more than one column is selected, the text from each column will be 
-    appended with paragraphs in-between and used as the input to the LLM.  The sequence
-    of the text will be based on the order of the columns selected.
-    """
-
-    st.info(how_to_select)
-    columns = st.multiselect("Select the column(s) to use", columns)
-    if not columns:
-        st.error("Please select at least one column.")
-        st.stop()
-    # Get the text from the columns
-    df["text_for_llm"] = df[columns].apply(lambda x: '\n'.join(x), axis=1)
-
-    # Give option to filter the dataframe based on selected files
-    if st.checkbox("Filter documents to use for the analysis", help="Use this if you want to analyze something specific."):
-        original_len = len(df)
-        df = dataframe_explorer(df, case=False)
-        filtered_len = len(df)
-        # Provide filter information
-        st.info(f"Removed {original_len - filtered_len} / {original_len} rows from the dataframe. {filtered_len} rows remain.")
-
-
-    # Copy the id column (ends with _id) and the text_for_llm column to the destination dataframe
-    id_col = [col for col in df.columns if col.endswith('_id')]
-    # If there is no id column, create sequential ids starting with 1
-    if len(id_col) == 0:
-        id_col_name = source_df.split('/')[-1].split('.')[0] + '_tbid'
-        df[id_col_name] = range(1, len(df) + 1)
-        id_col = [id_col_name]        
-        df.to_parquet(source_df)
-
-    if consolidated:
-        # If the user is consolidating the data, then there
-        # we cannot join with the original dataframe anymore.
-        # We will create a df with just one row and the column text_for_llm
-        df = pd.DataFrame({'text_for_llm': [df['text_for_llm'].str.cat(sep='\n\n')]})
-        all_col_info = []
-        col_info = {}
-        col_info['file_name'] = source_df
-        col_info['dataframe_description'] = f'This dataframe has just one row with the consolidated text from the source dataframe {source_df}.'
-        col_info['column_name'] = 'text_for_llm'
-        col_info['column_type'] = 'str'
-        col_info['column_info'] = 'The text to be analyzed by the LLM taken from the source dataframe.'
-        all_col_info.append(col_info)
-    else:
-        id_col = id_col[0]
-        df_for_llm = df[[id_col, 'text_for_llm']]
-        # Create an id for this dataframe
-        dest_id_name = destination_df_name.split('/')[-1].split('.')[0] + '_tbid'
-        
-        # Col info to save to the data model file
-
-        all_col_info = []
-        col_info = {}
-        col_info['file_name'] = source_df
-        col_info['dataframe_description'] = f'This dataframe has the id column of the source dataframe.'
-        col_info['column_name'] = id_col
-        col_info['column_type'] = 'int'
-        col_info['column_info'] = 'The id column of the source dataframe.'
-        all_col_info.append(col_info)
-        col_info = {}
-        col_info['file_name'] = source_df
-        col_info['dataframe_description'] = f'This dataframe has the id column of the dataframe created for LLM analysis.'
-        col_info['column_name'] = dest_id_name
-        col_info['column_type'] = 'int'
-        col_info['column_info'] = 'The id column of the dataframe created for LLM analysis.'
-        all_col_info.append(col_info)
-        col_info = {}
-        col_info['file_name'] = source_df
-        col_info['dataframe_description'] = f'This dataframe has the text to be analyzed by the LLM taken from the source dataframe.'
-        col_info['column_name'] = 'text_for_llm'
-        col_info['column_type'] = 'str'
-        col_info['column_info'] = 'The text to be analyzed by the LLM taken from the source dataframe.'
-        all_col_info.append(col_info)
-
-    # Get the column information for the dataframe
-    col_info_df = pd.DataFrame(all_col_info)
-
-    # Save the destination dataframe
-    # Save the source dataframe with the new id column
-    if st.button("Save the file"):
-        df_for_llm.to_parquet(destination_df_name)
-        # Save the col info to the data model file
-        write_to_data_model(destination_df_name, col_info_df=col_info_df)
-
-        st.success("I created a new table with this data.  We are ready for the next step.")
-        time.sleep(2)
-        st.rerun()
-    
-    return df_for_llm
 
 def select_output_col(df):
     """
@@ -170,7 +68,15 @@ def select_output_col(df):
     return output_col_name
 
 
-def analyze_with_llm():
+def select_or_create_research_project():
+    """
+    Allows the user to select an existing project or create a new one.
+    """
+    
+
+
+def research_with_llm():
+
 
     data_folder = st.session_state.project_folder + '/data'
     tables = glob(f"{data_folder}/*.parquet")
