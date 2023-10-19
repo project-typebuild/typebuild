@@ -367,10 +367,17 @@ def temp_upgrade():
         user_folder = user_folder[:-1]
 
     projects = glob(os.path.join(user_folder, '**', ''))
+     
     for project in projects:
         project_research_file = os.path.join(project, 'research_projects_with_llm.parquet')
         if not os.path.exists(project_research_file):
             create_research_data_file(project)
+        else:
+            df = pd.read_parquet(project_research_file)
+            if 'research_name' not in df.columns:
+                create_research_data_file(project)
+        
+
     return None
 
 def x(arr):
@@ -413,6 +420,7 @@ def create_research_data_file(project):
 
     data_model = f"{project}data_model.parquet"
     
+    st.sidebar.warning(f"No data model for {project}")
     if not os.path.exists(data_model):
         return None
     df = pd.read_parquet(data_model)
@@ -420,14 +428,16 @@ def create_research_data_file(project):
     res_projects = df[df.column_name.str.contains('llm')][['column_name', 'file_name']]
         
     if len(res_projects) == 0:
-        res_projects = pd.DataFrame(columns=['project_name', 'file_name', 'input_col', 'output_col', 'word_limit', 'row_by_row', 'system_instruction'])
+        res_projects = pd.DataFrame(columns=['research_name', 'project_name', 'file_name', 'input_col', 'output_col', 'word_limit', 'row_by_row', 'system_instruction'])
     else:
         res_projects = res_projects.rename(columns={'column_name': 'output_col'})
         
         res_projects['input_col'] = 'SELECT'
         
-        res_projects['project_name'] = res_projects[['file_name', 'output_col']].apply(x, axis=1)
-        
+        res_projects['research_name'] = res_projects[['file_name', 'output_col']].apply(x, axis=1)
+
+        res_projects['project_name'] = project
+        st.sidebar.warning(project)
         res_projects = res_projects.reset_index(drop=True)
         
         res_projects['word_limit'] = 1000
@@ -438,7 +448,7 @@ def create_research_data_file(project):
         
         res_projects.row_by_row = res_projects.row_by_row.fillna(False)
         
-        res_projects = res_projects[['project_name', 'file_name', 'input_col', 'output_col', 'word_limit', 'row_by_row', 'system_instruction']]
+        res_projects = res_projects[['project_name', 'research_name', 'file_name', 'input_col', 'output_col', 'word_limit', 'row_by_row', 'system_instruction']]
     
         res_projects['system_instruction'] = res_projects[['output_col', 'file_name']].apply(sys_ins_get, axis=1)
     
