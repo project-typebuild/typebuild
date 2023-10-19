@@ -1,3 +1,4 @@
+import tempfile
 import streamlit as st
 import os
 from streamlit_ace import st_ace
@@ -8,6 +9,10 @@ from streamlit_extras.add_vertical_space import add_vertical_space
 from simple_auth import logout
 import openai
 import time
+import os
+from glob import glob
+import pandas as pd
+
 
 def update_text_file(file, value):
     """
@@ -333,7 +338,9 @@ def starter_code():
         logout()
     create_user_folder()
     set_function_calling_availability()
-
+    if 'upgrade' not in st.session_state:
+        temp_upgrade()
+        st.session_state.upgrade = True
     return None
     
 def extract_list_of_dicts_from_string(res):
@@ -350,3 +357,58 @@ def extract_list_of_dicts_from_string(res):
 
     
     return eval(list_of_dicts_str)
+
+def temp_upgrade():
+    """
+    Use this for upgrades
+    """
+    user_folder = st.session_state.user_folder
+    if user_folder.endswith('/'):
+        user_folder = user_folder[:-1]
+
+    projects = glob(f"{user_folder}/**/**/")
+
+    for project in projects:
+        project_research_file = f"{project}research_projects_with_llm.parquet"
+        if not os.path.exists(project_research_file):
+            create_research_data_file(project)
+    return None
+
+def create_research_data_file(project):
+    """
+    Create a data model if it does not exist.  Temp upgrade from 0.0.22 to 0.0.23
+    """
+
+    data_model = f"{project}data_model.parquet"
+    
+    df = pd.read_parquet(data_model)
+    
+    res_projects = df[df.column_name.str.contains('llm')][['column_name', 'file_name']]
+        
+    if len(res_projects) == 0:
+        res_projects = pd.DataFrame(columns=['project_name', 'file_name', 'input_col', 'output_col', 'word_limit', 'row_by_row', 'system_instruction'])
+    else:
+        res_projects = res_projects.rename(columns={'column_name': 'output_col'})
+        
+        res_projects['input_col'] = 'SELECT'
+        
+        res_projects['project_name'] = res_projects[['file_name', 'output_col']].apply(x, axis=1)
+        
+        res_projects = res_projects.reset_index(drop=True)
+        
+        res_projects['word_limit'] = 1000
+
+        res_projects['system_instruction'] = ''
+        
+        res_projects.loc[res_projects.input_col.str.contains('conso'), 'row_by_row'] = True
+        
+        res_projects.row_by_row = res_projects.row_by_row.fillna(False)
+        
+        res_projects = res_projects[['project_name', 'file_name', 'input_col', 'output_col', 'word_limit', 'row_by_row', 'system_instruction']]
+    
+        res_projects['system_instruction'] = res_projects[['output_col', 'file_name']].apply(sys_ins_get, axis=1)
+    
+    project_research_file = f"{project}research_projects_with_llm.parquet"    
+    res_projects.to_parquet(project_research_file, index=False)
+    
+    return None
