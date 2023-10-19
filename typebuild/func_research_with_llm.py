@@ -68,16 +68,15 @@ def select_output_col(df):
     return output_col_name
 
 
-def select_or_create_research_project():
-    """
-    Allows the user to select an existing project or create a new one.
-    """
-    
-
 
 def research_with_llm():
 
-
+    new_project_name = st.text_input(
+        "Give your project a name", 
+        key='new_project_name',
+        help="Name your reserach so that you can find it later."
+        )
+    
     data_folder = st.session_state.project_folder + '/data'
     tables = glob(f"{data_folder}/*.parquet")
     # Get just the file name
