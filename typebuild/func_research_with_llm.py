@@ -76,7 +76,14 @@ def research_with_llm():
         key='new_project_name',
         help="Name your reserach so that you can find it later."
         )
-    
+    if not new_project_name:
+        st.error("Please give your project a name.")
+        st.stop()
+    else:
+        if st.button("Confirm project name"):
+            st.info("COnfirmed")
+            
+
     data_folder = st.session_state.project_folder + '/data'
     tables = glob(f"{data_folder}/*.parquet")
     # Get just the file name
