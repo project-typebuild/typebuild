@@ -21,8 +21,7 @@ def user_requirement_for_view():
     """
     file_path = st.session_state.file_path + '.txt'
     key = st.session_state.file_path + '_key'
-    extract_file_name = st.session_state.file_path \
-        .split('/')[-1] \
+    extract_file_name = os.path.basename(st.session_state.file_path) \
         .replace('_', ' ') \
         .upper()
     widget_label = 'User requirements for ' + extract_file_name

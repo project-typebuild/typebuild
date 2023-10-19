@@ -221,8 +221,7 @@ def search_youtube_and_save_results(search_term, num_videos=10):
         # Limit the length of the filename to 500 characters
         if len(cleaned_search_term_for_filename) > 500:
             cleaned_search_term_for_filename = cleaned_search_term_for_filename[:500]
-        file_name = st.session_state.project_folder + f'/data/youtube_{cleaned_search_term_for_filename}.parquet'
-
+        file_name = os.path.join(st.session_state.project_folder, 'data', f'youtube_{cleaned_search_term_for_filename}.parquet')
         save_youtube_data(file_name)
         st.write(f"Data saved to {file_name}")
         status.update(label=f"Download complete!", state="complete")
@@ -273,7 +272,7 @@ def save_youtube_data(file_name):
         })
     new_data_model['file_name'] = file_name
     # Save the data model to the project folder, append to the existing data model
-    data_model_file = st.session_state.project_folder + '/data_model.parquet'
+    data_model_file = os.path.join(st.session_state.project_folder, 'data_model.parquet')
     all_dfs = []
     if os.path.exists(data_model_file):
         current_model = pd.read_parquet(data_model_file)

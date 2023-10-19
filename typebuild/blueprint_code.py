@@ -19,7 +19,8 @@ session_state_management.main()
 
 import sys
 dir_path = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(dir_path + '/plugins')
+plugins_path = os.path.join(dir_path, 'plugins')
+sys.path.append(plugins_path)
 
 # Import the plugins
 from data_widgets import display_editable_data
@@ -36,7 +37,7 @@ def select_view():
     #----LET THE USER SELECT THE VIEW TO RUN----
 
     # Get the file names from the directory
-    dir = st.session_state.project_folder + '/views'
+    dir = os.path.join(st.session_state.project_folder, 'views')
     
     # Create directory if it doesn't exist
     if not os.path.exists(dir):
@@ -121,10 +122,10 @@ def delete_selected_view():
     st.sidebar.warning("Are you sure you want to delete this view?  This action cannot be undone.")
     project_folder = st.session_state.project_folder
     selected_view = st.session_state.selected_view
-    views_folder = project_folder + '/views'
-    view_file = views_folder + '/' + selected_view + '.txt'
-    py_file = views_folder + '/' + selected_view + '.py'
-    pkl_file = views_folder + '/' + selected_view + '_meta.pkl'
+    views_folder = os.path.join(project_folder, 'views')
+    view_file = os.path.join(views_folder, selected_view + '.txt')
+    py_file = os.path.join(views_folder, selected_view + '.py')
+    pkl_file = os.path.join(views_folder, selected_view + '_meta.pkl')
     if st.sidebar.button("Delete"):
         if os.path.exists(view_file):
             os.remove(view_file)
@@ -150,10 +151,10 @@ def save_selected_data():
     """
     project_folder = st.session_state.project_folder
     selected_view = st.session_state.selected_view
-    views_folder = project_folder + '/views'
+    views_folder = os.path.join(project_folder, 'views')
     key = f"selected_tables_{selected_view}"
     selected_data = st.session_state[key]
-    view_meta_file = views_folder + '/' + selected_view + '_meta.pkl'
+    view_meta_file = os.path.join(views_folder, selected_view + '_meta.pkl')
     # Open the view meta file to read the data
     if os.path.exists(view_meta_file):
         with open(view_meta_file, 'rb') as f:
@@ -180,13 +181,13 @@ def select_data():
     project_folder = st.session_state.project_folder
     selected_view = st.session_state.selected_view
     data_description_for_view = f"data_description_{selected_view}"
-    views_folder = project_folder + '/views'
+    views_folder = os.path.join(project_folder, 'views')
     key = f"selected_tables_{selected_view}"
     # Check if there is a pickle file for the selected view
     # called view meta
-    view_meta_file = views_folder + '/' + selected_view + '_meta.pkl'
+    view_meta_file = os.path.join(views_folder, selected_view + '_meta.pkl')
     # Define the data folder
-    data_folder = st.session_state.project_folder + '/data'
+    data_folder = os.path.join(project_folder, 'data')
 
     # Get a list of all data files in the data folder
     data_files = [f for f in os.listdir(data_folder) if f.endswith('.parquet')]
@@ -223,7 +224,7 @@ def select_data():
         st.error("Please select at least one data file that you will use for analysis.")
         st.session_state[data_description_for_view] = None
     else:
-        data_model_file = st.session_state.project_folder + "/data_model.parquet"
+        data_model_file = os.path.join(project_folder, 'data_model.parquet')
         data_description = pd.read_parquet(data_model_file)
         # Get the description of the selected files
         # Add data directory to the file names

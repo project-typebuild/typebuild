@@ -72,7 +72,7 @@ if st.session_state.new_menu == 'Home':
     home_page()
     st.stop()
 
-if api_key == '' and not os.path.exists(f'{st.session_state.typebuild_root}/custom_llm.py'):
+if api_key == '' and not os.path.exists(os.path.join(st.session_state.typebuild_root, 'custom_llm.py')):
     st.session_state.new_menu = 'llm_access'
 if st.session_state.new_menu == 'llm_access':
     config_project()

@@ -140,15 +140,14 @@ def get_column_info(data_model, new_files_only=True):
     # Get the list of files in data model
 
     project_folder = st.session_state.project_folder
-    data_folder = project_folder + '/data'
-    data_files = glob(data_folder + '/*.parquet')
+    data_folder = os.path.join(project_folder, 'data')
+    data_files = glob(os.path.join(data_folder, '*.parquet'))
 
     # Get the list of files that have already been processed
     if data_model is None:
         # Create an empty dataframe
         data_model = pd.DataFrame(columns=['column_name', 'column_type', 'column_info', 'file_name'])
-        data_model.to_parquet(project_folder + '/data_model.parquet', index=False)
-
+        data_model.to_parquet(os.path.join(project_folder, 'data_model.parquet'), index=False)
     processed_files = data_model.file_name.unique().tolist()
 
     if data_model is not None:
@@ -205,7 +204,7 @@ def save_data_model(data_model_for_file, file_name):
     Saves the data model.  If the model already exists, it will be appended to.
     Any old data model for the given file_name will be overwritten.
     """
-    data_model_file = st.session_state.project_folder + '/data_model.parquet'
+    data_model_file = os.path.join(st.session_state.project_folder, 'data_model.parquet')
     all_dfs = []
     if os.path.exists(data_model_file):
         current_model = pd.read_parquet(data_model_file)
@@ -233,13 +232,12 @@ def get_data_model():
     generate_for_new_files_only = True
     # Save the column info to the project folder
     project_folder = st.session_state.project_folder
-    
-    data_folder = project_folder + '/data'
-    
-    data_model_file = project_folder + '/data_model.parquet'
 
+    data_folder = os.path.join(project_folder, 'data')
+    data_model_file = os.path.join(project_folder, 'data_model.parquet')
     # Get a list of parquet data files
-    data_files = glob(data_folder + '/*.parquet')
+    data_files = glob(os.path.join(data_folder, '*.parquet'))
+
     # See which files have already been processed
     processed_files = []
     files_to_process = data_files

@@ -18,7 +18,6 @@ def update_text_file(file, value):
         f.write(value)
     return None
 
-
 def upload_custom_llm_file():
     """
     This function allows the user to upload a custom LLM file.
@@ -29,13 +28,13 @@ def upload_custom_llm_file():
     if uploaded_file is not None:
         # Get the file extension
         file_extension = uploaded_file.name.split('.')[-1]
-        # Load the file as a dataframe
-        if file_extension == 'py':
-            # Save the file to the tmp folder
-            tmp_folder = '/tmp/'
-            tmp_file_path =  tmp_folder + uploaded_file.name
+
+        # Create a temporary directory
+        with tempfile.TemporaryDirectory() as tmp_folder:
+            tmp_file_path = os.path.join(tmp_folder, uploaded_file.name)
             with open(tmp_file_path, 'wb') as f:
                 f.write(uploaded_file.getbuffer())
+
             # Verify the functions in the file
             function_dict = {'function_name': 'custom_llm_output', 'args': ['input', 'max_tokens', 'temperature', 'model', 'functions']}
             if verify_functions(tmp_file_path, function_dict):
@@ -45,7 +44,8 @@ def upload_custom_llm_file():
                     success_message.empty()
                     # Get the typebuild root directory from the session state
                     typebuild_root = st.session_state.typebuild_root
-                    file_path = f'{typebuild_root}/custom_llm.py'
+                    file_path = os.path.join(typebuild_root, 'custom_llm.py')
+
                     # if the file already exists, ask the user if they want to overwrite it or not
                     if os.path.exists(file_path):
                         add_vertical_space(2)
@@ -66,7 +66,6 @@ def upload_custom_llm_file():
                         st.success(f'File saved successfully')
     st.stop()
     return None
-
 
 import ast
 
@@ -89,7 +88,7 @@ def verify_functions(file_path, function_dict):
 
     # Check if the get_llm_output function is present in the functions list
     # if get_llm_output function present and the args do not match, show an error
-        with open(f'{st.session_state.dir_path}/plugins/llms.py', 'r') as f:
+        with open(os.path.join(st.session_state.dir_path, 'plugins', 'llms.py'), 'r') as f:
             tree = f.read()
 
     if 'custom_llm_output' not in [i['function_name'] for i in functions]:
@@ -129,7 +128,7 @@ def config_project():
     # Check if the user wants to upload a custom LLM file or set the openai API key
     default_index = 0
     api_key = set_or_get_openai_api_key()
-    if os.path.exists(f'{st.session_state.typebuild_root}/custom_llm.py'):
+    if os.path.exists(os.path.join(st.session_state.typebuild_root, 'custom_llm.py')):
         default_index = 1
 
     llm_selection = st.radio('Select an option', ['Set OpenAI API key', 'Upload Custom LLM'], horizontal=True, index=default_index)
@@ -305,7 +304,7 @@ def set_or_get_openai_api_key():
     # Get the project folder from the session state
     user_folder = st.session_state.user_folder
     # Create the secrets.toml file if it does not exist
-    secrets_file_path = user_folder + '/secrets.toml'
+    secrets_file_path = os.path.join(user_folder, 'secrets.toml')
     if not os.path.exists(secrets_file_path):
         with open(secrets_file_path, 'w') as f:
             f.write('')

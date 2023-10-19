@@ -1,6 +1,6 @@
 from glob import glob
 from setuptools import setup, find_packages
-
+import os
 # Read requirements from requirements.txt
 with open('requirements.txt') as f:
     requirements = f.read().splitlines()
@@ -9,7 +9,11 @@ with open('requirements.txt') as f:
 with open('README.md', 'r', encoding='utf-8') as f:
     long_description = f.read()
 
-images_list = glob('images/*.*')
+# Get the path to the images directory
+images_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'images')
+
+# Get a list of all files in the images directory with any extension
+images_list = glob(os.path.join(images_dir, '*.*'))
 
 setup(
     name="typebuild",

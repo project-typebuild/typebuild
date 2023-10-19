@@ -52,8 +52,7 @@ def get_latitude_and_longitude_from_location_name(location_name):
     location_df['search_term'] = location_name
 
     cleaned_search_term_for_filename = location_name.replace(' ', '_').replace(',', '_').replace('.', '_').replace(';', '_').replace(':', '_').replace('?', '_').replace('!', '_').replace('(', '_').replace(')', '_').replace('/', '_').replace('\\', '_').replace('\'', '_').replace('\"', '_').replace('=', '_').replace('+', '_').replace('-', '_').replace('*', '_').replace('&', '_').replace('%', '_').replace('$', '_').replace('#', '_').replace('@', '_')
-    file_name = st.session_state.project_folder + f'/data/location_api_{cleaned_search_term_for_filename}.parquet'
-
+    file_name = os.path.join(st.session_state.project_folder, 'data', f'location_api_{cleaned_search_term_for_filename}.parquet')
     location_df.to_parquet(file_name, index=False)
 
     col_names = ['latitude', 'longitude', 'type', 'name', 'number', 
@@ -86,7 +85,7 @@ def get_latitude_and_longitude_from_location_name(location_name):
     new_data_model['file_name'] = location_name
 
     # Save the data model to the project folder, append to the existing data model
-    data_model_file = st.session_state.project_folder + '/data_model.parquet'
+    data_model_file = os.path.join(st.session_state.project_folder, 'data_model.parquet')
     all_dfs = []
     if os.path.exists(data_model_file):
         current_model = pd.read_parquet(data_model_file)

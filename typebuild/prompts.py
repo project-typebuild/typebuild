@@ -156,7 +156,7 @@ def from_requirements_to_code(chat_key, current_text="", prompt="", func_str=Non
     """
 
     # Get data description
-    data_model_file = st.session_state.project_folder + "/data_model.parquet"
+    data_model_file = os.path.join(st.session_state.project_folder, "data_model.parquet")
     selected_view = st.session_state.selected_view
     data_description = st.session_state[f"data_description_{selected_view}"]
         
@@ -276,6 +276,8 @@ def get_code_instructions():
         
         """
 
+    data_folder = os.path.join(st.session_state.project_folder, 'data')
+
     system_instruction_to_code = f"""
     You are the python developer with an expertise in packages like streamlit, pandas, altair, faker, faker-commerce
     Because of your expertise, a domain expert contacted you to create a streamlit app for them. 
@@ -301,7 +303,7 @@ def get_code_instructions():
     - Do not use index columns for calculations, if avoidable.
     - Try to use only the approved libraries.  If you need to use other libraries, check with me first.
     - You have been given one or more data files.  Load the files needed for this requirement and create a dataframe.
-    - You can suggest creating synthetic data using faker and faker-commerce, and numpy, if needed.  Save new files to the '{st.session_state.project_folder}/data'.  Always show the data and confirm with the user before saving it to a parquet file.
+    - You can suggest creating synthetic data using faker and faker-commerce, and numpy, if needed.  Save new files to the '{data_folder}'.  Always show the data and confirm with the user before saving it to a parquet file.
     - Use the loaded the dataframe to fulfill the requirements. 
     - Use st.dataframe to display tablular data.  This is not editable.
     - If the user has to edit the data, you can use the function display_editable_data(df, file_name) to display and edit the data.  You can import the function 'display_editable_data' using the following import statement: |||from data_widgets import display_editable_data|||
