@@ -128,6 +128,12 @@ def research_with_llm():
                 st.rerun()
     # Get the dict for the selected project
     selected_res_project = res_projects[res_projects['research_name'] == research_name].to_dict('records')[0]
+    
+    create_llm_output(selected_res_project)
+    
+    return None
+
+def create_llm_output(selected_res_project):
     data_folder = os.path.join(st.session_state.project_folder, 'data')
     tables = glob(os.path.join(data_folder, '*.parquet'))
     # Get just the file name
@@ -138,132 +144,121 @@ def research_with_llm():
     tables.insert(0, 'SELECT')
     # Default table should be the one in the project
     default_index = 0
+    expanded = True
     project_table = selected_res_project['file_name']
     # Split the file name and get just the name
     project_table = os.path.splitext(project_table)[0].split('/')[-1]
-    st.success(project_table)
     if project_table in tables:
         default_index = tables.index(project_table)
+        expanded = False
 
-    # Select the source dataframe
-    selected_table = st.selectbox(
-        "Select the source data", 
-        tables, 
-        index=default_index,
-        key=f'{st.session_state.research_name}input_table_name')
-
-    if selected_table == 'SELECT':
-        st.error("Please select a table.")
-        st.stop()    
-    # Get full file name
-    selected_table = os.path.join(data_folder, selected_table + '.parquet')
-    
-    st.session_state.file_name = selected_table
-    # Get the column names
-    df = pd.read_parquet(selected_table)
-    c1, c2 = st.columns(2)
-    if st.checkbox("Show input data"):
-        st.dataframe(df.head())
-
-
-    create_llm_output(df, selected_table)
-    
-    return None
-
-def create_llm_output(df, selected_table):
-
-    columns = df.columns.to_list()
-    # Select the output column
-    c1, c2 = st.columns(2)
-
-
-    # If consolidated, see if there is a column called consolidated_text_for_llm
-
-    res_projects = st.session_state.res_projects
-    selected_research = res_projects[res_projects['research_name'] == st.session_state.research_name].to_dict('records')[0]
-    # Get all the details for this project to pre-populate the widgets
-    default_output_col_name = selected_research.get('output_col', 'SELECT')
-    default_input_col_name = selected_research.get('input_col', 'SELECT')
-    if default_input_col_name == 'SELECT':
-        if 'transcript' in columns:
-            default_input_col_name = 'transcript'
-        elif 'text_for_llm' in columns:
-            default_input_col_name = 'text_for_llm'
-        elif 'text_content' in columns:
-            default_input_col_name = 'text_content'
-        else:
-            pass
-    default_word_limit = selected_research.get('word_limit', 100)
-    default_row_by_row = selected_research.get('row_by_row', True)
-    st.session_state.default_row_by_row = default_row_by_row
-    
-    # Add SELECT to the columns
-    columns = ['SELECT'] + columns
-    # Default column should be text_for_llm, if it exists
-    if default_input_col_name in columns:
-        default_index = columns.index(default_input_col_name)
-    else:
-        default_index = 0
-    # Select the column to use
-    with c1:
-        selected_column = st.selectbox(
-            "Select Input Column", 
-            columns,
+    with st.expander("Select input and output columns", expanded=expanded):
+        # Select the source dataframe
+        selected_table = st.selectbox(
+            "Select the source data", 
+            tables, 
             index=default_index,
-            help="This column will be used as the input to the LLM",
-            key=f'{st.session_state.research_name}input_col'
-            )
-        if selected_column == 'SELECT':
-            st.error("Please select a column.")
-            st.stop()
-    with c2:
-        output_col_name = select_output_col(df)        
-    # Get the system instruction
-    input_table_name = os.path.splitext(os.path.basename(selected_table))[0]
-    txt_file = os.path.join(st.session_state.project_folder, f"{input_table_name}_{output_col_name}_sys_ins.txt")
-    # Check if this file exists (old system path), else, create with the new sysetm path
-    if not os.path.exists(txt_file):
-        txt_file = os.path.join(st.session_state.project_folder, f"{st.session_state.input_table_name}_{output_col_name}_sys_ins.txt")
+            key=f'{st.session_state.research_name}input_table_name')
+
+        if selected_table == 'SELECT':
+            st.error("Please select a table.")
+            st.stop()    
+        # Get full file name
+        selected_table = os.path.join(data_folder, selected_table + '.parquet')
         
+        st.session_state.file_name = selected_table
+        # Get the column names
+        df = pd.read_parquet(selected_table)
+        c1, c2 = st.columns(2)
+        if st.checkbox("Show input data"):
+            st.dataframe(df.head())
+
+
+        columns = df.columns.to_list()
+        # Select the output column
+        c1, c2 = st.columns(2)
+
+
+        # If consolidated, see if there is a column called consolidated_text_for_llm
+
+        res_projects = st.session_state.res_projects
+        selected_research = res_projects[res_projects['research_name'] == st.session_state.research_name].to_dict('records')[0]
+        # Get all the details for this project to pre-populate the widgets
+        default_output_col_name = selected_research.get('output_col', 'SELECT')
+        default_input_col_name = selected_research.get('input_col', 'SELECT')
+        if default_input_col_name == 'SELECT':
+            if 'transcript' in columns:
+                default_input_col_name = 'transcript'
+            elif 'text_for_llm' in columns:
+                default_input_col_name = 'text_for_llm'
+            elif 'text_content' in columns:
+                default_input_col_name = 'text_content'
+            else:
+                pass
+        default_word_limit = selected_research.get('word_limit', 100)
+        default_row_by_row = selected_research.get('row_by_row', True)
+        st.session_state.default_row_by_row = default_row_by_row
         
-    # Give option to reset prior analysis
-    if st.sidebar.checkbox("Reset prior analysis"):
-        st.info("This will remove prior analysis and start over.")
-        # Ask for a confirmation
-        if st.sidebar.button("Reset"):
+        # Add SELECT to the columns
+        columns = ['SELECT'] + columns
+        # Default column should be text_for_llm, if it exists
+        if default_input_col_name in columns:
+            default_index = columns.index(default_input_col_name)
+        else:
+            default_index = 0
+        # Select the column to use
+        with c1:
+            selected_column = st.selectbox(
+                "Select Input Column", 
+                columns,
+                index=default_index,
+                help="This column will be used as the input to the LLM",
+                key=f'{st.session_state.research_name}input_col'
+                )
+            if selected_column == 'SELECT':
+                st.error("Please select a column.")
+                st.stop()
+        with c2:
+            output_col_name = select_output_col(df)        
+        # Get the system instruction
+        input_table_name = os.path.splitext(os.path.basename(selected_table))[0]
+        txt_file = os.path.join(st.session_state.project_folder, f"{input_table_name}_{output_col_name}_sys_ins.txt")
+        # Check if this file exists (old system path), else, create with the new sysetm path
+        if not os.path.exists(txt_file):
+            txt_file = os.path.join(st.session_state.project_folder, f"{st.session_state.input_table_name}_{output_col_name}_sys_ins.txt")
+            
+            
+        
+            
+        if st.checkbox("Show input and output cols"):
+            st.markdown("*Input and output colums*")
+            st.dataframe(df[[selected_column, output_col_name]])
+
+        consolidated = row_by_row()
+        
+        # If row_by_row_analysis column does not exist, create it
+        if output_col_name not in df.columns:
             df[output_col_name] = np.nan
-            st.sidebar.success("Prior analysis has been removed.")
-            # Save the data
-            df.to_parquet(selected_table, index=False)
         
-    if st.checkbox("Show input and output cols"):
-        st.markdown("*Input and output colums*")
-        st.dataframe(df[[selected_column, output_col_name]])
+        # Ask the user to set a fraction value on how far to reduce the text
+        c1, c2, c3 = st.columns(3)
 
-    consolidated = row_by_row()
-    
-    # If row_by_row_analysis column does not exist, create it
-    if output_col_name not in df.columns:
-        df[output_col_name] = np.nan
-    
-    # Ask the user to set a fraction value on how far to reduce the text
-    c1, c2, c3 = st.columns(3)
-
-    if not default_word_limit:
-        default_word_limit = 100
-    
-    word_limit = c1.number_input(
-        "What's the word limit for the response?",
-        min_value=100,
-        max_value=6000,
-        value=int(default_word_limit),
-        step=500,
-        help="This will be set as max tokens for the LLM."
-        )
-    
-    c1, c2, c3, c4, c5 = st.columns(5)
+        if not default_word_limit:
+            default_word_limit = 100
+        
+        word_limit = c1.number_input(
+            "What's the word limit for the response?",
+            min_value=100,
+            max_value=6000,
+            value=int(default_word_limit),
+            step=500,
+            help="This will be set as max tokens for the LLM."
+            )
+        
     # Save this as the system instruction path
     st.session_state.system_instruction_path = txt_file
+    st.subheader("Instructions for the LLM")
+    st.info("Tell the LLM what you would like to do with the data we are passing from the input column.")
     system_instruction = text_areas(
         file=txt_file,
         key=f'step_by_step_{txt_file}',
@@ -278,96 +273,124 @@ def create_llm_output(df, selected_table):
     The LLM was asked to do the following:
     {system_instruction}
     """
+    c1, c2, c3, c4, c5 = st.columns(5)
+    num_to_be_analyzed = len(df[df[output_col_name].isna()])
+    num_analyzed = len(df) - num_to_be_analyzed
 
-    # Sample or full run
-    if c1.button(
-        "🌓 Run a sample analysis 🌓",
-        help="This will run the LLM on a sample of 3 rows.  Use this to test the LLM.",
-        ):
-        # Get a sample of 3 rows, if there are at least 5 rows
-        if len(df) > 3:
-            sample = df.sample(3)
-        else:
-            sample = df
-        update_data_model(
-            file_name=selected_table, 
-            column_name=output_col_name, 
-            column_type='str', 
-            column_info=col_info,
-            )
-        # Remove prior analysis
-        df[output_col_name] = np.nan
-        # Save the dataframe to the destination dataframe
-        # Add row by row analysis to the sample
-
-
-
-        with st.spinner("Analyzing the sample data..."):
-            sample[output_col_name] = sample[selected_column].apply(lambda x: row_by_row_llm_res(x, system_instruction, word_limit=word_limit))
-            
-            # Show input and output to the user
-            for row in sample[[selected_column, output_col_name]].values:
-                c1, c2 = st.columns(2)
-                c1.subheader("Input text")
-                c1.markdown(row[0], unsafe_allow_html=True)
-                c2.subheader("LLM output")
-                c2.markdown(row[1], unsafe_allow_html=True)
-                st.markdown("---")
-
-    remaining_rows = len(df[df[output_col_name].isna()])
-    if remaining_rows == 0:
-        st.success("All rows have been analyzed.")
-    else:
-        st.warning(f"There are {remaining_rows} rows remaining to be analyzed.")
-        # Show input and output cols
-    if c2.button("💯 Analyze all the rows", help="This will run the LLM on rows where the output is empty."):
-            tmp_dict = {}
-            tmp_dict['project_name'] = st.session_state.research_name
-            tmp_dict['file_name'] = st.session_state.file_name
-            tmp_dict['input_col'] = selected_column
-            tmp_dict['output_col'] = output_col_name
-            tmp_dict['word_limit'] = frac
-            tmp_dict['row_by_row'] = consolidated
-            tmp_dict['system_instruction'] = system_instruction
-            res_projects = st.session_state.res_projects
-            # Filter the DataFrame to select the row(s) where 'project_name' matches the value
-            mask = res_projects['project_name'] == tmp_dict['project_name']
-            res_projects.loc[mask, ['file_name','input_col', 'output_col', 'word_limit', 'row_by_row', 'system_instruction']] = [tmp_dict['file_name'],tmp_dict['input_col'], tmp_dict['output_col'], tmp_dict['word_limit'], tmp_dict['row_by_row'], tmp_dict['system_instruction']]
-            # res_projects.to_parquet(st.session_state.research_projects_with_llm_path, index=False)
-            st.write(res_projects)
-            res_projects.to_parquet(st.session_state.research_projects_with_llm_path, index=False)
-            st.stop()
-            
+    if num_analyzed > 0:
+        # Give option to reset prior analysis
+        if st.checkbox("Delete current analysis"):
+            st.info("This will remove current analysis")
+            # Ask for a confirmation
+            if st.button("Confirm deletion"):
+                df[output_col_name] = np.nan
+                st.sidebar.success("Prior analysis has been removed.")
+                # Save the data
+                df.to_parquet(selected_table, index=False)
+    if num_to_be_analyzed > 0:
+        # Sample or full run
+        if c1.button(
+            "🌓 Run a sample analysis 🌓",
+            help="This will run the LLM on a sample of 3 rows.  Use this to test the LLM.",
+            ):
+            # Get a sample of 3 rows, if there are at least 5 rows
+            if len(df) > 3:
+                sample = df.sample(3)
+            else:
+                sample = df
             update_data_model(
                 file_name=selected_table, 
                 column_name=output_col_name, 
                 column_type='str', 
                 column_info=col_info,
-            )
-            # Keep sample analysis and run on the rest of the data
-            with st.spinner("Analyzing the rest of the data..."):
-                if consolidated:
-                    # Get the full text and the res for it.  Add it to the first row.
-                    full_text = df[selected_column].str.cat(sep='\n\n')
-                    
-                    res_text = row_by_row_llm_res(full_text, system_instruction, frac=frac, model='gpt-3.5-turbo-16k')
-                    # res_text = '\n\n'.join(res)
-                    df.iloc[0, df.columns.get_loc(output_col_name)] = res_text
-                else:
-                    data = df.loc[df[output_col_name].isna(), selected_column].to_list()
-                    output = []
-                    for row in data:
-                        try:
-                            res = row_by_row_llm_res(row, system_instruction, frac=frac)
-                        except:
-                            res = np.nan
-                        output.append(res)
-                    # Add the output to the dataframe
-                    df.loc[df[output_col_name].isna(), output_col_name] = output
+                )
+            # Remove prior analysis
+            df[output_col_name] = np.nan
+            # Save the dataframe to the destination dataframe
+            # Add row by row analysis to the sample
 
-                # Save the data
-                df.to_parquet(selected_table, index=False)
-                st.dataframe(df[[selected_column, output_col_name]])            
+
+            with st.spinner("Analyzing the sample data..."):
+                sample[output_col_name] = sample[selected_column].apply(lambda x: row_by_row_llm_res(x, system_instruction, word_limit=word_limit))
+                
+                # Show input and output to the user
+                for row in sample[[selected_column, output_col_name]].values:
+                    c1, c2 = st.columns(2)
+                    c1.subheader("Input text")
+                    c1.markdown(row[0], unsafe_allow_html=True)
+                    c2.subheader("LLM output")
+                    c2.markdown(row[1], unsafe_allow_html=True)
+                    st.markdown("---")
+
+        remaining_rows = len(df[df[output_col_name].isna()])
+        if remaining_rows == 0:
+            st.success("All rows have been analyzed.")
+        else:
+            st.warning(f"There are {remaining_rows} rows remaining to be analyzed.")
+            # Show input and output cols
+        if c2.button("💯 Analyze all the rows", help="This will run the LLM on rows where the output is empty."):
+                tmp_dict = {}
+                tmp_dict['research_name'] = st.session_state.research_name
+                tmp_dict['project_name'] = st.session_state.project_folder
+                tmp_dict['file_name'] = st.session_state.file_name
+                tmp_dict['input_col'] = selected_column
+                tmp_dict['output_col'] = output_col_name
+                tmp_dict['word_limit'] = word_limit
+                tmp_dict['row_by_row'] = consolidated
+                tmp_dict['system_instruction'] = system_instruction
+                res_projects = st.session_state.res_projects
+                # Filter the DataFrame to select the row(s) where 'project_name' matches the value
+                update_cols = [
+                    'research_name',
+                    'project_name',
+                    'file_name',
+                    'input_col',
+                    'output_col',
+                    'word_limit',
+                    'row_by_row',
+                    'system_instruction'
+                ]
+
+                update_values = [tmp_dict[col] for col in update_cols]
+                res_projects.loc[
+                    (res_projects['research_name'] == st.session_state.research_name) &
+                    (res_projects['project_name'] == st.session_state.project_folder), 
+                    update_cols 
+                    ] = update_values
+
+                res_projects.to_parquet(st.session_state.research_projects_with_llm_path, index=False)
+
+                
+                update_data_model(
+                    file_name=selected_table, 
+                    column_name=output_col_name, 
+                    column_type='str', 
+                    column_info=col_info,
+                )
+                # Keep sample analysis and run on the rest of the data
+                with st.spinner("Analyzing the rest of the data..."):
+                    if consolidated:
+                        # Get the full text and the res for it.  Add it to the first row.
+                        full_text = df[selected_column].str.cat(sep='\n\n')
+                        
+                        res_text = row_by_row_llm_res(full_text, system_instruction, frac=frac, model='gpt-3.5-turbo-16k')
+                        # res_text = '\n\n'.join(res)
+                        df.iloc[0, df.columns.get_loc(output_col_name)] = res_text
+                    else:
+                        data = df.loc[df[output_col_name].isna(), selected_column].to_list()
+                        output = []
+                        for row in data:
+                            try:
+                                res = row_by_row_llm_res(row, system_instruction, frac=frac)
+                            except:
+                                res = np.nan
+                            output.append(res)
+                        # Add the output to the dataframe
+                        df.loc[df[output_col_name].isna(), output_col_name] = output
+
+                    # Save the data
+                    df.to_parquet(selected_table, index=False)
+                    st.dataframe(df[[selected_column, output_col_name]])            
     show_output(df, output_col_name)
 
     return None
@@ -377,7 +400,7 @@ def show_output(df, output_col_name):
     Given the output column name, show the output
     from the LLM in markdown format.
     """
-
+    
     # Show the output
     output = df[~df[output_col_name].isna()][output_col_name].to_list()
     if not output:
@@ -389,9 +412,27 @@ def show_output(df, output_col_name):
         # add a separator
         buf += '\n---\n'
     
+    # Allow users to download csv file
+    if st.sidebar.download_button(
+        label="Download full table as TSV",
+        data=df.to_csv(index=False, sep='\t'),
+        file_name=f"{output_col_name}.tsv",
+        mime="text/plain",
+        ):
+        st.success("Downloaded tsv file.")
     st.subheader("Output from the LLM")
-    st.info(f"This information is saved in the *{output_col_name}* column.")
+    
     st.markdown(clean_markdown(buf))
+    # Allow users to download markdown file
+    if st.sidebar.download_button(
+        label="Download markdown file",
+        data=buf,
+        file_name=f"{output_col_name}.md",
+        mime="text/plain",
+        ):
+        st.success("Downloaded markdown file.")
+    
+    
     return None
 
 def update_data_model(file_name, column_name, column_type, column_info):

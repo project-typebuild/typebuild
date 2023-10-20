@@ -24,3 +24,4 @@ tiktoken
 tldextract
 youtube-search
 youtube-transcript-api
+xlsxwriter
