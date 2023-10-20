@@ -115,9 +115,9 @@ def blueprint_prompt_structure(df=None, prompt=''):
         when the user requests it.
         """
     system_msg = {'role': 'system', 'content': system_instruction}
-    st.session_state.project_description_chat.append(system_msg)
+    st.session_state.ideation_chat.append(system_msg)
     msg = {'role': 'user', 'content': prompt}
-    st.session_state.project_description_chat.append(msg)
+    st.session_state.ideation_chat.append(msg)
     return None
 
 
