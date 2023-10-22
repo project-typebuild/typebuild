@@ -2,6 +2,7 @@ import os
 import re
 import streamlit as st
 import openai
+from anthropic import Anthropic, HUMAN_PROMPT, AI_PROMPT
 from tenacity import (
     retry,
     stop_after_attempt,
@@ -53,14 +54,16 @@ def get_llm_output(messages, max_tokens=2500, temperature=0.4, model='gpt-4', fu
     """
     # Check if there is a custom_llm.py in the plugins directory
     # If there is, use that
-    
     # Get just the last few messages
     messages = last_few_messages(messages)
-
+    st.session_state.last_request = messages
     typebuild_root = st.session_state.typebuild_root
     if os.path.exists(os.path.join(typebuild_root, 'custom_llm.py')):
         from custom_llm import custom_llm_output
         content = custom_llm_output(messages, max_tokens=max_tokens, temperature=temperature, model=model, functions=functions)
+    # If claude is requested and available, use claude
+    elif model == 'claude-2' and st.session_state.is_claude_available:
+        content = get_claude_response(messages, max_tokens=max_tokens)
     else:
         msg = get_openai_output(messages, max_tokens=max_tokens, temperature=temperature, model=model, functions=functions)
         content = msg.get('content', None)
@@ -108,7 +111,6 @@ def get_openai_output(messages, max_tokens=3000, temperature=0.4, model='gpt-4',
     - max_tokens (int): The maximum number of tokens to generate, default 800
     - temperature (float): The temperature for the model. The higher the temperature, the more random the output
     """
-    st.session_state.last_request = messages
     if functions:
         response = openai.ChatCompletion.create(
                     model="gpt-4-0613",
@@ -132,6 +134,29 @@ def get_openai_output(messages, max_tokens=3000, temperature=0.4, model='gpt-4',
     st.session_state.ask_llm = False    
     return msg
 
+def get_claude_response(messages, max_tokens=2000):
+    anthropic = Anthropic(
+    api_key=st.secrets.claude.token,
+)
+    # Since claude has a higher max_tokens, let's increase the limit
+    max_tokens = int(max_tokens * 2)
+    prompt = ""
+    for i in messages:
+        if i['role'] == 'assistant':
+            prompt += f"{AI_PROMPT} {i['content']}\n\n"
+        else:
+            prompt += f"{HUMAN_PROMPT} {i['content']}\n\n"
+
+    prompt += AI_PROMPT
+    response = anthropic.completions.create(
+        prompt=prompt,
+        stop_sequences = [anthropic.HUMAN_PROMPT],
+        model="claude-2",
+        temperature=0.4,
+        max_tokens_to_sample=max_tokens,
+    )
+
+    return response.completion
 
 def parse_func_call_info(response):
     """

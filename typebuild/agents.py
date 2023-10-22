@@ -101,7 +101,7 @@ def from_requirements_to_code(chat_key, current_text="", prompt="", func_str=Non
 
     # Add the technical requirements instructions
     system_instruction = f"""{system_instruction} {get_technical_requirements_instructions()}"""
-
+    system_instruction += f"\nFYI: Today's date is {pd.to_datetime('today').strftime('%B %d, %Y')}"
     prompt = f"""{prompt}"""
 
     chat = st.session_state[chat_key]

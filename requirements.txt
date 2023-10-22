@@ -5,7 +5,9 @@ extra-streamlit-components
 faker-commerce
 fsspec
 googlesearch-python
+google-api-python-client
 hydralit-components
+isodate
 numexpr
 nx-altair
 openai

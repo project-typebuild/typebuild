@@ -148,7 +148,7 @@ def technical_requirements_chat(widget_label):
         if 'error' in st.session_state:
             del st.session_state['error']    
 
-    with st.status("View chat", expanded=True) as st.session_state.chat_status:
+    with st.status("View chat") as st.session_state.chat_status:
         # Create the chat
         chat_container = st.container()
 
@@ -342,6 +342,8 @@ def save_code_to_file(content: str):
             content_lines[i] = '# ' + line
         elif "if __name__" in line:
             content_lines[i] = '# ' + line
+        elif 'st.cache' in line:
+            pass
         else:
             content_lines[i] = line
 

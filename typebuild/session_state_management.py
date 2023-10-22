@@ -20,6 +20,7 @@ def add_default_session_states():
         'secrets_file_path' : os.path.join(os.path.expanduser("~"), '.typebuild', 'users', st.session_state.token, 'secrets.toml'),
         'profile_dict_path': os.path.join(os.path.expanduser("~"), '.typebuild', 'users', 'admin', 'profile_dict.pk'),
         'message_to_agent': None,
+        'is_claude_available': 'claude' in st.secrets,
         }
 
     for key in ss_vars:

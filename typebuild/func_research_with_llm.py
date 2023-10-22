@@ -227,12 +227,6 @@ def create_llm_output(selected_res_project):
         if not os.path.exists(txt_file):
             txt_file = os.path.join(st.session_state.project_folder, f"{st.session_state.input_table_name}_{output_col_name}_sys_ins.txt")
             
-            
-        
-            
-        if st.checkbox("Show input and output cols"):
-            st.markdown("*Input and output colums*")
-            st.dataframe(df[[selected_column, output_col_name]])
 
         consolidated = row_by_row()
         
@@ -497,12 +491,18 @@ def row_by_row_llm_res(text_or_list, system_instruction, sample=True, frac=0.3, 
     else:
         text = '\n\n'.join([str(i) for i in text_or_list])
 
-    # Chunk the text by 10k characters
+    # Chunk the text by 8k characters for openai
+    # and by 20k characters for claude
     st.session_state.last_sample = []
     if not text:
         return ""
     else:
-        chunks = chunk_text(text, max_chars=8000)
+        if st.session_state.claude_available:
+            max_chars = 20000
+        else:
+            max_chars = 8000
+
+        chunks = chunk_text(text, max_chars=max_chars)
         output = []
         if sample:
             chunks = chunks[:2]
