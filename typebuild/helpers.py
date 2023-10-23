@@ -338,10 +338,7 @@ def starter_code():
     # Add all default session states
     session_state_management.main()
     set_or_get_llm_keys()
-    if 'claude_key' in st.session_state:
-        st.sidebar.info('Claude key found')
-    else:
-        st.sidebar.warning('Claude key not found')
+    
     # Menu bar and other settings
     from menu import get_menu
     new_menu = get_menu()

@@ -235,7 +235,7 @@ def create_llm_output(selected_res_project):
         txt_file = os.path.join(st.session_state.project_folder, f"{input_table_name}_{output_col_name}_sys_ins.txt")
         # Check if this file exists (old system path), else, create with the new sysetm path
         if not os.path.exists(txt_file):
-            txt_file = os.path.join(st.session_state.project_folder, f"{st.session_state.input_table_name}_{output_col_name}_sys_ins.txt")
+            txt_file = os.path.join(st.session_state.project_folder, f"{input_table_name}_{output_col_name}_sys_ins.txt")
             
 
         consolidated = row_by_row()
