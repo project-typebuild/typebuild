@@ -510,7 +510,7 @@ def row_by_row_llm_res(text_or_list, system_instruction, sample=True, word_limit
     if not text:
         return ""
     else:
-        if 'claude_key' in st.session_state:
+        if 'claude' in model:
             max_chars = 50000
         else:
             max_chars = 8000

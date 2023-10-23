@@ -60,6 +60,7 @@ def get_llm_output(messages, max_tokens=2500, temperature=0.4, model='gpt-4', fu
     typebuild_root = st.session_state.typebuild_root
     if os.path.exists(os.path.join(typebuild_root, 'custom_llm.py')):
         from custom_llm import custom_llm_output
+
         content = custom_llm_output(messages, max_tokens=max_tokens, temperature=temperature, model=model, functions=functions)
     # If claude is requested and available, use claude
     elif model == 'claude-2' and 'claude_key' in st.session_state:
