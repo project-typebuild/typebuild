@@ -22,7 +22,7 @@ from streamlit_extras.dataframe_explorer import dataframe_explorer
 from helpers import text_areas
 from plugins.llms import get_llm_output
 
-def select_output_col(df):
+def select_output_col(df, default_output_col_name):
     """
     Allow the user to select the output column.
     Create a new column if it does not exist.
@@ -32,7 +32,11 @@ def select_output_col(df):
     Returns:
         output_col_name (str): The name of the output column.
     """
-    columns = df.columns
+    columns = df.columns.to_list()
+    if default_output_col_name in columns:
+        default_index = columns.index(default_output_col_name)
+    else:
+        default_index = 0
     # Select the column to write into.  It has to start with llm_
     # Could also be a new column
     llm_cols = [col for col in columns if col.startswith('llm_')]
@@ -194,6 +198,7 @@ def create_llm_output(selected_res_project):
         # Get all the details for this project to pre-populate the widgets
         default_output_col_name = selected_research.get('output_col', 'SELECT')
         default_input_col_name = selected_research.get('input_col', 'SELECT')
+        
         if default_input_col_name is None:
             default_input_col_name = 'SELECT'
         if default_input_col_name == 'SELECT':
@@ -205,6 +210,7 @@ def create_llm_output(selected_res_project):
                 default_input_col_name = 'text_content'
             else:
                 pass
+        
         default_word_limit = selected_research.get('word_limit', 100)
         default_row_by_row = selected_research.get('row_by_row', True)
         st.session_state.default_row_by_row = default_row_by_row
@@ -229,7 +235,7 @@ def create_llm_output(selected_res_project):
                 st.error("Please select an input column.")
                 st.stop()
         with c2:
-            output_col_name = select_output_col(df)        
+            output_col_name = select_output_col(df, default_output_col_name)        
         # Get the system instruction
         input_table_name = os.path.splitext(os.path.basename(selected_table))[0]
         txt_file = os.path.join(st.session_state.project_folder, f"{input_table_name}_{output_col_name}_sys_ins.txt")
@@ -335,6 +341,7 @@ def create_llm_output(selected_res_project):
         else:
             st.warning(f"There are {remaining_rows} rows remaining to be analyzed.")
             # Show input and output cols
+
         if c2.button("💯 Analyze all the rows", help="This will run the LLM on rows where the output is empty."):
                 tmp_dict = {}
                 tmp_dict['research_name'] = st.session_state.research_name
@@ -359,9 +366,13 @@ def create_llm_output(selected_res_project):
                 ]
 
                 update_values = [tmp_dict[col] for col in update_cols]
+                
+
+                
+                
                 res_projects.loc[
                     (res_projects['research_name'] == st.session_state.research_name) &
-                    (res_projects['project_name'] == st.session_state.project_folder), 
+                    (res_projects['project_name'].str.contains(st.session_state.project_folder.strip())), 
                     update_cols 
                     ] = update_values
 
@@ -389,7 +400,8 @@ def create_llm_output(selected_res_project):
                         for row in data:
                             try:
                                 res = row_by_row_llm_res(row, system_instruction, word_limit=word_limit, model='claude-2')
-                            except:
+                            except Exception as e:
+                                st.sidebar.error(f"Error: {str(e)}")
                                 res = np.nan
                             output.append(res)
                         # Add the output to the dataframe
