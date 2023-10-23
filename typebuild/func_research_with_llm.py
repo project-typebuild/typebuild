@@ -247,7 +247,8 @@ def create_llm_output(selected_res_project):
         # Ask the user to set a fraction value on how far to reduce the text
         c1, c2, c3 = st.columns(3)
 
-        if default_word_limit == np.nan:
+        # Check if the word limit is NaN
+        if pd.isna(default_word_limit):
             default_word_limit = 100
         if not default_word_limit:
             default_word_limit = 100
