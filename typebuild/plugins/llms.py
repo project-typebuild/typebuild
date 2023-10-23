@@ -62,7 +62,7 @@ def get_llm_output(messages, max_tokens=2500, temperature=0.4, model='gpt-4', fu
         from custom_llm import custom_llm_output
         content = custom_llm_output(messages, max_tokens=max_tokens, temperature=temperature, model=model, functions=functions)
     # If claude is requested and available, use claude
-    elif model == 'claude-2' and st.session_state.is_claude_available:
+    elif model == 'claude-2' and 'claude_key' in st.session_state:
         content = get_claude_response(messages, max_tokens=max_tokens)
     else:
         msg = get_openai_output(messages, max_tokens=max_tokens, temperature=temperature, model=model, functions=functions)
@@ -136,7 +136,7 @@ def get_openai_output(messages, max_tokens=3000, temperature=0.4, model='gpt-4',
 
 def get_claude_response(messages, max_tokens=2000):
     anthropic = Anthropic(
-    api_key=st.secrets.claude.token,
+    api_key=st.session_state.claude_key,
 )
     # Since claude has a higher max_tokens, let's increase the limit
     max_tokens = int(max_tokens * 2)
@@ -155,7 +155,6 @@ def get_claude_response(messages, max_tokens=2000):
         temperature=0.4,
         max_tokens_to_sample=max_tokens,
     )
-
     return response.completion
 
 def parse_func_call_info(response):

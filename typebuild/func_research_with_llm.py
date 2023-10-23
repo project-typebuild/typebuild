@@ -119,13 +119,19 @@ def research_with_llm():
             st.stop()
         else:
             if st.button("Set name"):
-                tmp_df = pd.DataFrame([{"research_name": research_name}])
+                tmp_df = pd.DataFrame([
+                    {
+                        "research_name": research_name,
+                        "project_name": st.session_state.project_folder,
+                        }])
                 res_projects = pd.concat([res_projects, tmp_df])
                 res_projects.to_parquet(st.session_state.research_projects_with_llm_path, index=False)
                 st.session_state.new_research = research_name
                 st.success("Set the project name")
                 time.sleep(1)
                 st.rerun()
+            else:
+                st.stop()
     # Get the dict for the selected project
     selected_res_project = res_projects[res_projects['research_name'] == research_name].to_dict('records')[0]
     
@@ -146,11 +152,13 @@ def create_llm_output(selected_res_project):
     default_index = 0
     expanded = True
     project_table = selected_res_project['file_name']
+    
     # Split the file name and get just the name
-    project_table = os.path.splitext(project_table)[0].split('/')[-1]
-    if project_table in tables:
-        default_index = tables.index(project_table)
-        expanded = False
+    if project_table:
+        project_table = os.path.splitext(project_table)[0].split('/')[-1]
+        if project_table in tables:
+            default_index = tables.index(project_table)
+            expanded = False
 
     with st.expander("Select input and output columns", expanded=expanded):
         # Select the source dataframe
@@ -186,6 +194,8 @@ def create_llm_output(selected_res_project):
         # Get all the details for this project to pre-populate the widgets
         default_output_col_name = selected_research.get('output_col', 'SELECT')
         default_input_col_name = selected_research.get('input_col', 'SELECT')
+        if default_input_col_name is None:
+            default_input_col_name = 'SELECT'
         if default_input_col_name == 'SELECT':
             if 'transcript' in columns:
                 default_input_col_name = 'transcript'
@@ -216,7 +226,7 @@ def create_llm_output(selected_res_project):
                 key=f'{st.session_state.research_name}input_col'
                 )
             if selected_column == 'SELECT':
-                st.error("Please select a column.")
+                st.error("Please select an input column.")
                 st.stop()
         with c2:
             output_col_name = select_output_col(df)        
@@ -304,8 +314,8 @@ def create_llm_output(selected_res_project):
             # Add row by row analysis to the sample
 
 
-            with st.spinner("Analyzing the sample data..."):
-                sample[output_col_name] = sample[selected_column].apply(lambda x: row_by_row_llm_res(x, system_instruction, word_limit=word_limit))
+            with st.spinner("Analyzing sample data..."):
+                sample[output_col_name] = sample[selected_column].apply(lambda x: row_by_row_llm_res(x, system_instruction, word_limit=word_limit, model='claude-2'))
                 
                 # Show input and output to the user
                 for row in sample[[selected_column, output_col_name]].values:
@@ -367,7 +377,7 @@ def create_llm_output(selected_res_project):
                         # Get the full text and the res for it.  Add it to the first row.
                         full_text = df[selected_column].str.cat(sep='\n\n')
                         
-                        res_text = row_by_row_llm_res(full_text, system_instruction, frac=frac, model='gpt-3.5-turbo-16k')
+                        res_text = row_by_row_llm_res(full_text, system_instruction, word_limit=word_limit, model='claude-2')
                         # res_text = '\n\n'.join(res)
                         df.iloc[0, df.columns.get_loc(output_col_name)] = res_text
                     else:
@@ -375,7 +385,7 @@ def create_llm_output(selected_res_project):
                         output = []
                         for row in data:
                             try:
-                                res = row_by_row_llm_res(row, system_instruction, frac=frac)
+                                res = row_by_row_llm_res(row, system_instruction, word_limit=word_limit, model='claude-2')
                             except:
                                 res = np.nan
                             output.append(res)
@@ -482,7 +492,7 @@ def clean_markdown(text):
     return text
 
 
-def row_by_row_llm_res(text_or_list, system_instruction, sample=True, frac=0.3, model='gpt-3.5-turbo-16k'):
+def row_by_row_llm_res(text_or_list, system_instruction, sample=True, word_limit=1000, model='claude-2'):
 
     if isinstance(text_or_list, str):
         text = text_or_list
@@ -497,8 +507,8 @@ def row_by_row_llm_res(text_or_list, system_instruction, sample=True, frac=0.3, 
     if not text:
         return ""
     else:
-        if st.session_state.claude_available:
-            max_chars = 20000
+        if 'claude_key' in st.session_state:
+            max_chars = 50000
         else:
             max_chars = 8000
 
@@ -508,8 +518,8 @@ def row_by_row_llm_res(text_or_list, system_instruction, sample=True, frac=0.3, 
             chunks = chunks[:2]
         
         for chunk in chunks:
-            max_tokens = len(chunk) * frac / 3
-            max_tokens = int(max_tokens)
+            max_tokens = int(word_limit * 4/3)
+            
             # If max tokens is too small, make it 800
             if max_tokens < 500:
                 max_tokens = 500

@@ -12,7 +12,7 @@ st.session_state.token = token
 
 import session_state_management
 
-from helpers import starter_code, set_or_get_openai_api_key, config_project 
+from helpers import starter_code, set_or_get_llm_keys, config_project 
 
 # Starter code has to run early.  Do not move.
 starter_code()
@@ -68,7 +68,7 @@ if st.session_state.show_developer_options:
         st.stop()
 
 # Check if openai key exists in the secrets file or custom_llm.py exists in the .typebuild folder, if not, then run the config_project function
-api_key = set_or_get_openai_api_key()
+api_key = set_or_get_llm_keys()
 if st.session_state.new_menu == 'Home':
     home_page()
     st.stop()

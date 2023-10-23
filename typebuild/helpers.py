@@ -132,7 +132,7 @@ def config_project():
 
     # Check if the user wants to upload a custom LLM file or set the openai API key
     default_index = 0
-    api_key = set_or_get_openai_api_key()
+    api_key = set_or_get_llm_keys()
     if os.path.exists(os.path.join(st.session_state.typebuild_root, 'custom_llm.py')):
         default_index = 1
 
@@ -142,7 +142,8 @@ def config_project():
         upload_custom_llm_file()
         st.stop()
     else:
-        api_key = st.text_input('Enter the API key', value=st.session_state.config.get('openai', {}).get('key', ''))
+        api_key = st.text_input('Enter OpenAI key', value=st.session_state.config.get('openai', {}).get('key', ''))
+        claude_key = st.text_input('Enter Claude key', value=st.session_state.config.get('claude', {}).get('key', ''))
 
         function_call_availabilty = st.checkbox(
             "(Expert setting) I have access to function calling", 
@@ -160,6 +161,8 @@ def config_project():
             openai.api_key = api_key
             # Save the API key in the secrets module
             config['openai'] = {'key': api_key}
+            if claude_key != '':
+                config['claude'] = {'key': claude_key}
             config['function_call_availabilty'] = function_call_availabilty
             if function_call_availabilty:
                 st.session_state.function_call_type = 'auto'
@@ -177,6 +180,8 @@ def config_project():
 
             # Add the API key to the config dictionary
             config_['openai'] = {'key': api_key}
+            if claude_key != '':
+                config_['claude'] = {'key': claude_key}
             config_['function_call_availabilty'] = function_call_availabilty
             # Save the config to the secrets.toml file
             with open(secrets_file_path, 'w') as f:
@@ -302,7 +307,7 @@ def create_user_folder():
     
     return None
 
-def set_or_get_openai_api_key():
+def set_or_get_llm_keys():
 
     # Check if the user has a secrets file and openai key in the secrets.toml file. if yes, then set the openai key
 
@@ -319,8 +324,11 @@ def set_or_get_openai_api_key():
             config = toml.load(f)
             st.session_state.config = config
     api_key = st.session_state.config.get('openai', {}).get('key', '')
+    claude_key = st.session_state.config.get('claude', {}).get('key', '')
     if api_key != '':
         openai.api_key = api_key
+    if claude_key != '':
+        st.session_state.claude_key = claude_key
     return api_key
 
 def starter_code():
@@ -329,7 +337,11 @@ def starter_code():
     """
     # Add all default session states
     session_state_management.main()
-
+    set_or_get_llm_keys()
+    if 'claude_key' in st.session_state:
+        st.sidebar.info('Claude key found')
+    else:
+        st.sidebar.warning('Claude key not found')
     # Menu bar and other settings
     from menu import get_menu
     new_menu = get_menu()
