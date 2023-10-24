@@ -17,7 +17,7 @@ images_list = glob(os.path.join(images_dir, '*.*'))
 
 setup(
     name="typebuild",
-    version="0.0.22",
+    version="0.0.25",
     packages=find_packages(),
     include_package_data=True,
     package_data={

@@ -159,7 +159,7 @@ def create_llm_output(selected_res_project):
     
     # Split the file name and get just the name
     if project_table:
-        project_table = os.path.splitext(project_table)[0].split('/')[-1]
+        project_table = os.path.splitext(os.path.basename(project_table))[0]
         if project_table in tables:
             default_index = tables.index(project_table)
             expanded = False
