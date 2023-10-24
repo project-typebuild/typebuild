@@ -345,7 +345,7 @@ def starter_code():
     
     if st.session_state.new_menu == 'logout':
         logout()
-    create_user_folder()
+    # create_user_folder()
     set_function_calling_availability()
     if 'upgrade' not in st.session_state:
         temp_upgrade()

@@ -19,7 +19,7 @@ def add_default_session_states():
         'user_folder': os.path.join(os.path.expanduser("~"), '.typebuild', 'users', st.session_state.token),
         'secrets_file_path' : os.path.join(os.path.expanduser("~"), '.typebuild', 'users', st.session_state.token, 'secrets.toml'),
         'profile_dict_path': os.path.join(os.path.expanduser("~"), '.typebuild', 'users', 'admin', 'profile_dict.pk'),
-        'message_to_agent': None
+        'message_to_agent': None,
         }
 
     for key in ss_vars:

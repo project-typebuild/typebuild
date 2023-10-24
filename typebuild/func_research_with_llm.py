@@ -82,8 +82,10 @@ def research_with_llm():
         st.rerun()
 
     res_projects = pd.read_parquet(st.session_state.research_projects_with_llm_path)
+    
     # Select only projects with current project name
     res_projects = res_projects[res_projects['project_name'].str.contains(st.session_state.project_folder.strip())]
+    
     st.session_state.res_projects = res_projects
     # Get all the research projects from the research_projects_with_llm.parquet file
     all_research = res_projects['research_name'].unique().tolist()
