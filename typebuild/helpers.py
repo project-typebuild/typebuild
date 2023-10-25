@@ -429,7 +429,7 @@ def create_research_data_file(project):
     Create a data model if it does not exist.  Temp upgrade from 0.0.22 to 0.0.23
     """
 
-    data_model = f"{project}data_model.parquet"
+    data_model = os.path.join(project, 'data_model.parquet')
     
     st.sidebar.warning(f"No data model for {project}")
     if not os.path.exists(data_model):

@@ -336,9 +336,6 @@ def create_new_project():
         # Create the directory if it doesn't exist
         os.makedirs(user_folder)
 
-    # Add user folder to the session state
-    st.session_state.user_folder = user_folder
-
     # Project folder is project name inside the user folder
     project_folder = os.path.join(user_folder, project_name)
 

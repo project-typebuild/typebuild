@@ -25,7 +25,7 @@ for image_ in images_list:
 
 setup(
     name="typebuild",
-    version="0.0.25",
+    version="0.0.26",
     packages=find_packages(),
     include_package_data=True,
     package_data={
