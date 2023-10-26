@@ -82,13 +82,18 @@ def research_with_llm():
         st.rerun()
 
     res_projects = pd.read_parquet(st.session_state.research_projects_with_llm_path)
-    
-    # Select only projects with current project name
-    res_projects = res_projects[res_projects['project_name'].str.contains(st.session_state.project_folder.strip())]
-    
-    st.session_state.res_projects = res_projects
-    # Get all the research projects from the research_projects_with_llm.parquet file
-    all_research = res_projects['research_name'].unique().tolist()
+
+    if len(res_projects) > 0:
+        # Select only projects with the current project name
+        res_projects = res_projects[res_projects['project_name'] == st.session_state.project_folder.strip()]
+        st.session_state.res_projects = res_projects
+
+        # Check if 'research_name' exists in the DataFrame and contains valid data
+        if 'research_name' in res_projects:
+            all_research = res_projects['research_name'].unique().tolist()
+        else:
+            all_research = []
+
     all_research.insert(0, 'New Research')
     # Insert 'SELECT' at the beginning
     all_research.insert(0, 'SELECT')
@@ -374,7 +379,7 @@ def create_llm_output(selected_res_project):
                 
                 res_projects.loc[
                     (res_projects['research_name'] == st.session_state.research_name) &
-                    (res_projects['project_name'].str.contains(st.session_state.project_folder.strip())), 
+                    (res_projects['project_name'] == (st.session_state.project_folder.strip())), 
                     update_cols 
                     ] = update_values
 
