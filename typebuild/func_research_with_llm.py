@@ -21,6 +21,7 @@ import pandas as pd
 from streamlit_extras.dataframe_explorer import dataframe_explorer
 from helpers import text_areas
 from plugins.llms import get_llm_output
+from stqdm import stqdm
 
 def select_output_col(df, default_output_col_name):
     """
@@ -402,15 +403,23 @@ def create_llm_output(selected_res_project):
                     else:
                         data = df.loc[df[output_col_name].isna(), selected_column].to_list()
                         output = []
-                        for row in data:
+                        for i, row in stqdm(enumerate(data)):
                             try:
                                 res = row_by_row_llm_res(row, system_instruction, word_limit=word_limit, model='claude-2')
                             except Exception as e:
                                 st.sidebar.error(f"Error: {str(e)}")
                                 res = np.nan
                             output.append(res)
+
+                            # Add the res to the dataframe
+                            df.iloc[i, df.columns.get_loc(output_col_name)] = res
+                            # Save the data after every 10 rows
+                            if i % 10 == 0 and i > 0:
+                                df.to_parquet(selected_table, index=False) 
+                                st.sidebar.info(f"Saved {i} rows.")
+
                         # Add the output to the dataframe
-                        df.loc[df[output_col_name].isna(), output_col_name] = output
+                        # df.loc[df[output_col_name].isna(), output_col_name] = output
 
                     # Save the data
                     df.to_parquet(selected_table, index=False)

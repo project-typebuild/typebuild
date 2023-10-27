@@ -18,14 +18,9 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 # Get all the images in typebuild/images
 images_list = glob(os.path.join(current_dir, 'typebuild', 'images', '*'))
 
-# Display the images in the streamlit app
-for image_ in images_list:
-    st.image(image = Image.open(image_), caption=image_, use_column_width=True, output_format='PNG')
-
-
 setup(
     name="typebuild",
-    version="0.0.26",
+    version="0.0.29",
     packages=find_packages(),
     include_package_data=True,
     package_data={

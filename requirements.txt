@@ -15,6 +15,7 @@ openpyxl
 pip-chill
 pympler
 sqlalchemy
+stqdm
 streamlit-ace
 streamlit-datalist
 streamlit-extras
