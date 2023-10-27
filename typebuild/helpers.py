@@ -345,7 +345,7 @@ def starter_code():
     
     if st.session_state.new_menu == 'logout':
         logout()
-    create_user_folder()
+    # create_user_folder()
     set_function_calling_availability()
     if 'upgrade' not in st.session_state:
         temp_upgrade()
@@ -397,14 +397,16 @@ def x(arr):
 
 def sys_ins_get(row):
     col, file = row
-    file = file.split('/')[-1].replace('.parquet', '')
-    project = ('/').join(file.replace('data/', '').split('/')[0:-1])
+    file = os.path.basename(file).replace('.parquet', '')
+    project = os.path.join(*file.split(os.path.sep)[1:-1])
     sys_ins = f"{project}{file}_{col}_sys_ins.txt"
+    
     if os.path.exists(sys_ins):
         with open(sys_ins, 'r') as f:
             text = f.read()
     else:
         text = ''
+    
     return text
 
 def sys_ins_get(row):
@@ -427,7 +429,7 @@ def create_research_data_file(project):
     Create a data model if it does not exist.  Temp upgrade from 0.0.22 to 0.0.23
     """
 
-    data_model = f"{project}data_model.parquet"
+    data_model = os.path.join(project, 'data_model.parquet')
     
     st.sidebar.warning(f"No data model for {project}")
     if not os.path.exists(data_model):

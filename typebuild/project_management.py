@@ -88,7 +88,7 @@ def get_project_file_folder():
     # Make the first project the default
 
     default_index = 0
-    
+
     # If no project is selected, select the first project
     if 'selected_project' not in st.session_state:
         st.session_state.selected_project = project_names[default_index]
@@ -112,9 +112,7 @@ def get_project_file_folder():
         create_new_project()        
         st.stop()
     
-    project_folder = os.path.join(user_folder, selected_project)
-    
-
+    project_folder = os.path.join(st.session_state.user_folder, selected_project)
     # Save to session state
     st.session_state.project_folder = project_folder
     
@@ -330,22 +328,17 @@ def create_new_project():
     # token_name = st.session_state.token
     # user_folder = os.path.join('users', token_name)
 
-    # Get the path to the home directory
-    home_dir = os.path.expanduser("~")
-
     # Create the path to the .typebuild directory
-    user_folder = os.path.join(home_dir, ".typebuild",'users', st.session_state.token)    
+    user_folder = st.session_state.user_folder  
     
     # Check if the directory exists
     if not os.path.exists(user_folder):
         # Create the directory if it doesn't exist
         os.makedirs(user_folder)
 
-    # Add user folder to the session state
-    st.session_state.user_folder = user_folder
-
     # Project folder is project name inside the user folder
     project_folder = os.path.join(user_folder, project_name)
+
     if os.path.exists(project_folder):
         st.write('Project already exists, please rename')
         st.stop()

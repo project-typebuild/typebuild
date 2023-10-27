@@ -173,8 +173,8 @@ def analyze_with_llm():
     data_folder = os.path.join(st.session_state.project_folder, 'data')
     tables = glob(os.path.join(data_folder, '*.parquet'))
 
-    data_folder = st.session_state.project_folder + '/data'
-    tables = glob(f"{data_folder}/*.parquet")
+    data_folder = os.path.join(st.session_state.project_folder, 'data')
+    tables = glob(os.path.join(data_folder, '*.parquet'))
     # Get just the file name
     tables = [os.path.splitext(os.path.basename(table))[0] for table in tables]
     c1, c2 = st.columns(2)

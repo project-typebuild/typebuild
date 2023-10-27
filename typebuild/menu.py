@@ -20,11 +20,7 @@ def get_menu_data():
     menu_data = []
 
     # List of available projects
-    # Get the user folder from the session state
-    if 'user_folder' not in st.session_state:
-        home_dir = os.path.expanduser("~")
-        st.session_state.user_folder = os.path.join(home_dir, ".typebuild", 'users' ,st.session_state.token)
-        
+
     user_folder = st.session_state.user_folder
     # If the user folder does not exist, create it
     if not os.path.exists(user_folder):

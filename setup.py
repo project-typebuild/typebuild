@@ -1,6 +1,7 @@
 from glob import glob
 from setuptools import setup, find_packages
 import os
+
 # Read requirements from requirements.txt
 with open('requirements.txt') as f:
     requirements = f.read().splitlines()
@@ -9,15 +10,22 @@ with open('requirements.txt') as f:
 with open('README.md', 'r', encoding='utf-8') as f:
     long_description = f.read()
 
-# Get the path to the images directory
-images_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'images')
+import streamlit as st
 
-# Get a list of all files in the images directory with any extension
-images_list = glob(os.path.join(images_dir, '*.*'))
+# Get the current file directory and add typebuild/images to it in os independent way
+current_dir = os.path.dirname(os.path.realpath(__file__))
+
+# Get all the images in typebuild/images
+images_list = glob(os.path.join(current_dir, 'typebuild', 'images', '*'))
+
+# Display the images in the streamlit app
+for image_ in images_list:
+    st.image(image = Image.open(image_), caption=image_, use_column_width=True, output_format='PNG')
+
 
 setup(
     name="typebuild",
-    version="0.0.22",
+    version="0.0.26",
     packages=find_packages(),
     include_package_data=True,
     package_data={
