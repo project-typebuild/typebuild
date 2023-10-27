@@ -201,8 +201,8 @@ def select_data():
                 view_meta = pd.read_pickle(f)
             default = view_meta.get('selected_data', [])
         elif len(data_files) == 0:
-            st.warning("There are no data files in the data folder.  Please add data files.")
-            st.stop()
+            st.sidebar.warning("There are no data files in the data folder.  Please add data files.")
+            default = []
         # If there is just one file, show it without selection
         elif len(data_files) < 4:
             default = data_files
@@ -211,17 +211,18 @@ def select_data():
             default = []
         
         st.session_state[key] = default
-
-    # Allow the user to select multiple data files
-    selected_files = st.multiselect(
-        'Select data files', 
-        data_files, 
-        key=key, 
-        on_change=save_selected_data
-        )
-
+    if data_files:
+        # Allow the user to select multiple data files
+        selected_files = st.multiselect(
+            'Select data files', 
+            data_files, 
+            key=key, 
+            on_change=save_selected_data
+            )
+    else:
+        selected_files = []
     if not selected_files:
-        st.error("Please select at least one data file that you will use for analysis.")
+        # st.error("Please select at least one data file that you will use for analysis.")
         st.session_state[data_description_for_view] = None
     else:
         data_model_file = os.path.join(project_folder, 'data_model.parquet')

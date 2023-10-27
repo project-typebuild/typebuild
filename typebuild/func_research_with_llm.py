@@ -249,14 +249,14 @@ def create_llm_output(selected_res_project):
 
         # Check if the word limit is NaN
         if pd.isna(default_word_limit):
-            default_word_limit = 100
+            default_word_limit = 200
         if not default_word_limit:
-            default_word_limit = 100
+            default_word_limit = 200
         
         word_limit = c1.number_input(
             "What's the word limit for the response?",
             min_value=100,
-            max_value=6000,
+            max_value=8000,
             value=int(default_word_limit),
             step=500,
             help="This will be set as max tokens for the LLM."
