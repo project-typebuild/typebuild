@@ -411,10 +411,11 @@ def create_llm_output(selected_res_project):
                                 res = np.nan
                             output.append(res)
 
-                            # Add the res to the dataframe
-                            df.iloc[i, df.columns.get_loc(output_col_name)] = res
+                            # Add the res to the dataframe, locate by text, not index
+                            df.loc[df[selected_column] == row, output_col_name] = res
+
                             # Save the data after every 10 rows
-                            if i % 10 == 0 and i > 0:
+                            if i % 3 == 0 and i > 0:
                                 df.to_parquet(selected_table, index=False) 
                                 st.sidebar.info(f"Saved {i} rows.")
 
