@@ -20,7 +20,7 @@ images_list = glob(os.path.join(current_dir, 'typebuild', 'images', '*'))
 
 setup(
     name="typebuild",
-    version="0.0.30",
+    version="0.0.31",
     packages=find_packages(),
     include_package_data=True,
     package_data={
