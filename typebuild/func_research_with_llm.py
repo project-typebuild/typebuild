@@ -82,7 +82,7 @@ def research_with_llm():
         st.rerun()
 
     res_projects = pd.read_parquet(st.session_state.research_projects_with_llm_path)
-
+    all_research = []
     if len(res_projects) > 0:
         # Select only projects with the current project name
         res_projects = res_projects[res_projects['project_name'] == st.session_state.project_folder.strip()]
@@ -91,8 +91,6 @@ def research_with_llm():
         # Check if 'research_name' exists in the DataFrame and contains valid data
         if 'research_name' in res_projects:
             all_research = res_projects['research_name'].unique().tolist()
-        else:
-            all_research = []
 
     all_research.insert(0, 'New Research')
     # Insert 'SELECT' at the beginning
