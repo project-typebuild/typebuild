@@ -18,7 +18,8 @@ def create_document_chunk_df(documents_folder):
     documents_folder : str
         The path to the folder with the documents
     """
-    available_documents = glob(os.path.join(documents_folder, '*'))
+    tmp_folder = os.path.join(st.session_state.project_folder, 'documents')
+    available_documents = glob(os.path.join(tmp_folder, '*'))
     # read all text files in the folder
     documents = []
     for document in available_documents:

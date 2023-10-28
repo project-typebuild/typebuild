@@ -587,7 +587,7 @@ def upload_document_file(uploaded_file, file_extension):
     file_name = file_name.replace(f'.{file_extension}', '')
     # Save the file to the tmp folder
     
-    tmp_file_path =  tmp_folder + file_name + '.' + file_extension
+    tmp_file_path =  os.path.join(tmp_folder, f"{file_name}.{file_extension}")
     with open(tmp_file_path, 'wb') as f:
         f.write(uploaded_file.getbuffer())
     
