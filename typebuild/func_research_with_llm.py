@@ -407,7 +407,7 @@ def create_llm_output(selected_res_project):
                             try:
                                 res = row_by_row_llm_res(row, system_instruction, word_limit=word_limit, model='claude-2')
                             except Exception as e:
-                                st.sidebar.error(f"Error: {str(e)}")
+                                # st.sidebar.error(f"Error: {str(e)}")
                                 res = np.nan
                             output.append(res)
 
