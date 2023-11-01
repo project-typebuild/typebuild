@@ -138,8 +138,8 @@ def get_openai_output(messages, max_tokens=3000, temperature=0.4, model='gpt-4',
 
 def get_claude_response(messages, max_tokens=2000):
     anthropic = Anthropic(
-    api_key=st.session_state.claude_key,
-)
+        api_key=st.session_state.claude_key,
+    )
     # Since claude has a higher max_tokens, let's increase the limit
     max_tokens = int(max_tokens * 2)
     prompt = ""
