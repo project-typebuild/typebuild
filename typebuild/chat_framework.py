@@ -83,26 +83,3 @@ if 'a' not in st.session_state:
 else:
     a = st.session_state['a']
 
-if 'should_rerun' not in st.session_state:
-    st.session_state['should_rerun'] = False
-
-st.sidebar.success(st.session_state.should_rerun)
-
-# a.dynamic_menu()
-# if st.button("Remove chart"):
-#     a.remove_from_menu('show_chart')
-
-from graphical_menu import GraphicalMenu, menu_edges_data
-
-if 'menu' not in st.session_state:
-    menu = GraphicalMenu()
-    st.session_state['menu'] = menu
-    menu.add_edges(menu_edges_data, 'success')
-    
-else:
-    menu = st.session_state['menu']
-menu.create_menu()
-
-test_main()
-# Show the menu edges
-# st.json(st.session_state.menu.menu_edges)

@@ -5,24 +5,6 @@ from streamlit_elements import elements, mui, html, sync
 import streamlit as st
 
 
-
-
-menu_edges_data = [
-        ["HOME", "Users", "print_success"],
-        ["Users", "User List", "print_success"],
-
-        ["HOME", "Projects", "print_success"],
-        ["Projects", "Project List", "print_success"],
-        ["Project List", "View Projects", "print_success"],
-        
-        ["HOME", "Settings", "print_success"],
-        ["Settings", "General Settings", "print_success"],
-
-    ]
-
-
-
-
 # set Streamlit page layout to wide
 def display_menu_bar(menu_options):
     # create_dynamic_functions(menu_options)
@@ -32,10 +14,8 @@ def display_menu_bar(menu_options):
         clean_option = option.lower().replace(' ', '_').replace('~', '_').replace('.', '_').replace('-', '_').replace(',','_')
         if f"menu_button_function_{clean_option}" not in locals():
             myfunc = f"""def menu_button_function_{clean_option}(event):
-                st.sidebar.warning(f"Button {option} clicked")
                 st.session_state.activeStep = "{option}"
                 st.session_state.should_rerun = True
-                st.sidebar.info(f"Re-run is {st.session_state.should_rerun}")
                 return None
             """            
             exec(myfunc)
@@ -43,7 +23,6 @@ def display_menu_bar(menu_options):
         st.session_state.activeStep = 'HOME'        
     
 
-    st.sidebar.info(f'Active step is {st.session_state.activeStep}')
     with elements("App Bar"):
         with mui.AppBar(position="relative", sx = {'borderRadius': 10}):
             with mui.Toolbar(disableGutters=True, variant="dense"):
@@ -62,6 +41,9 @@ class GraphicalMenu:
     G = None
 
     def __init__(self):
+        # Create the Graph
+        self.G = nx.DiGraph()
+        self.G.add_node("HOME", node_name="HOME", func_name="home_page", module_name="home_page")
         return None
 
     def add_edges(self, menu_edges_data, source):
@@ -70,21 +52,25 @@ class GraphicalMenu:
         For uniqueness, the node names is done as "node_name~source"
         """
         if source not in self.menu_sources:
+            G = self.G
             self.menu_sources.append(source)
             revised_menu_edges_data = []
             for edge in menu_edges_data:
                 if edge[0] == "HOME":
-                    edge[0] = "HOME"
+                    node_0 = "HOME"
                 else:
-                    edge[0] = f"{edge[0]}~{source}"
+                    node_0 = f"{edge[0]}~{source}"
                 if edge[1] == "HOME":
-                    edge[1] = "HOME"
+                    node_1 = "HOME"
                 else:
-                    edge[1] = f"{edge[1]}~{source}"
-                revised_menu_edges_data.append([edge[0], edge[1]])
+                    node_1 = f"{edge[1]}~{source}"
+
+                # Add the edge to the graph with the function name and module name as properties
+                G.add_node(node_1, node_name=edge[1], func_name=edge[2], module_name=source)
+                G.add_edge(node_0, node_1)
+                revised_menu_edges_data.append([node_0, node_1])
             self.menu_edges += menu_edges_data
             self.add_functions(revised_menu_edges_data, source)
-            self.create_update_graph()
         return None
 
     def add_functions(self, edges, source):
@@ -95,8 +81,8 @@ class GraphicalMenu:
                 src, dst, func_name = edge
             else:
                 dst = 'HOME'
-                func_name = 'main'
-                source = 'main'
+                func_name = 'home_page'
+                source = 'home_page'
 
             node_name = f"{dst}~{source}"
             # Append if the node name is not already in the source functions
@@ -113,12 +99,9 @@ class GraphicalMenu:
         """
         Get the top level nodes from a list of edges.  These are the nodes that have no parents.
         """
-        nodes = self.get_nodes_from_edges()
-        
-        roots = []
-        for node in nodes:
-            if node not in [edge[1] for edge in self.menu_edges if edge[0] != "HOME"]:
-                roots.append(node)
+        G = self.G
+        # Get children of "HOME"
+        roots = [n for n in G.successors("HOME")]
         return roots
 
     def get_nodes_from_edges(self):
@@ -132,21 +115,6 @@ class GraphicalMenu:
                     nodes.add(node)
         return list(nodes)
 
-    def create_update_graph(self):
-
-        if self.G is None:
-            G = nx.DiGraph()
-        else:
-            G = self.G
-        # Add nodes
-        G.add_nodes_from(self.get_nodes_from_edges())
-        # Add edges if they exist
-        menu_edges = [edge[:2] for edge in self.menu_edges if "HOME" not in edge]
-        
-        G.add_edges_from(menu_edges)
-        # Add it to class variable
-        self.G = G
-        return None
 
     def get_children_and_parent(self, selected_node):
         G = self.G
@@ -158,8 +126,26 @@ class GraphicalMenu:
     def get_ancestors(self, selected_node):
         G = self.G
         ancestors = list(nx.ancestors(G, selected_node))
+        # Reverse the ancestors
+        ancestors.reverse()
+        # Add the current node name
+        current_node_name = G.nodes[selected_node].get('node_name')
+        st.sidebar.info(current_node_name)
+        ancestors.append(current_node_name)
         return ancestors
-    
+
+    def get_module_and_function(self, selected_node):
+        """
+        Get the module and function name from the selected node.
+        """
+        # Get the list with the selected node from the menu
+        st.code(self.source_functions)
+        node_info = [node for node in self.source_functions if node[0] == selected_node][0]
+        st.code(node_info)
+        module_name = node_info[1].split('~')[1]
+        func_name = node_info[2]
+        return module_name, func_name
+
     def create_menu(self):
         if 'selected_node' not in st.session_state:
             st.session_state['selected_node'] = 'HOME'
@@ -170,22 +156,12 @@ class GraphicalMenu:
         if st.session_state['selected_node'] == 'HOME':
             options += self.top_level_nodes()
 
-            st.sidebar.info('Here 1')
             # display_children = [option.split('~')[0] for option in options]
         else:
             st.error(st.session_state['selected_node'])
             parent, children = self.get_children_and_parent(st.session_state['selected_node'])
-            # We will display the children without the ~ source
-            # display_children = [child.split('~')[0] for child in children]
-            # Add children to options
-            st.sidebar.info('Here 2')
-            st.sidebar.info(f'Children are {children}')
             options += children
-
-        # RANU: THIS IS WHERE YOU PUT YOUR MENU SYSTEM
-        # I am assuming that there will be parent and selected node
-        st.sidebar.info(f'Options are {[i.split("~") for i in options]}')
-        
+        # Display the options
         display_menu_bar(options)
         
         selected_option = st.session_state.activeStep
@@ -196,17 +172,16 @@ class GraphicalMenu:
             st.session_state.should_rerun = False
         else:
             st.session_state['selected_node'] = selected_option
-        st.sidebar.warning(f"Re-run is {st.session_state.should_rerun}")
         
 
         if st.session_state.selected_node != 'HOME':
             ancestors = self.get_ancestors(st.session_state['selected_node'])
+            
             # Show breadcrumbs
-            breadcrumbs = " > ".join(ancestors + [st.session_state['selected_node']])
+            breadcrumbs = " > ".join(ancestors)
             st.markdown(f"**{breadcrumbs}**")
         
         if st.session_state.should_rerun == True:
-            st.balloons()
             
             st.session_state.should_rerun = False
             st.rerun()

@@ -1,11 +1,11 @@
 import tempfile
 import streamlit as st
 import os
-from streamlit_ace import st_ace
+# from streamlit_ace import st_ace
 import session_state_management
 import toml
-from streamlit_extras.stateful_button import button
-from streamlit_extras.add_vertical_space import add_vertical_space
+# from streamlit_extras.stateful_button import button
+# from streamlit_extras.add_vertical_space import add_vertical_space
 from simple_auth import logout
 import openai
 import time
@@ -339,11 +339,8 @@ def starter_code():
     session_state_management.main()
     set_or_get_llm_keys()
     
-    # Menu bar and other settings
-    from menu import get_menu
-    new_menu = get_menu()
     
-    if st.session_state.new_menu == 'logout':
+    if st.session_state.selected_node == 'logout':
         logout()
     # create_user_folder()
     set_function_calling_availability()

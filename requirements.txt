@@ -2,3 +2,4 @@ anthropic
 openai
 streamlit
 streamlit-elements
+networkx
