@@ -1,3 +1,5 @@
+import yaml
+import os
 class Agent:
     # Class variable to store message history
     messages = []
@@ -53,8 +55,17 @@ class AgentManager(Agent):
 
 # Override or extend methods from Agent as needed
 
-def system_instruction_for_agents():
+
+def system_instruction_for_agents(agent_name):
     """
-    Create system instructions for each agent
+    Read the system instruction from the yaml file and return it as a string, by taking agent name as input
     """
-    return None
+
+    path = os.path.join(os.path.dirname(__file__), 'system_instructions', f'{agent_name}.yaml')
+        
+    if os.path.exists(path):
+        with open(path, 'r') as f:
+            return yaml.safe_load(f)['instruction']
+
+    else:
+        raise FileNotFoundError(f'No system instruction found for {agent_name}.')
