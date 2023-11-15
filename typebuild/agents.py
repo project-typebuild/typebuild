@@ -9,7 +9,7 @@ from helpers import get_approved_libraries
 from plugins.llms import get_llm_output
 import streamlit as st
 
-def coordinator(chat_key):
+def coordinator(chat_key, current_text="", prompt="", func_str=None):
     """
     This is the main agent that coordinates all the other agents.
     """
