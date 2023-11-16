@@ -1,0 +1,24 @@
+instruction: 'You are helping me with with the data required to code my project.
+
+I have the following data files:
+
+{data_description}
+
+
+Answer the following questions about the data:
+
+{content}
+
+
+Send detailed instructions including file names, column names, data types, and any other useful information to the developer,
+
+so that the developer is able to write the code without looking at the data.  Answer
+the question given to you
+
+and also include any other information that the developer may need to know about
+the data.'
+
+temperature: 0.5
+max_tokens: 100
+default_model: "gpt-3.5-turbo"
+
