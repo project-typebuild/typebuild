@@ -158,7 +158,6 @@ class GraphicalMenu:
 
             # display_children = [option.split('~')[0] for option in options]
         else:
-            st.error(st.session_state['selected_node'])
             parent, children = self.get_children_and_parent(st.session_state['selected_node'])
             options += children
         # Display the options

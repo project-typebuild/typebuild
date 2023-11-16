@@ -1,19 +1,21 @@
 import streamlit as st
+from chat_framework import ChatFramework
 
 def test_main():
     # Add a test menu
     # Get menu object
     menu = st.session_state.menu
     test_menu_items = [
-        ['HOME', 'Test', 'print_success'],
-        ['Test', 'Test 1', 'print_success'],
-        ['Test', 'Test 2', 'print_success'],
-        ['Test 2', 'Test 2.1', 'print_success'],
-        ['Test 2.1', 'Test 2.1.1', 'print_success']
-    ]
-    
+        ['HOME', 'Chat', 'chat'],
+    ]    
     menu.add_edges(test_menu_items, 'test')
+    return None
 
-def print_success():
-    st.success("Success!")
+def chat():
+    if 'test_cf' not in st.session_state:
+        st.session_state.test_cf = ChatFramework()
+    cf = st.session_state.test_cf
+    cf.set_system_message("Welcome to the test chat!")
+    cf.chat_input_method()
+    cf.display_messages()
     return None

@@ -1,9 +1,6 @@
 import streamlit as st
-st.set_page_config(layout="centered")
-st.sidebar.title("Graphical Menu")
 import pandas as pd
 import altair as alt
-from test import test_main
 
 class ChatFramework:
     """A class to manage the chat framework
