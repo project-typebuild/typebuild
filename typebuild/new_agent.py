@@ -14,7 +14,7 @@ class Agent:
         There is a file called system_instruction/{agent_name}.yml.
         Parase the variables in it and create them as instance variables.
         """
-        path = os.path.join(os.path.dirname(__file__), 'system_instructions', f'{agent_name}.yaml')
+        path = os.path.join(os.path.dirname(__file__), 'system_instructions', f'{agent_name}.yml')
         
         if os.path.exists(path):
             with open(path, 'r') as f:
@@ -52,8 +52,8 @@ class Agent:
         pass
 
 class AgentManager(Agent):
-    def __init__(self, system_instruction, default_model, temperature, max_tokens):
-        super().__init__(system_instruction, default_model, temperature, max_tokens)
+    def __init__(self, agent_name):
+        super().__init__(agent_name)
         self.managed_agents = {}
 
     def add_agent(self, agent_name, agent):
@@ -74,19 +74,4 @@ class AgentManager(Agent):
         return responses
 
 
-# Override or extend methods from Agent as needed
-
-
-def system_instruction_for_agents(agent_name):
-    """
-    Read the system instruction from the yaml file and return it as a string, by taking agent name as input
-    """
-
-    path = os.path.join(os.path.dirname(__file__), 'system_instructions', f'{agent_name}.yaml')
-        
-    if os.path.exists(path):
-        with open(path, 'r') as f:
-            return yaml.safe_load(f)['instruction']
-
-    else:
-        raise FileNotFoundError(f'No system instruction found for {agent_name}.')
+# Create a new Data Agent and add it to the Agent Manager

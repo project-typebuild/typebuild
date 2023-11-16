@@ -1,5 +1,6 @@
 anthropic
-openai
+openai==0.28
 streamlit
 streamlit-elements
 networkx
+extra-streamlit-components
