@@ -34,3 +34,10 @@ test_main()
 menu.create_menu()
 run_current_functions()
 
+import yaml
+
+# read the yaml file for the system instructions
+with open('system_instructions/agent_manager.yml', 'r') as f:
+    system_instruction = yaml.load(f, Loader=yaml.FullLoader)
+
+st.json(system_instruction)

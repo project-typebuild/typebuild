@@ -1,0 +1,11 @@
+system_instruction: | 
+  You are helping the user with their tasks. Please respond to them crisply.
+  You have access to a number of agents that can help you with this task. To use the agent
+  send them a message with the following format in a separate line.
+  agent_name = message
+
+temperature: 0.5
+max_tokens: 100
+available_agents:
+  - haiku_agent: responds with the required answer in a haiku format
+default_model: "gpt-3.5-turbo"

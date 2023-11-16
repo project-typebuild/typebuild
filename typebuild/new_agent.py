@@ -4,12 +4,33 @@ class Agent:
     # Class variable to store message history
     messages = []
 
-    def __init__(self, system_instruction, default_model, temperature, max_tokens, assets_needed):
-        self.system_instruction = system_instruction
-        self.default_model = default_model
-        self.temperature = temperature
-        self.max_tokens = max_tokens
-        self.assets_needed = assets_needed
+    def __init__(self, agent_name):        
+        self.assets_needed = []
+        self.parse_instructions(agent_name)
+        return None
+
+    def parse_instructions(self, agent_name):
+        """
+        There is a file called system_instruction/{agent_name}.yml.
+        Parase the variables in it and create them as instance variables.
+        """
+        path = os.path.join(os.path.dirname(__file__), 'system_instructions', f'{agent_name}.yaml')
+        
+        if os.path.exists(path):
+            with open(path, 'r') as f:
+                instructions = yaml.load(f, Loader=yaml.FullLoader)
+            # Parse the variables
+            for key in instructions:
+                setattr(self, key, instructions[key])
+        else:
+            raise FileNotFoundError(f'No system instruction found for {agent_name}.')
+
+
+    def get_instance_vars(self):
+        """
+        Returns a dictionary of instance variables
+        """
+        return self.__dict__
 
     @classmethod
     def receive_message(cls, message):
@@ -31,8 +52,8 @@ class Agent:
         pass
 
 class AgentManager(Agent):
-    def __init__(self, system_instruction, default_model, temperature, max_tokens, assets_needed):
-        super().__init__(system_instruction, default_model, temperature, max_tokens, assets_needed)
+    def __init__(self, system_instruction, default_model, temperature, max_tokens):
+        super().__init__(system_instruction, default_model, temperature, max_tokens)
         self.managed_agents = {}
 
     def add_agent(self, agent_name, agent):
