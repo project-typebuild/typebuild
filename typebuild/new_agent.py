@@ -2,17 +2,16 @@ import yaml
 import os
 class Agent:
     # Class variable to store message history
-    messages = []
 
     def __init__(self, agent_name):        
         self.assets_needed = []
+        self.messages = []
         self.parse_instructions(agent_name)
         return None
 
-    @classmethod
-    def receive_message(cls, message):
+    def get_message(self, message):
         # Add message to the class-wide message history
-        cls.messages.append(message)
+        self.messages.append(message)
         # Optionally, limit the history to last 'k' messages
         # cls.messages = cls.messages[-k:]
 
@@ -46,10 +45,10 @@ class Agent:
         """
         return self.__dict__
 
-    def process_request(self):
-        # Process the request based on the assets needed
-        # Access the class variable messages as needed
-        # Implement logic to use system_instruction, default_model, etc.
+    def send_response_to_chat_framework(self):
+        """
+        Sends all the chat messages or the final message to the chat framework
+        """
         pass
 
     def respond(self):
