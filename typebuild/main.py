@@ -31,18 +31,10 @@ else:
     menu = st.session_state['menu']
     settings_main()
 test_main()
-
+search_menu = ['HOME', 'Search', 'main']
+menu.add_edges([search_menu], 'tools.google_search')
 
 menu.create_menu()
 run_current_functions()
 
 
-# read the yaml file for the system instructions
-with open('system_instructions/agent_manager.yml', 'r') as f:
-    system_instruction = yaml.load(f, Loader=yaml.FullLoader)
-
-# st.json(system_instruction)
-# del system_instruction['available_agents']
-# st.json(system_instruction)
-
-# instantiate the agent manager

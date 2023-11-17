@@ -4,3 +4,6 @@ streamlit
 streamlit-elements
 networkx
 extra-streamlit-components
+googlesearch-python
+tldextract
+bs4

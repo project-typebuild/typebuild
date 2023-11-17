@@ -1,5 +1,6 @@
 import yaml
 import os
+
 class Agent:
     # Class variable to store message history
 
@@ -92,16 +93,4 @@ class AgentManager(Agent):
     def remove_agent(self, agent_name):
         if agent_name in self.managed_agents:
             del self.managed_agents[agent_name]
-
-    def distribute_message(self, message):
-        for agent in self.managed_agents.values():
-            agent.receive_message(message)
-
-    def collect_responses(self):
-        responses = {}
-        for agent_name, agent in self.managed_agents.items():
-            responses[agent_name] = agent.respond()
-        return responses
-
-
 
