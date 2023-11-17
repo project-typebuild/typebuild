@@ -13,20 +13,35 @@ def test_main():
     return None
 
 def chat():
+    from new_agent import AgentManager, Agent
+    
+    agent_manager = AgentManager('agent_manager')
+    # Look for all the agents in the agent_deifnitions folder and add them.
+    
+    haiku_agent = Agent('haiku_agent')
+    agent_manager.add_agent('haiku_agent', haiku_agent)
+
     if 'test_cf' not in st.session_state:
         st.session_state.test_cf = ChatFramework()
+
     cf = st.session_state.test_cf
-    if 'system_instruction' not in st.session_state:
-        cf.set_system_message("Welcome to the test chat!")
-    else:
-        cf.set_system_message(st.session_state.system_instruction)
     cf.chat_input_method()
     cf.display_messages()
+    st.sidebar.info(f"Ask llm: {st.session_state.ask_llm}\n\nAsk agent: {st.session_state.ask_agent}")
     
-    if cf.ask_llm:
-        res = get_llm_output(cf.messages)
+    if st.session_state.ask_llm:
+        
+        system_instruction = agent_manager.get_system_instruction(st.session_state.ask_agent)
+        model = agent_manager.get_model(st.session_state.ask_agent)
+        messages = cf.get_messages_with_instruction(system_instruction)
+        st.session_state.last_request = messages
+        
+        res = get_llm_output(messages, model=model)
+
         cf.set_assistant_message(res)
         cf.ask_llm = False
         st.rerun()
 
+    if 'last_request' in st.session_state:
+        st.json(st.session_state.last_request)
     return None

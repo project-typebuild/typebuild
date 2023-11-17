@@ -66,14 +66,12 @@ def get_llm_output(messages, max_tokens=2500, temperature=0.4, model='gpt-4', fu
     elif model == 'claude-2' and 'claude_key' in st.session_state:
         content = get_claude_response(messages, max_tokens=max_tokens)
     else:
-        model = 'gpt-3.5-turbo'
         msg = get_openai_output(messages, max_tokens=max_tokens, temperature=temperature, model=model, functions=functions)
         content = msg.get('content', None)
         if 'function_call' in msg:
             func_call = msg.get('function_call', None)
             st.session_state.last_function_call = func_call
             st.sidebar.info("Got a function call from LLM")
-            content = func_call.get('content', None)
     
     # progress_status.info("Extracting information from response...")
     if content:
@@ -84,6 +82,13 @@ def get_llm_output(messages, max_tokens=2500, temperature=0.4, model='gpt-4', fu
     # Recent GPT models return function_call as a separate json object
     # Look for that first.
     # If there are triple backticks, we expect code
+    
+    if "<<<" in content:
+        agent_name, instruction, content = parse_agent_name_and_message(content)
+
+        st.session_state.ask_agent = agent_name
+    else:
+        st.session_state.ask_agent = 'agent_manager'
     if '```' in str(content) or '|||' in str(content):
         # NOTE: THERE IS AN ASSUMPTION THAT WE CAN'T GET BOTH CODE AND REQUIREMENTS
         extracted, function_name = parse_func_call_info(content)
@@ -92,10 +97,31 @@ def get_llm_output(messages, max_tokens=2500, temperature=0.4, model='gpt-4', fu
 
 
     # Stop ask llm
-    st.session_state.ask_llm = False
-    # progress_status.success('Response generated!')
+    if st.session_state.ask_agent != 'agent_manager':
+        st.session_state.ask_llm = True
+    else:
+        st.session_state.ask_llm = False
+
+
     return content
 
+def parse_agent_name_and_message(content):
+    """
+    Message to agent is in triple angular brackets. 
+    Within the brackets, we have agent_name: instruction.
+    Parase it and return the agent name, instruction and rest of the content
+    """
+    pattern = r"<<<([\s\S]*?):([\s\S]*?)>>>"
+    matches = re.findall(pattern, content)
+    if len(matches) == 1:
+        agent_name = matches[0][0].strip()
+        instruction = matches[0][1].strip()
+        rest_of_content = content.replace(f'<<<{agent_name}:{instruction}>>>', '')
+    else:
+        agent_name = None
+        instruction = None
+        rest_of_content = content
+    return agent_name, instruction, rest_of_content
 
 def get_openai_output(messages, max_tokens=3000, temperature=0.4, model='gpt-4', functions=[]):
     """

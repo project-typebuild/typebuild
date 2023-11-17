@@ -9,6 +9,20 @@ class Agent:
         self.parse_instructions(agent_name)
         return None
 
+    @classmethod
+    def receive_message(cls, message):
+        # Add message to the class-wide message history
+        cls.messages.append(message)
+        # Optionally, limit the history to last 'k' messages
+        # cls.messages = cls.messages[-k:]
+
+    def get_system_instruction(self):
+        """
+        Returns the system instruction
+        """
+        return self.system_instruction
+
+    
     def parse_instructions(self, agent_name):
         """
         There is a file called system_instruction/{agent_name}.yml.
@@ -32,13 +46,6 @@ class Agent:
         """
         return self.__dict__
 
-    @classmethod
-    def receive_message(cls, message):
-        # Add message to the class-wide message history
-        cls.messages.append(message)
-        # Optionally, limit the history to last 'k' messages
-        # cls.messages = cls.messages[-k:]
-
     def process_request(self):
         # Process the request based on the assets needed
         # Access the class variable messages as needed
@@ -59,6 +66,30 @@ class AgentManager(Agent):
     def add_agent(self, agent_name, agent):
         self.managed_agents[agent_name] = agent
 
+    def get_system_instruction(self, agent_name):
+        """
+        Add the agent name and description to the system instructions
+        """
+        if agent_name in self.managed_agents:
+            instruction = self.managed_agents[agent_name].get_system_instruction()
+        else:
+            instruction = self.system_instruction
+            instruction += "The following agents are available:\n"
+            for agent_name, agent in self.managed_agents.items():
+                instruction += f"{agent_name}: {agent.description}"
+
+        return instruction
+
+    def get_model(self, agent_name):
+        """
+        Returns the model for the agent
+        """
+        if agent_name in self.managed_agents:
+            model = self.managed_agents[agent_name].default_model
+        else:
+            model = self.default_model
+        return model
+    
     def remove_agent(self, agent_name):
         if agent_name in self.managed_agents:
             del self.managed_agents[agent_name]
@@ -74,4 +105,4 @@ class AgentManager(Agent):
         return responses
 
 
-# Create a new Data Agent and add it to the Agent Manager
+

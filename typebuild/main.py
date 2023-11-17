@@ -4,6 +4,7 @@ import os
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(dir_path)
 import streamlit as st
+import yaml
 
 
 # Make it full width
@@ -31,24 +32,17 @@ else:
     settings_main()
 test_main()
 
+
 menu.create_menu()
 run_current_functions()
 
-import yaml
 
 # read the yaml file for the system instructions
 with open('system_instructions/agent_manager.yml', 'r') as f:
     system_instruction = yaml.load(f, Loader=yaml.FullLoader)
 
+# st.json(system_instruction)
 # del system_instruction['available_agents']
 # st.json(system_instruction)
 
 # instantiate the agent manager
-from new_agent import AgentManager
-
-am = AgentManager('data_agent')
-
-instance_vars = am.get_instance_vars()
-
-# available_agents = instance_vars['available_agents']
-st.sidebar.write(instance_vars)

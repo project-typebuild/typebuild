@@ -9,6 +9,8 @@ def add_default_session_states():
         'menu_id': 0,
         'show_developer_options': False,
         'ask_llm': False,
+        'ask_agent': 'agent_manager',
+        'current_chat': None,
         'call_status': None,
         'dir_path': os.path.dirname(os.path.realpath(__file__)),
         'home_dir' : os.path.expanduser("~"),

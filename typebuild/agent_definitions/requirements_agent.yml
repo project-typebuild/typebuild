@@ -1,3 +1,5 @@
+name: requirements_agent
+description: This agent can take instructions and write code.  It can also modify code and fix errors based on feeback.
 instruction: |
   You are helping in my software development process by creating:
     1. Functional requirement

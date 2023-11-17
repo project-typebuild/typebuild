@@ -20,11 +20,12 @@ def display_menu_bar(menu_options):
             """            
             exec(myfunc)
     if 'activeStep' not in st.session_state:
-        st.session_state.activeStep = 'HOME'        
+        st.session_state.activeStep = 'HOME'     
     
 
-    with elements("App Bar"):
-        with mui.AppBar(position="relative", sx = {'borderRadius': 10}):
+    with elements(st.session_state.activeStep):
+        st.sidebar.info(f"Element name: {st.session_state.activeStep}")
+        with mui.AppBar(position="relative", sx = {'borderRadius': 10}, key=f"{st.session_state.activeStep}_appbar"):
             with mui.Toolbar(disableGutters=True, variant="dense"):
                 for index, option in enumerate(menu_options):
                     # lower case and replace spaces with underscores and ~ with _
@@ -181,6 +182,5 @@ class GraphicalMenu:
             st.markdown(f"**{breadcrumbs}**")
         
         if st.session_state.should_rerun == True:
-            
             st.session_state.should_rerun = False
             st.rerun()

@@ -41,14 +41,6 @@ class ChatFramework:
         """
         self.messages.append({'role': 'assistant', 'content': message})
 
-    def set_system_message(self, message):
-        """
-        Adds a system message to the chat.
-
-        Args:
-            message (str): The message content from the system.
-        """
-        self.messages.append({'role': 'system', 'content': message})
 
     def display_messages(self):
         """
@@ -85,5 +77,11 @@ class ChatFramework:
         if prompt:
             self.set_user_message(prompt)
             self.ask_llm = True
+            st.session_state.ask_llm = True
             self.display_expanded = True
         return None
+
+    def get_messages_with_instruction(self, system_instruction):
+        messages = self.messages.copy()
+        messages.insert(0, {'role': 'system', 'content': system_instruction})
+        return messages
