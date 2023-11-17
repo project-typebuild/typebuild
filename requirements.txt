@@ -7,3 +7,4 @@ extra-streamlit-components
 googlesearch-python
 tldextract
 bs4
+youtube-transcript-api

@@ -1,10 +1,11 @@
+import importlib
 import inspect
 import yaml
 import os
 import streamlit as st
+from helpers import remove_indents_in_lines
 
-
-def get_docstring_of_file(file, function_name='tool_main'):
+def get_docstring_of_tool(tool, function_name='tool_main'):
     """
     Return the docstring of the file as a dict.
 
@@ -16,12 +17,12 @@ def get_docstring_of_file(file, function_name='tool_main'):
     - The docstring of the file.
     """
     # Import the module
-    module = __import__(file)
-
+    module_name = f"tools.{tool}"
+    module = importlib.import_module(module_name)
     # Get the function object from the module
     function = getattr(module, function_name, None)
     if function is None:
-        return f"No function named '{function_name}' found in '{file}'."
+        return f"No function named '{function_name}' found in 'tools.{tool}'."
 
     # Get the docstring
     docstring = inspect.getdoc(function)
@@ -53,7 +54,7 @@ def get_docstring_of_tools(tool_list):
     tools = {}
     for tool in tool_list:
         file = os.path.join(os.path.dirname(__file__), 'tools', f"{tool}.py")
-        tools[tool] = get_docstring_of_file(file)
+        tools[tool] = get_docstring_of_tool(tool)
     return tools
 
 class Agent:
@@ -76,7 +77,10 @@ class Agent:
         """
         Returns the system instruction
         """
-        return self.system_instruction
+        instructions = self.system_instruction
+        # Add tools to the instruction
+        instructions += self.get_tool_defs()
+        return instructions
 
     
     def parse_instructions(self, agent_name):
@@ -112,13 +116,17 @@ class Agent:
             add_to_instruction += """THE FOLLOWING IS A LIST OF TOOLS AVAILABLE.  DO NOT MAKE UP OTHER TOOLS.  
             CALL THEM BY THEIR NAME VERBATIM.
             
-            TO USE THE TOOL, RETURN A WELL FORMATTED JSON OBJECT WITH THE FOLLOWING KEYS:
-            - tool_name: The name of the tool
-            - kwargs: The keyword arguments to the tool
-            """
-            for tool in self.tools:
-                add_to_instruction += f"{tool}: {available_tools()[tool]}\n"
+            TO USE THE TOOL, RETURN A WELL FORMATTED JSON OBJECT WITH the tool_name and kwargs as keys.
+            YOU CAN FIND THE DOCSTRING OF THE TOOLS BELOW:
 
+            """
+            tools = get_docstring_of_tools(self.tools)
+            
+            for tool in tools:
+                add_to_instruction += f"===\n\n{tool}: {tools[tool]}\n\n"
+            
+        
+        return remove_indents_in_lines(add_to_instruction)
 
     def send_response_to_chat_framework(self):
         """
@@ -148,6 +156,8 @@ class AgentManager(Agent):
             instruction = self.managed_agents[agent_name].get_system_instruction()
         else:
             instruction = self.system_instruction
+            # Add tools to the instruction
+            instruction += self.get_tool_defs()
             instruction += "THE FOLLOWING IS A LIST OF AGENTS AVAILABLE.  DO NOT MAKE UP OTHER AGENTS.  CALL THEM BY THEIR NAME VERBATIM:\n"
             for agent_name, agent in self.managed_agents.items():
                 instruction += f"{agent_name}: {agent.description}"
