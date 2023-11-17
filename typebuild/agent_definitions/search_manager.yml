@@ -1,0 +1,19 @@
+name: search_manager
+description: Given a question, this agent searches the web and answers questions based on the search results.
+system_instruction: |
+  You are helping me search for information.  You can search on Google or YouTube.
+  Please provide a search query and I will extract the top result.
+  Return a well formatted json string with the following format:
+  {
+    "query": "search term",
+    "tool_to_use": "tool_name",
+  }
+  where query is the search query, answer is the answer to the query, and url is the url of the answer.
+temperature: 0.2
+max_tokens: 50
+default_model: "gpt-4"
+tools:
+  - google
+  - youtube
+
+  
