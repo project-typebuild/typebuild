@@ -12,6 +12,7 @@ def display_menu_bar(menu_options):
         # Create the function if it doesn't exist in locals
         # lower case and replace spaces with underscores and ~ with _
         clean_option = option.lower().replace(' ', '_').replace('~', '_').replace('.', '_').replace('-', '_').replace(',','_')
+        st.sidebar.info(f"Option: {clean_option}")
         if f"menu_button_function_{clean_option}" not in locals():
             myfunc = f"""def menu_button_function_{clean_option}(event):
                 st.session_state.activeStep = "{option}"
@@ -22,7 +23,12 @@ def display_menu_bar(menu_options):
     if 'activeStep' not in st.session_state:
         st.session_state.activeStep = 'HOME'     
     
-
+    unique_labels = []
+    for option in menu_options:
+        label = option.split('~')[0]
+        if label not in unique_labels:
+            unique_labels.append(label)
+            
     with elements(st.session_state.activeStep):
         st.sidebar.info(f"Element name: {st.session_state.activeStep}")
         with mui.AppBar(position="relative", sx = {'borderRadius': 10}, key=f"{st.session_state.activeStep}_appbar"):
@@ -36,9 +42,9 @@ def display_menu_bar(menu_options):
     return None
 
 class GraphicalMenu:
-    menu_edges = []
-    menu_sources = []
-    source_functions = []
+    # menu_edges = []
+    # menu_sources = []
+    # source_functions = []
     G = None
 
     def __init__(self):
@@ -47,45 +53,53 @@ class GraphicalMenu:
         self.G.add_node("HOME", node_name="HOME", func_name="home_page", module_name="home_page")
         return None
 
-    def add_edges(self, menu_edges_data, source):
+    def add_edges(self, menu_edges_data):
         """
         This adds nodes and edges to a graph.
         For uniqueness, the node names is done as "node_name~source"
         """
-        if source not in self.menu_sources:
-            G = self.G
-            self.menu_sources.append(source)
-            revised_menu_edges_data = []
-            for edge in menu_edges_data:
-                if edge[0] == "HOME":
-                    node_0 = "HOME"
-                else:
-                    node_0 = f"{edge[0]}~{source}"
-                if edge[1] == "HOME":
-                    node_1 = "HOME"
-                else:
-                    node_1 = f"{edge[1]}~{source}"
 
-                # Add the edge to the graph with the function name and module name as properties
+        G = self.G
+        # revised_menu_edges_data = []
+
+        for edge in menu_edges_data:
+            source = edge[-1]  # Get the source from the last item in the sublist
+            # if source not in self.menu_sources:
+            #     self.menu_sources.append(source)
+
+            if edge[0] == "HOME":
+                node_0 = "HOME"
+            else:
+                node_0 = f"{edge[0]}~{source}"
+
+            if edge[1] == "HOME":
+                node_1 = "HOME"
+            else:
+                node_1 = f"{edge[1]}~{source}"
+
+            # Add the edge to the graph with the function name and module name as properties
+            if node_1 not in G.nodes:
                 G.add_node(node_1, node_name=edge[1], func_name=edge[2], module_name=source)
-                G.add_edge(node_0, node_1)
-                revised_menu_edges_data.append([node_0, node_1])
-            self.menu_edges += menu_edges_data
-            self.add_functions(revised_menu_edges_data, source)
+            G.add_edge(node_0, node_1)
+            # revised_menu_edges_data.append([node_0, node_1])
+
         return None
 
-    def add_functions(self, edges, source):
+
+    def add_functions(self, edges):
         
         run = False
         for edge in edges:
-            if len(edge) ==3:
+            if len(edge) == 3:
                 src, dst, func_name = edge
+                st.sidebar.error(f"edge: {edge}")
             else:
                 dst = 'HOME'
                 func_name = 'home_page'
                 source = 'home_page'
 
             node_name = f"{dst}~{source}"
+            # st.sidebar.error(node_name)
             # Append if the node name is not already in the source functions
             if node_name not in [func[0] for func in self.source_functions]:
                 self.source_functions.append([node_name, source, func_name, run])
@@ -162,6 +176,7 @@ class GraphicalMenu:
             parent, children = self.get_children_and_parent(st.session_state['selected_node'])
             options += children
         # Display the options
+        st.sidebar.code(f"""{options}""")
         display_menu_bar(options)
         
         selected_option = st.session_state.activeStep

@@ -6,6 +6,7 @@ import tldextract
 import pandas as pd
 import os
 from bs4 import BeautifulSoup
+import requests
 
 class GoogleSearchSaver:
     """
@@ -20,7 +21,8 @@ class GoogleSearchSaver:
         self.results = []
         self.file_name = None
 
-    def get_google_search_results(self, search_term, sleep_interval=2, num_results=10):
+
+    def get_google_search_results(self, search_term, sleep_interval=2, num_results=10, timeout=10):
         """
         Perform a Google search and store the results.
 
@@ -28,17 +30,21 @@ class GoogleSearchSaver:
         - search_term (str): The search term.
         - sleep_interval (int): The interval between searches. Default is 2 seconds.
         - num_results (int): Number of results to return. Default is 10.
+        - timeout (int): Timeout for the request in seconds. Default is 5 seconds.
         """
-        for result in search(search_term, sleep_interval=sleep_interval, num_results=num_results, advanced=True):
-            content = requests.get(result.url).content
-            page_content = BeautifulSoup(content).get_text()
-            self.results.append({
-                'url': result.url,
-                'title': result.title,
-                'description': result.description,
-                'text_content': page_content,
-                'domain': tldextract.extract(result.url).domain
-            })
+        for result in search(search_term, num_results=num_results, advanced=True, timeout=timeout):
+            try:
+                content = requests.get(result.url, timeout=timeout).content
+                page_content = BeautifulSoup(content).get_text()
+                self.results.append({
+                    'url': result.url,
+                    'title': result.title,
+                    'description': result.description,
+                    'text_content': page_content,
+                    'domain': tldextract.extract(result.url).domain
+                })
+            except requests.exceptions.Timeout:
+                print(f"Request to {result.url} timed out.")
 
     def get_results_as_list(self):
         """

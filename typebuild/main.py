@@ -31,22 +31,27 @@ else:
     menu = st.session_state['menu']
     settings_main()
 test_main()
-# TODO: THIS CREATES TWO SEARCH MENUS.  FIX IT.
-#  google_menu = [
-#     ['HOME', 'Search', None],
-#     ['Search', 'Google Search', 'google_search_interface']
-#     ]
-# menu.add_edges(google_menu, 'tools.google_search')
 
-# youtube_menu = [
-#     ['HOME', 'Search', None],
-#     ['Search', 'YouTube Search', 'main']
-#     ]
-# menu.add_edges(youtube_menu, 'tools.yt_search')
+# TODO: THIS CREATES TWO SEARCH MENUS.  FIX IT.
+
+google_menu = [
+    # ['HOME', 'Search', 'google_search_interface', 'tools.google_search'],
+    # ['HOME', 'Search', 'main', 'tools.yt_search'],
+    ['HOME', "Search","", ""],
+    ['Search', 'Google Search', 'google_search_interface', 'tools.google_search'],
+    ['Search', 'YouTube Search', 'main', 'tools.yt_search']
+    ]
+
+menu.add_edges(google_menu)
 
 menu.create_menu()
 run_current_functions()
+st.code(menu.G.nodes.data())
+st.code(list(menu.G.successors('HOME')))
 
-# from tools.google_search import google_search_interface
+# from tools.google_search import tool_main as google_search
 
-# google_search_interface()
+# if st.button('Google Search'):
+#     res = google_search('nrega')
+
+#     st.code(res)

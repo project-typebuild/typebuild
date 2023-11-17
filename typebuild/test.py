@@ -10,9 +10,9 @@ def test_main():
     # Get menu object
     menu = st.session_state.menu
     test_menu_items = [
-        ['HOME', 'Chat', 'chat'],
+        ['HOME', 'Chat', 'chat', 'test'],
     ]    
-    menu.add_edges(test_menu_items, 'test')
+    menu.add_edges(test_menu_items)
     return None
 
 def chat():
