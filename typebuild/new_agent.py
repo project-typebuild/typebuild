@@ -1,5 +1,6 @@
 import yaml
 import os
+import streamlit as st
 
 class Agent:
     # Class variable to store message history
@@ -28,7 +29,7 @@ class Agent:
         There is a file called system_instruction/{agent_name}.yml.
         Parase the variables in it and create them as instance variables.
         """
-        path = os.path.join(os.path.dirname(__file__), 'system_instructions', f'{agent_name}.yml')
+        path = os.path.join(os.path.dirname(__file__), 'agent_definitions', f'{agent_name}.yml')
         
         if os.path.exists(path):
             with open(path, 'r') as f:
@@ -74,10 +75,9 @@ class AgentManager(Agent):
             instruction = self.managed_agents[agent_name].get_system_instruction()
         else:
             instruction = self.system_instruction
-            instruction += "The following agents are available:\n"
+            instruction += "THE FOLLOWING IS A LIST OF AGENTS AVAILABLE.  DO NOT MAKE UP OTHER AGENTS.  CALL THEM BY THEIR NAME VERBATIM:\n"
             for agent_name, agent in self.managed_agents.items():
                 instruction += f"{agent_name}: {agent.description}"
-
         return instruction
 
     def get_model(self, agent_name):

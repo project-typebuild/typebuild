@@ -34,7 +34,7 @@ test_main()
 # TODO: THIS CREATES TWO SEARCH MENUS.  FIX IT.
 #  google_menu = [
 #     ['HOME', 'Search', None],
-#     ['Search', 'Google Search', 'main']
+#     ['Search', 'Google Search', 'google_search_interface']
 #     ]
 # menu.add_edges(google_menu, 'tools.google_search')
 

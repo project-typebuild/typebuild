@@ -57,6 +57,7 @@ class GoogleSearchSaver:
         """
         return "\n".join([str(result) for result in self.results])
 
+
     def store_to_db(self, search_term, project_folder):
         """
         Save the stored results to a Parquet file.
@@ -97,7 +98,7 @@ class GoogleSearchSaver:
         return cleaned[:500]  # Limit the length to 500 characters
 
 
-def main():
+def google_search_interface():
     # Create an instance of the GoogleSearchSaver class
     searcher = GoogleSearchSaver()
 
@@ -116,3 +117,13 @@ def main():
             st.success('Done.')
             st.write('Results saved to parquet file.')
             st.write(f"Data saved to {file_name}")
+    return None
+
+def get_one_search_result(search_term):
+    """
+    Returns one search result for a given search term.
+    Returned as a string.
+    """
+    searcher = GoogleSearchSaver()
+    searcher.get_google_search_results(search_term, num_results=1)
+    return searcher.get_results_as_string()
