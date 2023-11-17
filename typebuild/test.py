@@ -1,7 +1,10 @@
 import streamlit as st
 from chat_framework import ChatFramework
 from plugins.llms import get_llm_output
-
+import os
+from glob import glob
+from new_agent import AgentManager, Agent
+    
 def test_main():
     # Add a test menu
     # Get menu object
@@ -13,13 +16,21 @@ def test_main():
     return None
 
 def chat():
-    from new_agent import AgentManager, Agent
-    
+    # Get all the agents from the agent_definitions folder, in os independent way
+    # current directory plus agent_definitions
+    agent_definitions = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'agent_definitions')
+    # Get all the files in the agent_definitions folder
+    agent_files = glob(os.path.join(agent_definitions, '*.yml'))
+    # Get the agent names
+    agent_names = [os.path.basename(i).replace('.yml', '') for i in agent_files]
+    # Add the agent names to AgentManager
+
     agent_manager = AgentManager('agent_manager')
+
     # Look for all the agents in the agent_deifnitions folder and add them.
-    
-    haiku_agent = Agent('haiku_agent')
-    agent_manager.add_agent('haiku_agent', haiku_agent)
+    for agent_name in agent_names:
+        agent = Agent(agent_name)
+        agent_manager.add_agent(agent_name, agent)
 
     if 'test_cf' not in st.session_state:
         st.session_state.test_cf = ChatFramework()

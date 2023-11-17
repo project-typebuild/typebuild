@@ -9,6 +9,7 @@ from tenacity import (
     wait_random_exponential,
 ) 
 dir_path = os.path.dirname(os.path.realpath(__file__))
+import json
 
 import sys
 sys.path.append(st.session_state.typebuild_root)
@@ -123,6 +124,31 @@ def parse_agent_name_and_message(content):
         rest_of_content = content
     return agent_name, instruction, rest_of_content
 
+def parse_json_from_response(response):
+    """
+    Returns the JSON from the response from LLM.
+    In the prompt to JSON, we have asked the LLM to return the JSON inside triple backticks.
+
+    Args:
+    - response (str): The response from LLM
+
+    Returns:
+    - json_dict (dict): A dictionary containing the parsed JSON
+    """
+
+    pattern = r"```json([\s\S]*?)```"
+    matches = re.findall(pattern, response)
+    if len(matches) > 0:
+        json_str = '\n'.join(matches)
+        try:
+            json_dict = json.loads(json_str)
+            return json_dict
+        except json.JSONDecodeError:
+            # Handle JSON decoding error
+            return None
+    else:
+        return None
+
 def get_openai_output(messages, max_tokens=3000, temperature=0.4, model='gpt-4', functions=[]):
     """
     Gets the output from GPT models. default is gpt-4. 
@@ -203,6 +229,10 @@ def parse_func_call_info(response):
         elif 'data_agent' in response:
             extracted = parse_modified_user_requirements_from_response(response)
             function_name = 'data_agent'
+
+        elif 'json' in response:
+            extracted = parse_json_from_response(response)
+            function_name = ''
         # If it's not python code, it's probably requirements
         else:
             extracted = parse_modified_user_requirements_from_response(response)
