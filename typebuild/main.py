@@ -5,7 +5,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(dir_path)
 import streamlit as st
 import yaml
-
+from tools.google_search import GoogleSearchSaver
 
 # Make it full width
 st.set_page_config(layout="wide", page_title='TB Chat Framework')
@@ -47,4 +47,6 @@ test_main()
 menu.create_menu()
 run_current_functions()
 
+# from tools.google_search import google_search_interface
 
+# google_search_interface()

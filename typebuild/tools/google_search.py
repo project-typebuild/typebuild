@@ -30,7 +30,8 @@ class GoogleSearchSaver:
         - num_results (int): Number of results to return. Default is 10.
         """
         for result in search(search_term, sleep_interval=sleep_interval, num_results=num_results, advanced=True):
-            page_content = BeautifulSoup(requests.get(result.url).content).get_text()
+            content = requests.get(result.url).content
+            page_content = BeautifulSoup(content).get_text()
             self.results.append({
                 'url': result.url,
                 'title': result.title,
@@ -110,6 +111,7 @@ def google_search_interface():
             # Perform the Google search
             searcher.get_google_search_results(search_term, num_results=num_results)
             # Save results to a Parquet file
+            st.session_state.project_folder = 'tmp'
             searcher.store_to_db(search_term, project_folder=st.session_state.project_folder)
 
             # Retrieve and display the file name where results are saved

@@ -3,7 +3,7 @@ from chat_framework import ChatFramework
 from plugins.llms import get_llm_output
 import os
 from glob import glob
-from new_agent import AgentManager, Agent
+from agents import AgentManager, Agent
     
 def test_main():
     # Add a test menu

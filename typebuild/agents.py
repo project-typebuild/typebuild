@@ -62,6 +62,7 @@ class Agent:
     def __init__(self, agent_name):        
         self.assets_needed = []
         self.messages = []
+        self.tools = []
         self.parse_instructions(agent_name)
         return None
 
@@ -100,6 +101,24 @@ class Agent:
         Returns a dictionary of instance variables
         """
         return self.__dict__
+
+    def get_tool_defs(self):
+        """
+        Find the list of tools available for this agent.
+        Get the docstring of each tool to add to the system instruction.
+        """
+        add_to_instruction = ""
+        if self.tools:
+            add_to_instruction += """THE FOLLOWING IS A LIST OF TOOLS AVAILABLE.  DO NOT MAKE UP OTHER TOOLS.  
+            CALL THEM BY THEIR NAME VERBATIM.
+            
+            TO USE THE TOOL, RETURN A WELL FORMATTED JSON OBJECT WITH THE FOLLOWING KEYS:
+            - tool_name: The name of the tool
+            - kwargs: The keyword arguments to the tool
+            """
+            for tool in self.tools:
+                add_to_instruction += f"{tool}: {available_tools()[tool]}\n"
+
 
     def send_response_to_chat_framework(self):
         """
