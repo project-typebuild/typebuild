@@ -276,10 +276,19 @@ def main():
         fetcher.save_search_results()
     return None
 
-def tool_main(search_term, num_results):
+def tool_main(search_term, num_results=10):
     """
-    Gets the youtube transcripts and returns the file name
+    Given a search term, this fetches the youtube transcripts.
+    The transcripts are saved to a parquet file and the file path is returned.
+    
+    Parameters:
+    - search_term (str): The search term.
+    - num_results (int): The number of results to return. Default is 10.
+
+    Returns (str):
+    - Path to the parquet file where the results are saved.
     """
+
     fetcher = YouTubeDataFetcher()  # Create an instance of the YouTubeDataFetcher class
 
     # Use the class method to perform the search and save results

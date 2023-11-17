@@ -121,8 +121,15 @@ def google_search_interface():
 
 def tool_main(search_term="", num_results=1):
     """
-    Returns one search result for a given search term.
-    Returned as a string.
+    This tool performs a Google search and returns the
+    content of the results.  All results are concatenated and returned as one string.
+
+    Parameters:
+    - search_term (str): The query to search with.
+    - num_results (int): The number of results to return.  Default is 1.
+    
+    Returns (str):
+    - The content of the results as one string.
     """
     searcher = GoogleSearchSaver()
     searcher.get_google_search_results(search_term, num_results=num_results)
