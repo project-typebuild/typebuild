@@ -13,6 +13,14 @@ import os
 from glob import glob
 import pandas as pd
 
+def remove_indents_in_lines(text):
+    """
+    Strip each line of the text of any leading spaces.
+    """
+    lines = text.split('\n')
+    lines = [i.strip() for i in lines]
+    return '\n'.join(lines)
+
 
 def update_text_file(file, value):
     """
