@@ -31,8 +31,18 @@ else:
     menu = st.session_state['menu']
     settings_main()
 test_main()
-search_menu = ['HOME', 'Search', 'main']
-menu.add_edges([search_menu], 'tools.google_search')
+# TODO: THIS CREATES TWO SEARCH MENUS.  FIX IT.
+#  google_menu = [
+#     ['HOME', 'Search', None],
+#     ['Search', 'Google Search', 'main']
+#     ]
+# menu.add_edges(google_menu, 'tools.google_search')
+
+# youtube_menu = [
+#     ['HOME', 'Search', None],
+#     ['Search', 'YouTube Search', 'main']
+#     ]
+# menu.add_edges(youtube_menu, 'tools.yt_search')
 
 menu.create_menu()
 run_current_functions()

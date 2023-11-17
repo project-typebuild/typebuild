@@ -108,10 +108,6 @@ def main():
         with st.spinner('Getting results...'):
             # Perform the Google search
             searcher.get_google_search_results(search_term, num_results=num_results)
-
-            # TODO: DELETE THIS
-            st.session_state.project_folder = 'tmp'
-
             # Save results to a Parquet file
             searcher.store_to_db(search_term, project_folder=st.session_state.project_folder)
 
