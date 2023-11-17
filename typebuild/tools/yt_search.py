@@ -290,3 +290,6 @@ def main():
     if st.button("Search"):
         search_youtube_and_save_results(search_term=search_term, num_videos=num_videos)
     return None
+
+def tool_main(search_term="", num_results=1):
+    search_youtube_and_save_results(search_term=search_term, num_videos=num_results)

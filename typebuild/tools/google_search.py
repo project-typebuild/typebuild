@@ -119,11 +119,11 @@ def google_search_interface():
             st.write(f"Data saved to {file_name}")
     return None
 
-def get_one_search_result(search_term):
+def tool_main(search_term="", num_results=1):
     """
     Returns one search result for a given search term.
     Returned as a string.
     """
     searcher = GoogleSearchSaver()
-    searcher.get_google_search_results(search_term, num_results=1)
+    searcher.get_google_search_results(search_term, num_results=num_results)
     return searcher.get_results_as_string()

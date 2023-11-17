@@ -7,14 +7,14 @@ system_instruction: |
   {
     "agent_name": "search_agent",
     "search_term": "search term",
-    "tool_to_use": "tool_name",
+    "tool_name": "tool_name",
   }
   where query is the search query, answer is the answer to the query, and url is the url of the answer.
 temperature: 0.2
 max_tokens: 50
 default_model: "gpt-4"
 tools:
-  - google
-  - youtube
+  - google_search
+  - youtube_search
 
   
