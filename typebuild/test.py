@@ -6,7 +6,6 @@ from glob import glob
 from agents import AgentManager, Agent
 import importlib
 import json    
-from tools.google_search import GoogleSearchSaver
 
 def test_main():
     # Add a test menu
@@ -86,6 +85,8 @@ def chat():
             st.json(st.session_state.last_request)
         return None
 
+
+from tools.google_search import GoogleSearchSaver
 def google_search_interface():
     # Create an instance of the GoogleSearchSaver class
     searcher = GoogleSearchSaver()
