@@ -4,7 +4,9 @@ from plugins.llms import get_llm_output
 import os
 from glob import glob
 from agents import AgentManager, Agent
-    
+import importlib
+import json    
+
 def test_main():
     # Add a test menu
     # Get menu object
@@ -14,6 +16,15 @@ def test_main():
     ]    
     menu.add_edges(test_menu_items)
     return None
+
+def extract_dict(s):
+    try:
+        start = s.index('{')
+        end = s.rindex('}') + 1
+        dict_str = s[start:end]
+        return json.loads(dict_str)
+    except ValueError:
+        return {}
 
 def chat():
     # Get all the agents from the agent_definitions folder, in os independent way
@@ -48,11 +59,19 @@ def chat():
         st.session_state.last_request = messages
         
         res = get_llm_output(messages, model=model)
-
+        st.sidebar.code(res)
         cf.set_assistant_message(res)
+
+        res_dict = extract_dict(res)
+        if 'tool_name' in res_dict:
+            tool_name = res_dict['tool_name']
+            tool_module = importlib.import_module(f'tools.{tool_name}')
+            tool_function = getattr(tool_module, 'tool_main')
+            tool_result = tool_function(**res_dict['kwargs'])
+
         cf.ask_llm = False
         st.rerun()
 
-    if 'last_request' in st.session_state:
-        st.json(st.session_state.last_request)
-    return None
+        if 'last_request' in st.session_state:
+            st.json(st.session_state.last_request)
+        return None

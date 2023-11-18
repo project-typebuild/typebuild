@@ -17,6 +17,14 @@ class YouTubeDataFetcher:
         self.session = requests.Session()
         self.yt_info = []
 
+    def get_request_with_retry_timeout(url, headers=None, params=None,
+                                    cookies=None, timeout=None, max_retry=5):
+        response = request_with_retry_timeout(url, headers=headers,
+                                            params=params, cookies=cookies,
+                                            timeout=timeout, max_retry=max_retry, 
+                                            method="get")
+        return response
+
     def request_with_retry_timeout(self, url, data=None, headers=None, params=None, cookies=None,
                                    timeout=300, max_retry=5, method="post"):
         """Makes a request with retry and timeout logic."""
@@ -67,7 +75,7 @@ class YouTubeDataFetcher:
             # Using regex to extract the video id from the url
             video_id = re.findall(r'v=([^&]+)', video_id)[0]
 
-        response = self.get_request_with_retry_timeout(f'https://www.youtube.com/watch?v={video_id}', headers=headers)
+        response = requests.get(f'https://www.youtube.com/watch?v={video_id}', headers=headers)
         soup = BeautifulSoup(response.content,'lxml')
         json_response = json.loads(response.text.split('ytInitialData =')[1].split(';</script><script nonce=')[0])
         
@@ -180,6 +188,9 @@ class YouTubeDataFetcher:
         with st.spinner("Saving data..."):
             cleaned_search_term = self._clean_filename(self.search_term)
             file_name = os.path.join(st.session_state.project_folder, 'data', f'youtube_{cleaned_search_term}.parquet')
+            # if the folder doesn't exist, create it
+            if not os.path.exists(os.path.dirname(file_name)):
+                os.makedirs(os.path.dirname(file_name))
             self.file_name = file_name
             # Assuming save_youtube_data is a method that saves data to a file
             self.save_youtube_data(file_name)
