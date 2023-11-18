@@ -42,6 +42,5 @@ google_menu = [
     ]
 
 menu.add_edges(google_menu)
-
 menu.create_menu()
 run_current_functions()

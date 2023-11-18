@@ -102,7 +102,6 @@ def get_llm_output(messages, max_tokens=2500, temperature=0.4, model='gpt-4', fu
     else:
         st.session_state.ask_llm = False
 
-
     return content
 
 def parse_agent_name_and_message(content):

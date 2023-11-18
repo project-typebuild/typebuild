@@ -85,9 +85,7 @@ def chat():
             tool_function = getattr(tool_module, 'tool_main')
             tool_result = tool_function(**res_dict['kwargs'])
             st.info(tool_result)
-            
 
-        st.session_state.ask_llm = False
         st.rerun()
 
         if 'last_request' in st.session_state:
