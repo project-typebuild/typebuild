@@ -146,12 +146,21 @@ class Agent:
         pass
 
 class AgentManager(Agent):
-    def __init__(self, agent_name):
+    def __init__(self, agent_name, available_agents):
         super().__init__(agent_name)
         self.managed_agents = {}
+        self.available_agents = available_agents
+        self.current_agent = 'agent_manager'
 
     def add_agent(self, agent_name, agent):
         self.managed_agents[agent_name] = agent
+
+    def set_message(self, message):
+        current_agent = st.session_state.ask_agent
+        if current_agent in self.managed_agents:
+            self.managed_agents[current_agent].messages.append(message)
+        else:
+            self.messages.append(message)
 
     def get_system_instruction(self, agent_name):
         """

@@ -52,12 +52,11 @@ def chat():
     agent_names = [os.path.basename(i).replace('.yml', '') for i in agent_files]
     # Add the agent names to AgentManager
 
-    agent_manager = AgentManager('agent_manager')
+    if 'agent_manager' not in st.session_state:
+        agent_manager = AgentManager('agent_manager', agent_names)
+        st.session_state.agent_manager = agent_manager
 
-    # Look for all the agents in the agent_deifnitions folder and add them.
-    for agent_name in agent_names:
-        agent = Agent(agent_name)
-        agent_manager.add_agent(agent_name, agent)
+    agent_manager = st.session_state.agent_manager
 
     if 'test_cf' not in st.session_state:
         st.session_state.test_cf = ChatFramework()
@@ -75,7 +74,10 @@ def chat():
         st.session_state.last_request = messages
         
         res = get_llm_output(messages, model=model)
-        cf.set_assistant_message(res)
+        
+        if st.session_state.ask_agent != agent_manager.current_agent:
+            agent = Agent(st.session_state.ask_agent)
+            agent_manager.add_agent(st.session_state.ask_agent, agent)
 
         res_dict = extract_dict(res)
         
