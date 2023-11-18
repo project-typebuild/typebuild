@@ -22,7 +22,7 @@ class GoogleSearchSaver:
         self.file_name = None
 
 
-    def get_google_search_results(self, search_term, sleep_interval=2, num_results=10, timeout=10):
+    def get_google_search_results(self, search_term, sleep_interval=2, num_results=10, timeout=30):
         """
         Perform a Google search and store the results.
 
