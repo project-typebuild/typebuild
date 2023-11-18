@@ -77,6 +77,7 @@ class GraphicalMenu:
 
             # Add the edge to the graph with the function name and module name as properties
             if node_1 not in G.nodes:
+                st.sidebar.error(f'node_1: {node_1} node_name {edge[1]} func_name {edge[2]} module_name {source}')
                 G.add_node(node_1, node_name=edge[1], func_name=edge[2], module_name=source)
             G.add_edge(node_0, node_1)
             # revised_menu_edges_data.append([node_0, node_1])
@@ -130,6 +131,7 @@ class GraphicalMenu:
     def get_children_and_parent(self, selected_node):
         G = self.G
         children = list(G.successors(selected_node))
+        st.sidebar.code(f'Children: {children}')
 
         parent = "HOME" if not list(G.predecessors(selected_node)) else list(G.predecessors(selected_node))[0]
         return parent, children
@@ -168,6 +170,9 @@ class GraphicalMenu:
         else:
             parent, children = self.get_children_and_parent(st.session_state['selected_node'])
             options += children
+    
+        # options.append('Google Search~tools.google_search')
+        st.sidebar.code(options)
         # Display the options
         display_menu_bar(options)
         

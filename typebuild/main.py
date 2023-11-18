@@ -6,6 +6,7 @@ sys.path.append(dir_path)
 import streamlit as st
 import yaml
 from tools.google_search import GoogleSearchSaver
+# import tools
 
 # Make it full width
 st.set_page_config(layout="wide", page_title='TB Chat Framework')
@@ -35,11 +36,9 @@ test_main()
 # TODO: THIS CREATES TWO SEARCH MENUS.  FIX IT.
 
 google_menu = [
-    # ['HOME', 'Search', 'google_search_interface', 'tools.google_search'],
-    # ['HOME', 'Search', 'main', 'tools.yt_search'],
-    ['HOME', "Search","", ""],
-    ['Search', 'Google Search', 'google_search_interface', 'tools.google_search'],
-    ['Search', 'YouTube Search', 'main', 'tools.yt_search']
+    ['HOME', 'Search', 'empty_func', 'test'],
+    ['Search', 'Google Search', 'google_search_interface', 'test'],
+    ['Search', 'YouTube Search', 'search_youtube', 'test'],
     ]
 
 menu.add_edges(google_menu)

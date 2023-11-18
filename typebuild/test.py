@@ -6,15 +6,26 @@ from glob import glob
 from agents import AgentManager, Agent
 import importlib
 import json    
+from tools.google_search import GoogleSearchSaver
 
 def test_main():
     # Add a test menu
     # Get menu object
     menu = st.session_state.menu
     test_menu_items = [
-        ['HOME', 'Chat', 'chat', 'test'],
+        ['HOME', 'Chat', 'empty_func', 'test'],
+        ['Chat', 'Test', 'print_success', 'test'],
+        ['Chat', 'LLM', 'chat', 'test'],
+
     ]    
     menu.add_edges(test_menu_items)
+    return None
+
+def empty_func():
+    return None
+
+def print_success():
+    st.success('Success')
     return None
 
 def extract_dict(s):
@@ -75,3 +86,34 @@ def chat():
         if 'last_request' in st.session_state:
             st.json(st.session_state.last_request)
         return None
+
+def google_search_interface():
+    # Create an instance of the GoogleSearchSaver class
+    searcher = GoogleSearchSaver()
+
+    search_term = st.text_input('Enter search term')
+    num_results = st.number_input('Enter number of results', min_value=1, max_value=50, value=10)
+
+    if st.button('Get results'):
+        with st.spinner('Getting results...'):
+            # Perform the Google search
+            searcher.get_google_search_results(search_term, num_results=num_results)
+            # Save results to a Parquet file
+            st.session_state.project_folder = 'tmp'
+            searcher.store_to_db(search_term, project_folder=st.session_state.project_folder)
+
+            # Retrieve and display the file name where results are saved
+            file_name = searcher.get_file_name()
+            st.success('Done.')
+            st.write('Results saved to parquet file.')
+            st.write(f"Data saved to {file_name}")
+    return None
+
+from tools.yt_search import search_youtube_and_save_results
+
+def search_youtube():
+    search_term = st.text_input("Search YouTube")
+    num_videos = st.number_input("How many videos?", min_value=1, max_value=20, value=10, step=2)
+    if st.button("Search"):
+        search_youtube_and_save_results(search_term=search_term, num_videos=num_videos)
+    return None
