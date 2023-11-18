@@ -23,9 +23,6 @@ def run_current_functions():
         func_name = mynode.get('func_name')
     # If module name and func name are not None, run the function
     # Otherwise, do nothing
-    st.sidebar.code(f'st.session_state.activeStep: {st.session_state.activeStep}')
-    st.sidebar.code(f'Module name: {module_name}')
-    st.sidebar.code(f'Function name: {func_name}')
     if module_name == 'home_page':
         pass
     elif module_name and func_name:  

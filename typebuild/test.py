@@ -70,7 +70,6 @@ def chat():
         st.session_state.last_request = messages
         
         res = get_llm_output(messages, model=model)
-        st.sidebar.code(res)
         cf.set_assistant_message(res)
 
         res_dict = extract_dict(res)

@@ -131,7 +131,6 @@ class GraphicalMenu:
     def get_children_and_parent(self, selected_node):
         G = self.G
         children = list(G.successors(selected_node))
-        st.sidebar.code(f'Children: {children}')
 
         parent = "HOME" if not list(G.predecessors(selected_node)) else list(G.predecessors(selected_node))[0]
         return parent, children
@@ -172,7 +171,6 @@ class GraphicalMenu:
             options += children
     
         # options.append('Google Search~tools.google_search')
-        st.sidebar.code(options)
         # Display the options
         display_menu_bar(options)
         

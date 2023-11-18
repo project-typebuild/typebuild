@@ -45,9 +45,3 @@ menu.add_edges(google_menu)
 
 menu.create_menu()
 run_current_functions()
-# from tools.google_search import tool_main as google_search
-
-# if st.button('Google Search'):
-#     res = google_search('nrega')
-
-#     st.code(res)
