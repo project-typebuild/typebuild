@@ -12,7 +12,6 @@ def display_menu_bar(menu_options):
         # Create the function if it doesn't exist in locals
         # lower case and replace spaces with underscores and ~ with _
         clean_option = option.lower().replace(' ', '_').replace('~', '_').replace('.', '_').replace('-', '_').replace(',','_')
-        st.sidebar.info(f"Option: {clean_option}")
         if f"menu_button_function_{clean_option}" not in locals():
             myfunc = f"""def menu_button_function_{clean_option}(event):
                 st.session_state.activeStep = "{option}"
@@ -28,9 +27,8 @@ def display_menu_bar(menu_options):
         label = option.split('~')[0]
         if label not in unique_labels:
             unique_labels.append(label)
-            
+
     with elements(st.session_state.activeStep):
-        st.sidebar.info(f"Element name: {st.session_state.activeStep}")
         with mui.AppBar(position="relative", sx = {'borderRadius': 10}, key=f"{st.session_state.activeStep}_appbar"):
             with mui.Toolbar(disableGutters=True, variant="dense"):
                 for index, option in enumerate(menu_options):
@@ -92,14 +90,12 @@ class GraphicalMenu:
         for edge in edges:
             if len(edge) == 3:
                 src, dst, func_name = edge
-                st.sidebar.error(f"edge: {edge}")
             else:
                 dst = 'HOME'
                 func_name = 'home_page'
                 source = 'home_page'
 
             node_name = f"{dst}~{source}"
-            # st.sidebar.error(node_name)
             # Append if the node name is not already in the source functions
             if node_name not in [func[0] for func in self.source_functions]:
                 self.source_functions.append([node_name, source, func_name, run])
@@ -145,7 +141,6 @@ class GraphicalMenu:
         ancestors.reverse()
         # Add the current node name
         current_node_name = G.nodes[selected_node].get('node_name')
-        st.sidebar.info(current_node_name)
         ancestors.append(current_node_name)
         return ancestors
 
@@ -154,9 +149,7 @@ class GraphicalMenu:
         Get the module and function name from the selected node.
         """
         # Get the list with the selected node from the menu
-        st.code(self.source_functions)
         node_info = [node for node in self.source_functions if node[0] == selected_node][0]
-        st.code(node_info)
         module_name = node_info[1].split('~')[1]
         func_name = node_info[2]
         return module_name, func_name
@@ -176,7 +169,6 @@ class GraphicalMenu:
             parent, children = self.get_children_and_parent(st.session_state['selected_node'])
             options += children
         # Display the options
-        st.sidebar.code(f"""{options}""")
         display_menu_bar(options)
         
         selected_option = st.session_state.activeStep

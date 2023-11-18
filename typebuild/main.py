@@ -46,9 +46,6 @@ menu.add_edges(google_menu)
 
 menu.create_menu()
 run_current_functions()
-st.code(menu.G.nodes.data())
-st.code(list(menu.G.successors('HOME')))
-
 # from tools.google_search import tool_main as google_search
 
 # if st.button('Google Search'):
