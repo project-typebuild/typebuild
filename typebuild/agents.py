@@ -80,6 +80,11 @@ class Agent:
         instructions = self.system_instruction
         # Add tools to the instruction
         instructions += self.get_tool_defs()
+
+        instructions += """You can use tools multiple times and talk to the user.  
+        When your job is done, pass it back to the agent_manager with the final message.:
+        <<<agent_manager: final_message>>>
+        """
         return instructions
 
     
@@ -160,7 +165,8 @@ class AgentManager(Agent):
             instruction += self.get_tool_defs()
             instruction += "THE FOLLOWING IS A LIST OF AGENTS AVAILABLE.  DO NOT MAKE UP OTHER AGENTS.  CALL THEM BY THEIR NAME VERBATIM:\n"
             for agent_name, agent in self.managed_agents.items():
-                instruction += f"{agent_name}: {agent.description}"
+                if 'description' in agent.__dict__:
+                    instruction += f"{agent_name}: {agent.description}"
         return instruction
 
     def get_model(self, agent_name):

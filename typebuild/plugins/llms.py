@@ -86,10 +86,9 @@ def get_llm_output(messages, max_tokens=2500, temperature=0.4, model='gpt-4', fu
     
     if "<<<" in content:
         agent_name, instruction, content = parse_agent_name_and_message(content)
-
         st.session_state.ask_agent = agent_name
-    else:
-        st.session_state.ask_agent = 'agent_manager'
+    # else:
+    #     st.session_state.ask_agent = 'agent_manager'
     if '```' in str(content) or '|||' in str(content):
         # NOTE: THERE IS AN ASSUMPTION THAT WE CAN'T GET BOTH CODE AND REQUIREMENTS
         extracted, function_name = parse_func_call_info(content)

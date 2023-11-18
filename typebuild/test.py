@@ -28,12 +28,21 @@ def print_success():
     return None
 
 def extract_dict(s):
-    try:
-        start = s.index('{')
-        end = s.rindex('}') + 1
-        dict_str = s[start:end]
-        return json.loads(dict_str)
-    except ValueError:
+    # TODO: Move this to a file called extractors.  Create a detailed class.
+    if isinstance(s, dict):
+        return s
+    elif isinstance(s, list):
+        return s
+    elif isinstance(s, str):
+        s = s.strip()
+        try:
+            start = s.index('{')
+            end = s.rindex('}') + 1
+            dict_str = s[start:end]
+            return json.loads(dict_str)
+        except ValueError:
+            return {}
+    else:
         return {}
 
 def chat():
@@ -60,7 +69,7 @@ def chat():
     cf.chat_input_method()
     cf.display_messages()
     st.sidebar.info(f"Ask llm: {st.session_state.ask_llm}\n\nAsk agent: {st.session_state.ask_agent}")
-    
+
     if st.session_state.ask_llm:
         
         system_instruction = agent_manager.get_system_instruction(st.session_state.ask_agent)
@@ -72,13 +81,16 @@ def chat():
         cf.set_assistant_message(res)
 
         res_dict = extract_dict(res)
+        
         if 'tool_name' in res_dict:
             tool_name = res_dict['tool_name']
             tool_module = importlib.import_module(f'tools.{tool_name}')
             tool_function = getattr(tool_module, 'tool_main')
             tool_result = tool_function(**res_dict['kwargs'])
+            st.info(tool_result)
+            
 
-        cf.ask_llm = False
+        st.session_state.ask_llm = False
         st.rerun()
 
         if 'last_request' in st.session_state:
