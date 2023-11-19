@@ -66,12 +66,57 @@ class Agent:
         self.tools = []
         self.parse_instructions(agent_name)
         return None
+    
 
-    def get_message(self, message):
-        # Add message to the class-wide message history
-        self.messages.append(message)
-        # Optionally, limit the history to last 'k' messages
-        # cls.messages = cls.messages[-k:]
+    def set_user_message(self, message):
+        """
+        Adds a user message to the chat.
+
+        Args:
+            message (str): The message content from the user.
+        """
+        current_agent = st.session_state.ask_agent
+        if current_agent in self.managed_agents:
+            self.managed_agents[current_agent].messages.append({'role': 'user', 'content': message})
+        else:
+            self.messages.append({'role': 'user', 'content': message})
+
+    def set_assistant_message(self, message):
+        """
+        Adds an assistant message to the chat.
+
+        Args:
+            message (str): The message content from the assistant.
+        """
+        current_agent = st.session_state.ask_agent
+        if current_agent in self.managed_agents:
+            self.managed_agents[current_agent].messages.append({'role': 'assistant', 'content': message})
+        else:
+            self.messages.append({'role': 'assistant', 'content': message})
+
+    def chat_input_method(self):
+        """
+        Handles the input of chat messages.
+
+        This method provides an input field for the user to enter their message.
+        Upon receiving a message, it updates the messages list and sets the
+        `ask_llm` flag to True.
+
+        Returns:
+            None
+        """
+        prompt = st.chat_input("Enter your message", key="chat_input")
+        if prompt:
+            self.set_user_message(prompt)
+            self.ask_llm = True
+            st.session_state.ask_llm = True
+            self.display_expanded = True
+        return None
+
+    def get_messages_with_instruction(self, system_instruction):
+        messages = self.messages.copy()
+        messages.insert(0, {'role': 'system', 'content': system_instruction})
+        return messages
 
     def get_system_instruction(self):
         """
@@ -155,13 +200,6 @@ class AgentManager(Agent):
     def add_agent(self, agent_name, agent):
         self.managed_agents[agent_name] = agent
 
-    def set_message(self, message):
-        current_agent = st.session_state.ask_agent
-        if current_agent in self.managed_agents:
-            self.managed_agents[current_agent].messages.append(message)
-        else:
-            self.messages.append(message)
-
     def get_system_instruction(self, agent_name):
         """
         Add the agent name and description to the system instructions
@@ -178,15 +216,15 @@ class AgentManager(Agent):
                     instruction += f"{agent_name}: {agent.description}"
         return instruction
 
-    def get_model(self, agent_name):
-        """
-        Returns the model for the agent
-        """
-        if agent_name in self.managed_agents:
-            model = self.managed_agents[agent_name].default_model
-        else:
-            model = self.default_model
-        return model
+    def get_agent(self, agent_name):
+            """
+            Returns the agent for the given agent_name
+            """
+            if agent_name in self.managed_agents:
+                agent = self.managed_agents[agent_name]
+            else:
+                agent = self
+            return agent
     
     def remove_agent(self, agent_name):
         if agent_name in self.managed_agents:

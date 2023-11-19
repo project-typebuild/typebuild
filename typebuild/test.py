@@ -1,5 +1,5 @@
 import streamlit as st
-from chat_framework import ChatFramework
+from chat_framework import display_messages
 from plugins.llms import get_llm_output
 import os
 from glob import glob
@@ -56,28 +56,32 @@ def chat():
         agent_manager = AgentManager('agent_manager', agent_names)
         st.session_state.agent_manager = agent_manager
 
+
     agent_manager = st.session_state.agent_manager
 
-    if 'test_cf' not in st.session_state:
-        st.session_state.test_cf = ChatFramework()
-
-    cf = st.session_state.test_cf
-    cf.chat_input_method()
-    cf.display_messages()
+    
+    agent_manager.chat_input_method()
+    st.code(agent_manager.messages, language='json')
+    #
+    display_messages(agent_manager.messages, expanded=True)
     st.sidebar.info(f"Ask llm: {st.session_state.ask_llm}\n\nAsk agent: {st.session_state.ask_agent}")
 
     if st.session_state.ask_llm:
         
         system_instruction = agent_manager.get_system_instruction(st.session_state.ask_agent)
-        model = agent_manager.get_model(st.session_state.ask_agent)
-        messages = cf.get_messages_with_instruction(system_instruction)
+        if st.session_state.ask_agent == 'agent_manager':
+            agent = agent_manager
+        else:
+            agent = agent_manager.get_agent(st.session_state.ask_agent)
+        messages = agent.get_messages_with_instruction(system_instruction)
         st.session_state.last_request = messages
         
-        res = get_llm_output(messages, model=model)
+        res = get_llm_output(messages, model=agent.default_model)
         
         if st.session_state.ask_agent != agent_manager.current_agent:
             agent = Agent(st.session_state.ask_agent)
             agent_manager.add_agent(st.session_state.ask_agent, agent)
+
 
         res_dict = extract_dict(res)
         
@@ -87,6 +91,30 @@ def chat():
             tool_function = getattr(tool_module, 'tool_main')
             tool_result = tool_function(**res_dict['kwargs'])
             st.info(tool_result)
+
+        # Agents that use tools may have to work more than once
+        # with the tool to get the desired result.  When the agent is done
+        # It sends a final response to the agent manager.  
+        # If it is the final response, set the message to the agent manager
+        # If not, set the message to the agent and ask LLM for another response
+
+        if st.session_state.ask_agent == 'agent_manager':
+            agent_manager.set_assistant_message(res)
+            st.session_state.ask_llm = False
+        # If it is a final response from a worker agent
+        elif 'final_response' in res:
+            # Get the current agent so that you can delete it
+            current_agent = agent_manager.current_agent
+            # Set the current agent to the agent manager
+            agent_manager.current_agent = 'agent_manager'
+            agent_manager.set_message(res)
+            # Delete the agent
+            agent_manager.remove_agent(current_agent)
+            st.session_state.ask_llm = False
+        else:
+            # Set the message to the worker agent via the agent manager
+            agent_manager.set_message(res)
+            st.session_state.ask_llm = True
 
         st.rerun()
 
