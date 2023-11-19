@@ -51,7 +51,6 @@ def chat():
     # Get the agent names
     agent_names = [os.path.basename(i).replace('.yml', '') for i in agent_files]
     # Add the agent names to AgentManager
-
     if 'agent_manager' not in st.session_state:
         agent_manager = AgentManager('agent_manager', agent_names)
         st.session_state.agent_manager = agent_manager
@@ -113,7 +112,7 @@ def chat():
             st.session_state.ask_llm = False
         else:
             # Set the message to the worker agent via the agent manager
-            agent_manager.set_message(res)
+            agent_manager.set_assistant_message(res)
             st.session_state.ask_llm = True
 
         st.rerun()

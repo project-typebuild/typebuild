@@ -29,18 +29,6 @@ def get_docstring_of_tool(tool, function_name='tool_main'):
     return docstring if docstring else "No docstring available."
 
 
-def available_tools():
-    """
-    Look at the tools folder to see what tools are available for agents to use.
-    Return the file name and the doc string of the file as a dict.
-    """
-    tools = {}
-    for file in os.listdir(os.path.join(os.path.dirname(__file__), 'tools')):
-        if file.endswith('.py'):
-            tools[file] = get_docstring_of_file(file)
-    return tools
-
-
 def get_docstring_of_tools(tool_list):
     """
     Given the list of tools, get their docstrings.
@@ -57,6 +45,19 @@ def get_docstring_of_tools(tool_list):
         tools[tool] = get_docstring_of_tool(tool)
     return tools
 
+
+def available_tools():
+    """
+    Look at the tools folder to see what tools are available for agents to use.
+    Return the file name and the doc string of the file as a dict.
+    """
+    tools = {}
+    for file in os.listdir(os.path.join(os.path.dirname(__file__), 'tools')):
+        if file.endswith('.py'):
+            tools[file] = get_docstring_of_tool(file)
+    return tools
+
+
 class Agent:
     # Class variable to store message history
 
@@ -66,52 +67,7 @@ class Agent:
         self.tools = []
         self.parse_instructions(agent_name)
         return None
-    
-
-    def set_user_message(self, message):
-        """
-        Adds a user message to the chat.
-
-        Args:
-            message (str): The message content from the user.
-        """
-        current_agent = st.session_state.ask_agent
-        if current_agent in self.managed_agents:
-            self.managed_agents[current_agent].messages.append({'role': 'user', 'content': message})
-        else:
-            self.messages.append({'role': 'user', 'content': message})
-
-    def set_assistant_message(self, message):
-        """
-        Adds an assistant message to the chat.
-
-        Args:
-            message (str): The message content from the assistant.
-        """
-        current_agent = st.session_state.ask_agent
-        if current_agent in self.managed_agents:
-            self.managed_agents[current_agent].messages.append({'role': 'assistant', 'content': message})
-        else:
-            self.messages.append({'role': 'assistant', 'content': message})
-
-    def chat_input_method(self):
-        """
-        Handles the input of chat messages.
-
-        This method provides an input field for the user to enter their message.
-        Upon receiving a message, it updates the messages list and sets the
-        `ask_llm` flag to True.
-
-        Returns:
-            None
-        """
-        prompt = st.chat_input("Enter your message", key="chat_input")
-        if prompt:
-            self.set_user_message(prompt)
-            self.ask_llm = True
-            st.session_state.ask_llm = True
-            self.display_expanded = True
-        return None
+   
 
     def get_messages_with_instruction(self, system_instruction):
         messages = self.messages.copy()
@@ -138,6 +94,7 @@ class Agent:
         There is a file called system_instruction/{agent_name}.yml.
         Parase the variables in it and create them as instance variables.
         """
+        
         path = os.path.join(os.path.dirname(__file__), 'agent_definitions', f'{agent_name}.yml')
         
         if os.path.exists(path):
@@ -146,6 +103,7 @@ class Agent:
             # Parse the variables
             for key in instructions:
                 setattr(self, key, instructions[key])
+            return instructions
         else:
             raise FileNotFoundError(f'No system instruction found for {agent_name}.')
 
@@ -196,10 +154,23 @@ class AgentManager(Agent):
         self.managed_agents = {}
         self.available_agents = available_agents
         self.current_agent = 'agent_manager'
+        self.agent_descriptions = {}
+        self.set_available_agent_descriptions()
 
     def add_agent(self, agent_name, agent):
         self.managed_agents[agent_name] = agent
 
+    def set_available_agent_descriptions(self):
+        for agent_name in self.available_agents:
+            path = os.path.join(os.path.dirname(__file__), 'agent_definitions', f'{agent_name}.yml')
+            with open(path, 'r') as f:
+                instructions = yaml.load(f, Loader=yaml.FullLoader)
+
+            description = instructions.get('description', '')
+            if description:
+                self.agent_descriptions[agent_name] = description
+        return None
+    
     def get_system_instruction(self, agent_name):
         """
         Add the agent name and description to the system instructions
@@ -211,9 +182,8 @@ class AgentManager(Agent):
             # Add tools to the instruction
             instruction += self.get_tool_defs()
             instruction += "THE FOLLOWING IS A LIST OF AGENTS AVAILABLE.  DO NOT MAKE UP OTHER AGENTS.  CALL THEM BY THEIR NAME VERBATIM:\n"
-            for agent_name, agent in self.managed_agents.items():
-                if 'description' in agent.__dict__:
-                    instruction += f"{agent_name}: {agent.description}"
+            for agent_name, description in self.agent_descriptions.items():
+                instruction += f"{agent_name}: {description}"
         return instruction
 
     def get_agent(self, agent_name):
@@ -229,4 +199,49 @@ class AgentManager(Agent):
     def remove_agent(self, agent_name):
         if agent_name in self.managed_agents:
             del self.managed_agents[agent_name]
+
+    def set_user_message(self, message):
+        """
+        Adds a user message to the chat.
+
+        Args:
+            message (str): The message content from the user.
+        """
+        current_agent = st.session_state.ask_agent
+        if current_agent in self.managed_agents:
+            self.managed_agents[current_agent].messages.append({'role': 'user', 'content': message})
+        else:
+            self.messages.append({'role': 'user', 'content': message})
+
+    def set_assistant_message(self, message):
+        """
+        Adds an assistant message to the chat.
+
+        Args:
+            message (str): The message content from the assistant.
+        """
+        current_agent = st.session_state.ask_agent
+        if current_agent in self.managed_agents:
+            self.managed_agents[current_agent].messages.append({'role': 'assistant', 'content': message})
+        else:
+            self.messages.append({'role': 'assistant', 'content': message})
+
+    def chat_input_method(self):
+        """
+        Handles the input of chat messages.
+
+        This method provides an input field for the user to enter their message.
+        Upon receiving a message, it updates the messages list and sets the
+        `ask_llm` flag to True.
+
+        Returns:
+            None
+        """
+        prompt = st.chat_input("Enter your message", key="chat_input")
+        if prompt:
+            self.set_user_message(prompt)
+            self.ask_llm = True
+            st.session_state.ask_llm = True
+            self.display_expanded = True
+        return None
 
