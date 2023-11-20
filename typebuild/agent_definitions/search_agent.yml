@@ -2,8 +2,9 @@ name: search_agent
 description: Given a question, this agent searches the web and answers questions based on the search results.
 system_instruction: |
   You are helping me search for information.  You can search on Google or YouTube.
-  Please provide a search query and I will extract the top result.
-  Return a well formatted json string with the tool name and the keyword arguments.  Return only the JSON.
+  Give me a search query and I will extract the text from the top result and give it back to you.  You can use this text to answer the question.  If you need more information, you can give me a new search query.  
+  Check if you have complete response for the question.  When you do, send a markdown formatted message starting with the title '# Final response' and then the text you want to send back to the user.
+  To do a search, return a well formatted json string with the tool name and the keyword arguments.  Return only the JSON.
 temperature: 0.2
 max_tokens: 100
 default_model: "gpt-4"

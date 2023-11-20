@@ -74,7 +74,7 @@ def get_llm_output(messages, max_tokens=2500, temperature=0.4, model='gpt-4', fu
             st.session_state.last_function_call = func_call
             st.sidebar.info("Got a function call from LLM")
     
-    # progress_status.info("Extracting information from response...")
+    
     if content:
         st.session_state.last_response = content
     # We can get back code or requirements in multiple forms
@@ -87,8 +87,7 @@ def get_llm_output(messages, max_tokens=2500, temperature=0.4, model='gpt-4', fu
     if "<<<" in content:
         agent_name, instruction, content = parse_agent_name_and_message(content)
         st.session_state.ask_agent = agent_name
-    # else:
-    #     st.session_state.ask_agent = 'agent_manager'
+    
     if '```' in str(content) or '|||' in str(content):
         # NOTE: THERE IS AN ASSUMPTION THAT WE CAN'T GET BOTH CODE AND REQUIREMENTS
         extracted, function_name = parse_func_call_info(content)
@@ -177,8 +176,6 @@ def get_openai_output(messages, max_tokens=3000, temperature=0.4, model='gpt-4',
                 )
     msg = response.choices[0].message
     
-    # Stop ask llm
-    st.session_state.ask_llm = False    
     return msg
 
 def get_claude_response(messages, max_tokens=2000):

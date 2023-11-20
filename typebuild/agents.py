@@ -210,19 +210,20 @@ class AgentManager(Agent):
         current_agent = st.session_state.ask_agent
         if current_agent in self.managed_agents:
             self.managed_agents[current_agent].messages.append({'role': 'user', 'content': message})
-        else:
-            self.messages.append({'role': 'user', 'content': message})
+        
+        # Always add the user message to the agent manager
+        self.messages.append({'role': 'user', 'content': message})
 
-    def set_assistant_message(self, message):
+    def set_assistant_message(self, message, agent='agent_manager'):
         """
         Adds an assistant message to the chat.
 
         Args:
             message (str): The message content from the assistant.
         """
-        current_agent = st.session_state.ask_agent
-        if current_agent in self.managed_agents:
-            self.managed_agents[current_agent].messages.append({'role': 'assistant', 'content': message})
+        
+        if agent in self.managed_agents:
+            self.managed_agents[agent].messages.append({'role': 'assistant', 'content': message})
         else:
             self.messages.append({'role': 'assistant', 'content': message})
 

@@ -6,6 +6,8 @@ from glob import glob
 from agents import AgentManager, Agent
 import importlib
 import json    
+import time
+
 
 def test_main():
     # Add a test menu
@@ -15,13 +17,6 @@ def test_main():
         ['HOME', 'Chat', 'chat', 'test']
     ]    
     menu.add_edges(test_menu_items)
-    return None
-
-def empty_func():
-    return None
-
-def print_success():
-    st.success('Success')
     return None
 
 def extract_dict(s):
@@ -55,41 +50,32 @@ def chat():
         agent_manager = AgentManager('agent_manager', agent_names)
         st.session_state.agent_manager = agent_manager
 
-
     agent_manager = st.session_state.agent_manager
-
     
     agent_manager.chat_input_method()
-    st.code(agent_manager.messages, language='json')
-    #
+    
     display_messages(agent_manager.messages, expanded=True)
     st.sidebar.info(f"Ask llm: {st.session_state.ask_llm}\n\nAsk agent: {st.session_state.ask_agent}")
 
     if st.session_state.ask_llm:
         
         system_instruction = agent_manager.get_system_instruction(st.session_state.ask_agent)
+        # TODO: The agent has to be in the session state.  Just access from the manager.
         if st.session_state.ask_agent == 'agent_manager':
             agent = agent_manager
         else:
             agent = agent_manager.get_agent(st.session_state.ask_agent)
         messages = agent.get_messages_with_instruction(system_instruction)
         st.session_state.last_request = messages
-        
-        res = get_llm_output(messages, model=agent.default_model)
+        with st.spinner("Getting response from LLM..."):      
+            res = get_llm_output(messages, model=agent.default_model)
+            st.info(f"LLM output: {res}")
+            time.sleep(2)
         
         if st.session_state.ask_agent != agent_manager.current_agent:
+            st.info(f"Changing agent from {agent_manager.current_agent} to {st.session_state.ask_agent}")
             agent = Agent(st.session_state.ask_agent)
             agent_manager.add_agent(st.session_state.ask_agent, agent)
-
-
-        res_dict = extract_dict(res)
-        
-        if 'tool_name' in res_dict:
-            tool_name = res_dict['tool_name']
-            tool_module = importlib.import_module(f'tools.{tool_name}')
-            tool_function = getattr(tool_module, 'tool_main')
-            tool_result = tool_function(**res_dict['kwargs'])
-            st.info(tool_result)
 
         # Agents that use tools may have to work more than once
         # with the tool to get the desired result.  When the agent is done
@@ -98,58 +84,44 @@ def chat():
         # If not, set the message to the agent and ask LLM for another response
 
         if st.session_state.ask_agent == 'agent_manager':
-            agent_manager.set_assistant_message(res)
+            agent_manager.set_assistant_message(res, agent='agent_manager')
             st.session_state.ask_llm = False
         # If it is a final response from a worker agent
-        elif 'final_response' in res:
+        elif 'final response' in res.lower():
+            # Save agent messages to session state
+            st.session_state.agent_messages = agent_manager.managed_agents[st.session_state.ask_agent].messages
             # Get the current agent so that you can delete it
             current_agent = agent_manager.current_agent
             # Set the current agent to the agent manager
             agent_manager.current_agent = 'agent_manager'
-            agent_manager.set_message(res)
+            agent_manager.set_assistant_message(res, agent='agent_manager')
             # Delete the agent
             agent_manager.remove_agent(current_agent)
             st.session_state.ask_llm = False
         else:
             # Set the message to the worker agent via the agent manager
-            agent_manager.set_assistant_message(res)
+            agent_manager.set_assistant_message(res, agent=st.session_state.ask_agent)
             st.session_state.ask_llm = True
+
+        res_dict = extract_dict(res)
+        # If a tool is used, ask the llm to respond again
+        if 'tool_name' in res_dict:
+            tool_name = res_dict['tool_name']
+            tool_module = importlib.import_module(f'tools.{tool_name}')
+            tool_function = getattr(tool_module, 'tool_main')
+            tool_result = tool_function(**res_dict['kwargs'])
+            st.info(tool_result)
+            # Add this to the agent's messages
+            agent_manager.set_user_message(tool_result)
+
+            with st.spinner("Let me study the seach results..."):
+                st.session_state.ask_llm = True
+                st.sidebar.warning(f"Ask llm: {st.session_state.ask_llm}\n\nAsk agent: {st.session_state.ask_agent}")
+                time.sleep(2)
+
 
         st.rerun()
 
-        if 'last_request' in st.session_state:
-            st.json(st.session_state.last_request)
+        # if 'last_request' in st.session_state:
+        #     st.json(st.session_state.last_request)
         return None
-
-
-from tools.google_search import GoogleSearchSaver
-def google_search_interface():
-    # Create an instance of the GoogleSearchSaver class
-    searcher = GoogleSearchSaver()
-
-    search_term = st.text_input('Enter search term')
-    num_results = st.number_input('Enter number of results', min_value=1, max_value=50, value=10)
-
-    if st.button('Get results'):
-        with st.spinner('Getting results...'):
-            # Perform the Google search
-            searcher.get_google_search_results(search_term, num_results=num_results)
-            # Save results to a Parquet file
-            st.session_state.project_folder = 'tmp'
-            searcher.store_to_db(search_term, project_folder=st.session_state.project_folder)
-
-            # Retrieve and display the file name where results are saved
-            file_name = searcher.get_file_name()
-            st.success('Done.')
-            st.write('Results saved to parquet file.')
-            st.write(f"Data saved to {file_name}")
-    return None
-
-from tools.yt_search import search_youtube_and_save_results
-
-def search_youtube():
-    search_term = st.text_input("Search YouTube")
-    num_videos = st.number_input("How many videos?", min_value=1, max_value=20, value=10, step=2)
-    if st.button("Search"):
-        search_youtube_and_save_results(search_term=search_term, num_videos=num_videos)
-    return None

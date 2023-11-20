@@ -22,7 +22,7 @@ class GoogleSearchSaver:
         self.file_name = None
 
 
-    def get_google_search_results(self, search_term, sleep_interval=2, num_results=10, timeout=30):
+    def get_google_search_results(self, search_term, sleep_interval=2, num_results=10, timeout=30, full_text=False):
         """
         Perform a Google search and store the results.
 
@@ -32,20 +32,27 @@ class GoogleSearchSaver:
         - num_results (int): Number of results to return. Default is 10.
         - timeout (int): Timeout for the request in seconds. Default is 5 seconds.
         """
-        for result in search(search_term, num_results=num_results, advanced=True, timeout=timeout):
-            try:
-                content = requests.get(result.url, timeout=timeout).content
-                page_content = BeautifulSoup(content).get_text()
-                self.results.append({
-                    'url': result.url,
-                    'title': result.title,
-                    'description': result.description,
-                    'text_content': page_content,
-                    'domain': tldextract.extract(result.url).domain
-                })
-            except requests.exceptions.Timeout:
-                print(f"Request to {result.url} timed out.")
-
+        res = search(search_term, num_results=num_results, advanced=True, timeout=timeout)
+        # Compile the results into a markdown text with url, title, and snippet
+        result_text = ""
+        for result in res:
+            result_text += f"[{result.title}]({result.url})\n\n{result.description}\n\n"
+            if full_text:
+                try:
+                    content = requests.get(result.url, timeout=timeout).content
+                    page_content = BeautifulSoup(content).get_text()
+                    self.results.append({
+                        'url': result.url,
+                        'title': result.title,
+                        'description': result.description,
+                        'text_content': page_content,
+                        'domain': tldextract.extract(result.url).domain
+                    })
+                except requests.exceptions.Timeout:
+                    st.write(f"Request to {result.url} timed out.")
+            # Add result text to instance var
+        self.result_text = result_text
+    
     def get_results_as_list(self):
         """
         Retrieve the stored search results as a list.
@@ -139,6 +146,10 @@ def tool_main(search_term="", num_results=1):
     Returns (str):
     - The content of the results as one string.
     """
-    searcher = GoogleSearchSaver()
-    searcher.get_google_search_results(search_term, num_results=num_results)
-    return searcher.get_results_as_string()
+    with st.spinner(f"Searching for {search_term}..."):
+        searcher = GoogleSearchSaver()
+        searcher.get_google_search_results(search_term, num_results=num_results)
+        # return searcher.get_results_as_string()
+        return searcher.result_text
+    
+
