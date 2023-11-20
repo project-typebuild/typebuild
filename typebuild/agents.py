@@ -1,9 +1,29 @@
 import importlib
 import inspect
+import re
 import yaml
 import os
 import streamlit as st
 from helpers import remove_indents_in_lines
+
+def parse_agent_name_and_message(content):
+    """
+    Message to agent is in triple angular brackets. 
+    Within the brackets, we have agent_name: instruction.
+    Parase it and return the agent name, instruction and rest of the content
+    """
+    pattern = r"<<<([\s\S]*?):([\s\S]*?)>>>"
+    matches = re.findall(pattern, content)
+    if len(matches) == 1:
+        agent_name = matches[0][0].strip()
+        instruction = matches[0][1].strip()
+        rest_of_content = content.replace(f'<<<{agent_name}:{instruction}>>>', '')
+    else:
+        agent_name = None
+        instruction = None
+        rest_of_content = content
+    return agent_name, instruction, rest_of_content
+
 
 def get_docstring_of_tool(tool, function_name='tool_main'):
     """
@@ -151,17 +171,30 @@ class Agent:
 class AgentManager(Agent):
     def __init__(self, agent_name, available_agents):
         super().__init__(agent_name)
+        # Agents who are currently in action
         self.managed_agents = {}
-        self.available_agents = available_agents
-        self.current_agent = 'agent_manager'
+        
+        # Agent names and descriptions of all available agents
+        # All the agents available to this manager
+        
         self.agent_descriptions = {}
-        self.set_available_agent_descriptions()
+        self.set_available_agent_descriptions(available_agents)
+        
+        # Only one agent can work at a time.  The default is the manager
+        self.current_agent = 'agent_manager'
+        
 
-    def add_agent(self, agent_name, agent):
-        self.managed_agents[agent_name] = agent
+    def add_agent(self, agent_name):
+        """
+        Add an agent if not already added
+        """
+        if agent_name not in self.managed_agents:
+            agent = Agent(agent_name)
+            self.managed_agents[agent_name] = agent
+        return None
 
-    def set_available_agent_descriptions(self):
-        for agent_name in self.available_agents:
+    def set_available_agent_descriptions(self, available_agents):
+        for agent_name in available_agents:
             path = os.path.join(os.path.dirname(__file__), 'agent_definitions', f'{agent_name}.yml')
             with open(path, 'r') as f:
                 instructions = yaml.load(f, Loader=yaml.FullLoader)

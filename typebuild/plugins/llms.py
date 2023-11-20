@@ -84,10 +84,7 @@ def get_llm_output(messages, max_tokens=2500, temperature=0.4, model='gpt-4', fu
     # Look for that first.
     # If there are triple backticks, we expect code
     
-    if "<<<" in content:
-        agent_name, instruction, content = parse_agent_name_and_message(content)
-        st.session_state.ask_agent = agent_name
-    
+       
     if '```' in str(content) or '|||' in str(content):
         # NOTE: THERE IS AN ASSUMPTION THAT WE CAN'T GET BOTH CODE AND REQUIREMENTS
         extracted, function_name = parse_func_call_info(content)
@@ -97,24 +94,6 @@ def get_llm_output(messages, max_tokens=2500, temperature=0.4, model='gpt-4', fu
 
 
     return content
-
-def parse_agent_name_and_message(content):
-    """
-    Message to agent is in triple angular brackets. 
-    Within the brackets, we have agent_name: instruction.
-    Parase it and return the agent name, instruction and rest of the content
-    """
-    pattern = r"<<<([\s\S]*?):([\s\S]*?)>>>"
-    matches = re.findall(pattern, content)
-    if len(matches) == 1:
-        agent_name = matches[0][0].strip()
-        instruction = matches[0][1].strip()
-        rest_of_content = content.replace(f'<<<{agent_name}:{instruction}>>>', '')
-    else:
-        agent_name = None
-        instruction = None
-        rest_of_content = content
-    return agent_name, instruction, rest_of_content
 
 def parse_json_from_response(response):
     """
