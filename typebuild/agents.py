@@ -6,6 +6,7 @@ import os
 import streamlit as st
 from helpers import remove_indents_in_lines
 
+# TODO: MOVE TO EXTRACTORS
 def parse_agent_name_and_message(content):
     """
     Message to agent is in triple angular brackets. 
@@ -24,7 +25,7 @@ def parse_agent_name_and_message(content):
         rest_of_content = content
     return agent_name, instruction, rest_of_content
 
-
+# TODO: MOVE TO EXTRACTORS
 def get_docstring_of_tool(tool, function_name='tool_main'):
     """
     Return the docstring of the file as a dict.
@@ -48,7 +49,7 @@ def get_docstring_of_tool(tool, function_name='tool_main'):
     docstring = inspect.getdoc(function)
     return docstring if docstring else "No docstring available."
 
-
+# TODO: MOVE TO EXTRACTORS
 def get_docstring_of_tools(tool_list):
     """
     Given the list of tools, get their docstrings.

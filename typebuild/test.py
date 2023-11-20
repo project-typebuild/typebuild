@@ -8,7 +8,6 @@ import importlib
 import json    
 import time
 
-
 def test_main():
     # Add a test menu
     # Get menu object
@@ -20,7 +19,8 @@ def test_main():
     return None
 
 def extract_dict(s):
-    # TODO: Move this to a file called extractors.  Create a detailed class.
+    # TODO: Move this to a file called extractFromLLM.  Create a detailed class.
+    # add other methods to extract data from llm response, some of which are in llm.py
     if isinstance(s, dict):
         return s
     elif isinstance(s, list):
@@ -37,7 +37,6 @@ def extract_dict(s):
     else:
         return {}
 
-# TODO: Refactor this code into smaller blocks.  Make this a class, perhaps the chat framework.
 def add_agent_manager_to_session_state():
     if 'agent_manager' not in st.session_state:
         # Get all the agents from the agent_definitions folder, in os independent way
@@ -145,6 +144,7 @@ def manage_tool_interaction(agent_manager, res_dict):
         time.sleep(2)
     return None
 
+# TODO: MAKE THIS A CHAT FRAMEWORK CLASS
 def chat():
 
     # Add the agent manager to the session state
