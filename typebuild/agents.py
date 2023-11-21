@@ -248,6 +248,7 @@ class AgentManager(Agent):
         if task in self.managed_tasks:
             del self.managed_tasks[task]
 
+    
     def set_user_message(self, message):
         """
         Adds a user message to the chat.
