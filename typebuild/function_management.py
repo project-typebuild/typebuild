@@ -12,6 +12,20 @@ def run_function(module_name: str, func_name: str):
 def run_current_functions():
     """
     Runs the functions selected in the menu.
+
+    This function retrieves the module name and function name from the menu based on the active step.
+    If the active step is 'HOME', it sets the module name and function name to 'home_page'.
+    Otherwise, it retrieves the module name and function name from the menu's graph based on the active step.
+    
+    If the module name is 'home_page', the function does nothing.
+    If both the module name and function name are not None, it calls the 'run_function' function with the module name and function name as arguments.
+    If either the module name or function name is None, it raises an error using the 'st.error' function.
+
+    Parameters:
+    None
+
+    Returns:
+    None
     """
     menu = st.session_state.menu
     if st.session_state.activeStep == 'HOME':

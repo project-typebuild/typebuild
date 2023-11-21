@@ -17,7 +17,7 @@ def test_main():
     ]    
     menu.add_edges(test_menu_items)
     return None
-    
+
 def add_agent_manager_to_session_state():
     if 'agent_manager' not in st.session_state:
         # Get all the agents from the agent_definitions folder, in os independent way
@@ -144,7 +144,7 @@ def chat():
     if st.session_state.ask_llm:
         # Get the response from the llm
         res = manage_llm_interaction(agent_manager)        
-        res_dict = st.session_state.extractors.extract_dict_from_response(res)
+        res_dict = st.session_state.extractor.extract_dict_from_response(res)
         # If a tool is used, ask the llm to respond again
         if 'tool_name' in res_dict:
             manage_tool_interaction(agent_manager, res_dict)

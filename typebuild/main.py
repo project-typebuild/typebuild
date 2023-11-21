@@ -30,6 +30,7 @@ if 'menu' not in st.session_state:
 else:
     menu = st.session_state['menu']
     settings_main()
+
 # If latest request or response are there, show checkbox to show them
 if 'last_request' in st.session_state:
     show_request = st.sidebar.checkbox('Show latest request')
@@ -41,18 +42,22 @@ if 'last_response' in st.session_state:
         res = st.session_state.last_response
         st.warning(st.session_state.last_response)
 
+# If there is a message from the agent, show it (temporary)
 if 'agent_messages' in st.session_state:
     if st.sidebar.checkbox('Show agent messages'):
         st.success(st.session_state.agent_messages)
 
 test_main()
 
-google_menu = [
-    ['HOME', 'Search', 'search_placeholder', 'helpers'],
+# menu options down below are a list of lists, 
+# the first element of which is the parent node, the second element is the node name, 
+# the third element is the function name, and the fourth element is the module name (python file name)
+menu_bar_options = [
+    ['HOME', 'Search', 'search_placeholder', 'helpers'], # search_placeholder is a placeholder function because when Search is clicked, it should not do anything and should just show the children of Search
     ['Search', 'Google Search', 'google_search_interface_for_menu', 'helpers'],
     ['Search', 'YouTube Search', 'youtube_search_interface_for_menu', 'helpers'],
     ]
 
-menu.add_edges(google_menu)
-menu.create_menu()
-run_current_functions()
+menu.add_edges(menu_bar_options) # add the edges to the menu in the GraphicalMenu class
+menu.create_menu() # create the meu bar
+run_current_functions() # run the current functions in the session state

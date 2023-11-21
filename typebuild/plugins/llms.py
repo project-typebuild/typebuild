@@ -16,9 +16,16 @@ sys.path.append(st.session_state.typebuild_root)
 
 def last_few_messages(messages):
     """
-    Long messages get rejected by the LLM.  So,
-    - Will keep the system message, which is the first message
-    - Will keep the last 3 user and system messages
+    Returns the last few messages from the given list of messages.
+
+    Long messages get rejected by the LLM. So, this function keeps the system message, which is the first message,
+    and the last 3 user and system messages.
+
+    Args:
+        messages (list): A list of messages.
+
+    Returns:
+        list: The last few messages from the given list.
     """
     last_messages = []
     if messages:
@@ -30,10 +37,30 @@ def last_few_messages(messages):
     return last_messages
 
 def get_llm_output(messages, max_tokens=2500, temperature=0.4, model='gpt-4', functions=[]):
+
     """
-    This checks if there is a custom_llm.py in the plugins directory 
-    If there is, it uses that.
-    If not, it uses the openai llm.
+    This function retrieves the output from the Language Model (LLM) based on the given messages.
+
+    Args:
+        messages (list): List of messages exchanged between the user and the LLM.
+        max_tokens (int, optional): The maximum number of tokens to generate in the LLM output. Defaults to 2500.
+        temperature (float, optional): The temperature parameter for controlling the randomness of the LLM output. 
+            Higher values (e.g., 1.0) make the output more random, while lower values (e.g., 0.1) make it more deterministic. 
+            Defaults to 0.4.
+        model (str, optional): The name of the LLM model to use. Defaults to 'gpt-4'.
+        functions (list, optional): List of functions to be used by the LLM. Defaults to an empty list.
+
+    Returns:
+        str: The generated output from the LLM.
+
+    Raises:
+        None
+
+    Notes:
+        - If there is a custom_llm.py file in the plugins directory, it will be used instead of the default LLM.
+        - If the 'claude-2' model is requested and available, it will be used instead of the default LLM.
+        - The function may return code or requirements in multiple forms, which need to be extracted separately.
+        - If a function call is received from the LLM, it will be stored in the session state.
     """
     # Check if there is a custom_llm.py in the plugins directory
     # If there is, use that
@@ -64,8 +91,7 @@ def get_llm_output(messages, max_tokens=2500, temperature=0.4, model='gpt-4', fu
 
     # Recent GPT models return function_call as a separate json object
     # Look for that first.
-    # If there are triple backticks, we expect code
-    
+    # If there are triple backticks, we expect code    
        
     if '```' in str(content) or '|||' in str(content):
         # NOTE: THERE IS AN ASSUMPTION THAT WE CAN'T GET BOTH CODE AND REQUIREMENTS
@@ -116,6 +142,20 @@ def get_openai_output(messages, max_tokens=3000, temperature=0.4, model='gpt-4',
     return msg
 
 def get_claude_response(messages, max_tokens=2000):
+    """
+    Generates a response from the Claude model based on the given messages.
+
+    Args:
+        messages (list): A list of dictionaries representing the conversation messages.
+            Each dictionary should have 'role' and 'content' keys, where 'role' can be
+            either 'assistant' or 'human', and 'content' contains the message content.
+        max_tokens (int, optional): The maximum number of tokens to generate in the response.
+            Defaults to 2000.
+
+    Returns:
+        str: The generated response from the Claude model.
+    """
+
     anthropic = Anthropic(
         api_key=st.session_state.claude_key,
     )

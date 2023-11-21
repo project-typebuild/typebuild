@@ -294,14 +294,28 @@ def set_function_calling_availability(toggle=False):
     return None
 
 def search_placeholder():
+    """
+    This function is a placeholder for the search function. On the menu bar, when the user clicks on the search icon, this function is called and do nothing.
+    
+    Returns:
+        None: If no placeholder is found.
+    """
     return None
 
 def google_search_interface_for_menu():
+    """
+    This function calls the `google_search_interface` function from the `tools.google_search` module.
+    It is used to provide a menu interface for performing Google searches.
+    """
     from tools.google_search import google_search_interface
     google_search_interface()
     return None
 
 def youtube_search_interface_for_menu():
+    """
+    This function serves as an interface for searching YouTube transcripts.
+    It imports the 'youtube_transcript_search' module and calls its 'main' function.
+    """
     from tools.youtube_transcript_search import main as youtube_search_interface
     youtube_search_interface()
     return None
@@ -344,7 +358,18 @@ def set_or_get_llm_keys():
 
 def starter_code():
     """
-    Functions that need to be run at the top of the app.
+    This function is responsible for running the necessary code at the top of the app.
+    
+    Steps:
+    1. Add all default session states using the `session_state_management.main()` function.
+    2. Set or get the LLM keys using the `set_or_get_llm_keys()` function.
+    3. Instantiate the `ExtractFromLLM` class and add it to the session state if it doesn't already exist.
+    4. If the selected node in the session state is 'logout', call the `logout()` function.
+    5. Set the availability of function calling using the `set_function_calling_availability()` function.
+    6. If 'upgrade' is not in the session state, call the `temp_upgrade()` function and set `st.session_state.upgrade` to True.
+    
+    Returns:
+    None
     """
     # Add all default session states
     session_state_management.main()
@@ -363,21 +388,6 @@ def starter_code():
         st.session_state.upgrade = True
     return None
     
-def extract_list_of_dicts_from_string(res):
-    """
-    Extracts a list of dictionaries from a string.
-    """
-    # Remove the new line characters
-    res = res.replace('\n', ' ')
-
-    # assuming `res` is the string with the list of dicts
-    start_index = res.index('[') 
-    end_index = res.rindex(']') + 1
-    list_of_dicts_str = res[start_index:end_index]
-
-    
-    return eval(list_of_dicts_str)
-
 def temp_upgrade():
     """
     Use this for upgrades

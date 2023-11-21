@@ -7,6 +7,15 @@ import streamlit as st
 
 # set Streamlit page layout to wide
 def display_menu_bar(menu_options):
+    """
+    Display a menu bar with clickable buttons based on the given menu options.
+
+    Args:
+        menu_options (list): A list of menu options to be displayed.
+
+    Returns:
+        None
+    """
     # create_dynamic_functions(menu_options)
     for index, option in enumerate(menu_options):
         # Create the function if it doesn't exist in locals
@@ -19,6 +28,7 @@ def display_menu_bar(menu_options):
                 return None
             """            
             exec(myfunc)
+            
     if 'activeStep' not in st.session_state:
         st.session_state.activeStep = 'HOME'     
     
@@ -40,9 +50,6 @@ def display_menu_bar(menu_options):
     return None
 
 class GraphicalMenu:
-    # menu_edges = []
-    # menu_sources = []
-    # source_functions = []
     G = None
 
     def __init__(self):
@@ -53,18 +60,24 @@ class GraphicalMenu:
 
     def add_edges(self, menu_edges_data):
         """
-        This adds nodes and edges to a graph.
-        For uniqueness, the node names is done as "node_name~source"
+        This method adds nodes and edges to a graph.
+
+        Parameters:
+        - menu_edges_data (list): A list of edges data containing source, node names, function names, and module names.
+
+        Returns:
+        - None
+
+        For uniqueness, the node names are formatted as "node_name~source".
         """
-
+        # Create a reference to the graph
         G = self.G
-        # revised_menu_edges_data = []
 
+        # Iterate over each edge in the menu_edges_data
         for edge in menu_edges_data:
             source = edge[-1]  # Get the source from the last item in the sublist
-            # if source not in self.menu_sources:
-            #     self.menu_sources.append(source)
 
+            # Format node_0 and node_1 based on edge[0] and edge[1]
             if edge[0] == "HOME":
                 node_0 = "HOME"
             else:
@@ -80,13 +93,20 @@ class GraphicalMenu:
                 st.sidebar.error(f'node_1: {node_1} node_name {edge[1]} func_name {edge[2]} module_name {source}')
                 G.add_node(node_1, node_name=edge[1], func_name=edge[2], module_name=source)
             G.add_edge(node_0, node_1)
-            # revised_menu_edges_data.append([node_0, node_1])
 
         return None
 
 
     def add_functions(self, edges):
-        
+        """
+        Add functions to the graphical menu.
+
+        Parameters:
+        - edges (list): A list of edges representing the connections between nodes.
+
+        Returns:
+        None
+        """
         run = False
         for edge in edges:
             if len(edge) == 3:
@@ -159,13 +179,10 @@ class GraphicalMenu:
         if 'selected_node' not in st.session_state:
             st.session_state['selected_node'] = 'HOME'
 
-        
         # If selected_node is HOME, get top level nodes
         options = ['HOME']
         if st.session_state['selected_node'] == 'HOME':
             options += self.top_level_nodes()
-
-            # display_children = [option.split('~')[0] for option in options]
         else:
             parent, children = self.get_children_and_parent(st.session_state['selected_node'])
             options += children

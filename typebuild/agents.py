@@ -17,13 +17,27 @@ class Agent:
    
 
     def get_messages_with_instruction(self, system_instruction):
+        """
+        Returns a copy of the messages list with a new system instruction message added at the beginning.
+
+        Args:
+            system_instruction (str): The system instruction message to be added.
+
+        Returns:
+            list: A new list of messages with the system instruction message added at the beginning.
+        """
         messages = self.messages.copy()
         messages.insert(0, {'role': 'system', 'content': system_instruction})
         return messages
 
     def get_system_instruction(self):
         """
-        Returns the system instruction
+        Returns the system instruction for the agent.
+
+        The system instruction includes the tool definitions and a final message for the agent manager.
+
+        Returns:
+            str: The system instruction.
         """
         instructions = self.system_instruction
         # Add tools to the instruction
@@ -38,8 +52,16 @@ class Agent:
     
     def parse_instructions(self, agent_name):
         """
-        There is a file called system_instruction/{agent_name}.yml.
-        Parase the variables in it and create them as instance variables.
+        Parse the instructions for a given agent.
+
+        Args:
+            agent_name (str): The name of the agent.
+
+        Returns:
+            dict: The parsed instructions.
+
+        Raises:
+            FileNotFoundError: If no system instruction is found for the given agent.
         """
         
         path = os.path.join(os.path.dirname(__file__), 'agent_definitions', f'{agent_name}.yml')
@@ -57,14 +79,19 @@ class Agent:
 
     def get_instance_vars(self):
         """
-        Returns a dictionary of instance variables
+        Returns a dictionary containing all the instance variables of the object.
         """
         return self.__dict__
 
     def get_tool_defs(self):
         """
-        Find the list of tools available for this agent.
-        Get the docstring of each tool to add to the system instruction.
+        Returns a formatted string containing the list of available tools and their docstrings.
+        
+        The method retrieves the docstrings of the tools specified in the `self.tools` attribute.
+        It then formats the information into a well-structured string, including the tool name and its docstring.
+        
+        Returns:
+            str: A formatted string with the list of available tools and their docstrings.
         """
         add_to_instruction = ""
         if self.tools:
@@ -85,8 +112,12 @@ class Agent:
 
     def available_tools(self):
         """
-        Look at the tools folder to see what tools are available for agents to use.
-        Return the file name and the doc string of the file as a dict.
+        Returns a dictionary of available tools.
+
+        The dictionary contains the names of the available tools as keys and their respective docstrings as values.
+
+        Returns:
+            dict: A dictionary of available tools with their docstrings.
         """
         tools = {}
         for file in os.listdir(os.path.join(os.path.dirname(__file__), 'tools')):
@@ -125,7 +156,13 @@ class AgentManager(Agent):
 
     def add_agent(self, agent_name):
         """
-        Add an agent if not already added
+        Add a new agent to the list of managed agents.
+
+        Args:
+            agent_name (str): The name of the agent to be added.
+
+        Returns:
+            None
         """
         if agent_name not in self.managed_agents:
             agent = Agent(agent_name)
@@ -133,6 +170,12 @@ class AgentManager(Agent):
         return None
 
     def set_available_agent_descriptions(self, available_agents):
+        """
+        Set the available agent descriptions.
+
+        Args:
+            available_agents (list): A list of available agent names.
+        """
         for agent_name in available_agents:
             path = os.path.join(os.path.dirname(__file__), 'agent_definitions', f'{agent_name}.yml')
             with open(path, 'r') as f:
@@ -146,6 +189,12 @@ class AgentManager(Agent):
     def get_system_instruction(self, agent_name):
         """
         Add the agent name and description to the system instructions
+
+        Args:
+            agent_name (str): The name of the agent
+
+        Returns:
+            str: The system instruction with the agent name and description
         """
         if agent_name in self.managed_agents:
             instruction = self.managed_agents[agent_name].get_system_instruction()
@@ -159,14 +208,20 @@ class AgentManager(Agent):
         return instruction
 
     def get_agent(self, agent_name):
-            """
-            Returns the agent for the given agent_name
-            """
-            if agent_name in self.managed_agents:
-                agent = self.managed_agents[agent_name]
-            else:
-                agent = self
-            return agent
+        """
+        Returns the agent for the given agent_name
+
+        Parameters:
+        agent_name (str): The name of the agent to retrieve.
+
+        Returns:
+        agent: The agent object associated with the given agent_name. If the agent_name is not found in the managed_agents dictionary, returns self.
+        """
+        if agent_name in self.managed_agents:
+            agent = self.managed_agents[agent_name]
+        else:
+            agent = self
+        return agent
     
     def remove_agent(self, agent_name):
         if agent_name in self.managed_agents:

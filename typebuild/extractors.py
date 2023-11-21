@@ -7,19 +7,53 @@ import json
 
 
 class ExtractFromLLM:
+
+    """
+    This class contains functions to extract information from the response from the LLM.
+
+    Available functions:
+    - remove_indents_in_lines (response)
+    - extract_dict_from_response (response)
+    - extract_json_from_response (response)
+    - extract_list_of_dicts_from_string (response)
+    - extract_agent_name_and_message (response)
+    - extract_message_to_agent (response)
+    - extract_func_call_info (response)
+    - extract_code_from_response (response)
+    - extract_modified_user_requirements_from_response (response)
+    - get_docstring_of_tool (tool, function_name='tool_main')
+    - get_docstring_of_tools (tool_list)
+
+    """
     
     def __init__(self):
         return None
 
-    def remove_indents_in_lines(self, content):
+    def remove_indents_in_lines(self, response):
         """
-        Strip each line of the text of any leading spaces.
+        Remove leading and trailing whitespace from each line in the given response.
+
+        Args:
+            response (str): The response to process.
+
+        Returns:
+            str: The response with leading and trailing whitespace removed from each line.
         """
-        lines = content.split('\n')
+        lines = response.split('\n')
         lines = [i.strip() for i in lines]
         return '\n'.join(lines)
 
     def extract_dict_from_response(self, response):
+        """
+        Extracts a dictionary from the given response.
+
+        Args:
+            response (dict or list or str): The response to extract the dictionary from.
+
+        Returns:
+            dict: The extracted dictionary.
+
+        """
         if isinstance(response, dict):
             return response
         elif isinstance(response, list):
@@ -62,11 +96,42 @@ class ExtractFromLLM:
         else:
             return None
 
+    def extract_list_of_dicts_from_string(self, response):
+        """
+        Extracts a list of dictionaries from a string.
+
+        Args:
+            response (str): The string containing the list of dictionaries.
+
+        Returns:
+            list: A list of dictionaries extracted from the string.
+
+        """
+        # Remove the new line characters
+        response = response.replace('\n', ' ')
+
+        # assuming `response` is the string with the list of dicts
+        start_index = response.index('[') 
+        end_index = response.rindex(']') + 1
+        list_of_dicts_str = response[start_index:end_index]
+
+        return eval(list_of_dicts_str)
+
+
     def extract_agent_name_and_message(self,response):
         """
-        Message to agent is in triple angular brackets. 
-        Within the brackets, we have agent_name: instruction.
-        Parse it and return the agent name, instruction, and the rest of the response.
+        Extracts the agent name, instruction, and the rest of the response from a given response string.
+
+        Args:
+            response (str): The response string containing the agent name and instruction.
+
+        Returns:
+            tuple: A tuple containing the agent name, instruction, and the rest of the response.
+
+        Example:
+            >>> response = "<<<Agent1: Do this instruction>>> Some other text"
+            >>> extract_agent_name_and_message(response)
+            ('Agent1', 'Do this instruction', ' Some other text')
         """
         pattern = r"<<<([\s\S]*?):([\s\S]*?)>>>"
         matches = re.findall(pattern, response)
@@ -86,6 +151,12 @@ class ExtractFromLLM:
         This is found within <<< and >>>.
         There will be at least one set of triple angle brackets
         for this function to be invoked.
+
+        Parameters:
+        - response (str): The response string from which to extract the message.
+
+        Returns:
+        - message_to_agent (str): The extracted message to the agent.
         """
         pattern = r"<<<([\s\S]*?)>>>"
         matches = re.findall(pattern, response)
@@ -98,13 +169,21 @@ class ExtractFromLLM:
         st.session_state.message_to_agent = message_to_agent
         return message_to_agent
 
-    def extract_func_call_info(self,response):
+    def extract_func_call_info(self, response):
         """
+        Extracts code or requirements from the given response.
+
         The LLM can return code or requirements in the content.  
         Ideally, requirements come in triple pipe delimiters, 
         but sometimes they come in triple backticks.
 
         Figure out which one it is and return the extracted code or requirements.
+
+        Args:
+            response (str): The response containing code or requirements.
+
+        Returns:
+            tuple: A tuple containing the extracted code or requirements and the corresponding function name.
         """
         # If there are ```, it could be code or requirements
         function_name = None
@@ -116,7 +195,6 @@ class ExtractFromLLM:
             elif 'data_agent' in response:
                 extracted = self.extract_modified_user_requirements_from_response(response)
                 function_name = 'data_agent'
-
             elif 'json' in response:
                 extracted = self.extract_json_from_response(response)
                 function_name = ''
