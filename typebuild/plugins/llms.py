@@ -14,6 +14,8 @@ import json
 import sys
 sys.path.append(st.session_state.typebuild_root)
 
+from extractors import Extractors
+
 def last_few_messages(messages):
     """
     Returns the last few messages from the given list of messages.
@@ -92,13 +94,12 @@ def get_llm_output(messages, max_tokens=2500, temperature=0.4, model='gpt-4', fu
     # Recent GPT models return function_call as a separate json object
     # Look for that first.
     # If there are triple backticks, we expect code    
-       
+    extractors = Extractors()
     if '```' in str(content) or '|||' in str(content):
         # NOTE: THERE IS AN ASSUMPTION THAT WE CAN'T GET BOTH CODE AND REQUIREMENTS
-        extracted, function_name = parse_func_call_info(content)
+        extracted, function_name = extractors.parse_func_call_info(content)
         func_call = {'name': function_name, 'arguments': {'content':extracted}}
         st.session_state.last_function_call = func_call
-
 
 
     return content

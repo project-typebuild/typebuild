@@ -1,6 +1,6 @@
 name: data_agent
-description: Given the task, this agent informs the coding agent about data such as files, columns, and data types to advise effectively.
-instruction: |
+description: This agent knows what data is available.  It can inform the coding agent about data such as files, columns, and data types to advise effectively.
+system_instruction: |
   You are helping me with with the data required to code my project.
 
   I have the following data files:
@@ -21,6 +21,6 @@ instruction: |
   and also include any other information that the developer may need to know about
   the data.
 
-temperature: 0.5
-max_tokens: 100
-default_model: "gpt-3.5-turbo"
+temperature: 0.2
+max_tokens: 500
+default_model: "gpt-4"

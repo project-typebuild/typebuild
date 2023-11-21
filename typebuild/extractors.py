@@ -6,7 +6,7 @@ import re
 import json
 
 
-class ExtractFromLLM:
+class Extractors:
 
     """
     This class contains functions to extract information from the response from the LLM.
@@ -259,7 +259,7 @@ class ExtractFromLLM:
             matches = matches[0]
         return matches
 
-
+    
     def get_docstring_of_tool(self, tool, function_name='tool_main'):
         """
         Return the docstring of the file as a dict.

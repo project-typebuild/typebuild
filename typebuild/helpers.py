@@ -9,7 +9,7 @@ import time
 import os
 from glob import glob
 import pandas as pd
-from extractors import ExtractFromLLM
+from extractors import Extractors
 
 def update_text_file(file, value):
     """
@@ -363,7 +363,7 @@ def starter_code():
     Steps:
     1. Add all default session states using the `session_state_management.main()` function.
     2. Set or get the LLM keys using the `set_or_get_llm_keys()` function.
-    3. Instantiate the `ExtractFromLLM` class and add it to the session state if it doesn't already exist.
+    3. Instantiate the `Extractors` class and add it to the session state if it doesn't already exist.
     4. If the selected node in the session state is 'logout', call the `logout()` function.
     5. Set the availability of function calling using the `set_function_calling_availability()` function.
     6. If 'upgrade' is not in the session state, call the `temp_upgrade()` function and set `st.session_state.upgrade` to True.
@@ -375,9 +375,9 @@ def starter_code():
     session_state_management.main()
     set_or_get_llm_keys()
     
-    # Instantiate the ExtractFromLLM class and add it to the session state
+    # Instantiate the Extractors class and add it to the session state
     if 'extractor' not in st.session_state:
-        st.session_state.extractor = ExtractFromLLM()
+        st.session_state.extractor = Extractors()
     
     if st.session_state.selected_node == 'logout':
         logout()

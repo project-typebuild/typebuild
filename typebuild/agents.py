@@ -1,9 +1,19 @@
-import importlib
-import inspect
-import re
+"""
+TODO:
+- (Vivek) Graphs for tasks, not agents
+- (Ranu) Convert tools to classes.  Each tool should have a run method & a visual method forh the UP.
+    - (Ranu) Make sure that the agent knows how to use tools.
+- (Ranu) Create a requests tool, separate that from the google search tool.
+- (Ranu) Save messages by default, may be just save the graph.
+- (later) Allow the user to retrieve not just the main thread but also subthreads, may be with expanders.
+
+"""
+
 import yaml
 import os
 import streamlit as st
+
+from extractors import Extractors
 
 class Agent:
     # Class variable to store message history
@@ -119,10 +129,11 @@ class Agent:
         Returns:
             dict: A dictionary of available tools with their docstrings.
         """
+        extractor = Extractors()
         tools = {}
         for file in os.listdir(os.path.join(os.path.dirname(__file__), 'tools')):
             if file.endswith('.py'):
-                tools[file] = get_docstring_of_tool(file)
+                tools[file] = extractor.get_docstring_of_tool(file)
         return tools
 
 
@@ -141,6 +152,8 @@ class Agent:
 class AgentManager(Agent):
     def __init__(self, agent_name, available_agents):
         super().__init__(agent_name)
+
+        # TODO: Create a graph of tasks rather than a dict of agents
         # Agents who are currently in action
         self.managed_agents = {}
         
