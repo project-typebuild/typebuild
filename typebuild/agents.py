@@ -1,9 +1,9 @@
 """
 TODO:
 - (Vivek) Graphs for tasks, not agents
-- (Ranu) Convert tools to classes.  Each tool should have a run method & a visual method forh the UP.
-    - (Ranu) Make sure that the agent knows how to use tools.
-- (Ranu) Create a menu tool and agent.  Connect the agent to current projects, views, and research projects.
+
+- (Ranu) Create a menu tool and agent.  
+    - Connect the agent to current projects, views, and research projects.
 - (Ranu) Work on the LLM for reserch agent that creates the instruction first, runs samples, and then runs it on all text.
 
 - (Ranu) Create a requests tool, separate that from the google search tool.
