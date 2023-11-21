@@ -6,7 +6,6 @@ sys.path.append(dir_path)
 
 import streamlit as st
 import yaml
-from tools.google_search import GoogleSearch
 
 # Make it full width
 st.set_page_config(layout="wide", page_title='TB Chat Framework')
