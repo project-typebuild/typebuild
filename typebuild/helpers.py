@@ -1,26 +1,15 @@
 import tempfile
 import streamlit as st
 import os
-# from streamlit_ace import st_ace
 import session_state_management
 import toml
-# from streamlit_extras.stateful_button import button
-# from streamlit_extras.add_vertical_space import add_vertical_space
 from simple_auth import logout
 import openai
 import time
 import os
 from glob import glob
 import pandas as pd
-
-def remove_indents_in_lines(text):
-    """
-    Strip each line of the text of any leading spaces.
-    """
-    lines = text.split('\n')
-    lines = [i.strip() for i in lines]
-    return '\n'.join(lines)
-
+from extractors import ExtractFromLLM
 
 def update_text_file(file, value):
     """
@@ -304,6 +293,20 @@ def set_function_calling_availability(toggle=False):
 
     return None
 
+def search_placeholder():
+    return None
+
+def google_search_interface_for_menu():
+    from tools.google_search import google_search_interface
+    google_search_interface()
+    return None
+
+def youtube_search_interface_for_menu():
+    from tools.youtube_transcript_search import main as youtube_search_interface
+    youtube_search_interface()
+    return None
+
+
 def create_user_folder():
     """
     Creates a user folder in the .typebuild folder.
@@ -347,6 +350,9 @@ def starter_code():
     session_state_management.main()
     set_or_get_llm_keys()
     
+    # Instantiate the ExtractFromLLM class and add it to the session state
+    if 'extractor' not in st.session_state:
+        st.session_state.extractor = ExtractFromLLM()
     
     if st.session_state.selected_node == 'logout':
         logout()

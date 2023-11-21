@@ -3,15 +3,14 @@ import simple_auth
 import os
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(dir_path)
+
 import streamlit as st
 import yaml
 from tools.google_search import GoogleSearchSaver
-# import tools
 
 # Make it full width
 st.set_page_config(layout="wide", page_title='TB Chat Framework')
 token = simple_auth.simple_auth()
-
 st.session_state.token = token
 
 from helpers import starter_code, set_or_get_llm_keys, config_project 
@@ -48,12 +47,10 @@ if 'agent_messages' in st.session_state:
 
 test_main()
 
-# TODO: THIS CREATES TWO SEARCH MENUS.  FIX IT.
-
 google_menu = [
-    ['HOME', 'Search', 'empty_func', 'test'],
-    ['Search', 'Google Search', 'google_search_interface', 'test'],
-    ['Search', 'YouTube Search', 'search_youtube', 'test'],
+    ['HOME', 'Search', 'search_placeholder', 'helpers'],
+    ['Search', 'Google Search', 'google_search_interface_for_menu', 'helpers'],
+    ['Search', 'YouTube Search', 'youtube_search_interface_for_menu', 'helpers'],
     ]
 
 menu.add_edges(google_menu)

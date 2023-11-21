@@ -3,7 +3,7 @@ from chat_framework import display_messages
 from plugins.llms import get_llm_output
 import os
 from glob import glob
-from agents import AgentManager, Agent, parse_agent_name_and_message
+from agents import AgentManager, Agent
 import importlib
 import json    
 import time
@@ -17,26 +17,7 @@ def test_main():
     ]    
     menu.add_edges(test_menu_items)
     return None
-
-def extract_dict(s):
-    # TODO: Move this to a file called extractFromLLM.  Create a detailed class.
-    # add other methods to extract data from llm response, some of which are in llm.py
-    if isinstance(s, dict):
-        return s
-    elif isinstance(s, list):
-        return s
-    elif isinstance(s, str):
-        s = s.strip()
-        try:
-            start = s.index('{')
-            end = s.rindex('}') + 1
-            dict_str = s[start:end]
-            return json.loads(dict_str)
-        except ValueError:
-            return {}
-    else:
-        return {}
-
+    
 def add_agent_manager_to_session_state():
     if 'agent_manager' not in st.session_state:
         # Get all the agents from the agent_definitions folder, in os independent way
@@ -81,7 +62,7 @@ def manage_llm_interaction(agent_manager):
 
     # If the response is a request for a new agent, create the agent, if it does not exist
     if "<<<" in res:
-        agent_name, instruction, res = parse_agent_name_and_message(res)
+        agent_name, instruction, res = st.session_state.extractor.extract_agent_name_and_message(res)
         st.session_state.ask_agent = agent_name
 
         if agent_name != agent_manager.current_agent:
@@ -163,7 +144,7 @@ def chat():
     if st.session_state.ask_llm:
         # Get the response from the llm
         res = manage_llm_interaction(agent_manager)        
-        res_dict = extract_dict(res)
+        res_dict = st.session_state.extractors.extract_dict_from_response(res)
         # If a tool is used, ask the llm to respond again
         if 'tool_name' in res_dict:
             manage_tool_interaction(agent_manager, res_dict)

@@ -4,80 +4,6 @@ import re
 import yaml
 import os
 import streamlit as st
-from helpers import remove_indents_in_lines
-
-# TODO: MOVE TO EXTRACTORS
-def parse_agent_name_and_message(content):
-    """
-    Message to agent is in triple angular brackets. 
-    Within the brackets, we have agent_name: instruction.
-    Parase it and return the agent name, instruction and rest of the content
-    """
-    pattern = r"<<<([\s\S]*?):([\s\S]*?)>>>"
-    matches = re.findall(pattern, content)
-    if len(matches) == 1:
-        agent_name = matches[0][0].strip()
-        instruction = matches[0][1].strip()
-        rest_of_content = content.replace(f'<<<{agent_name}:{instruction}>>>', '')
-    else:
-        agent_name = None
-        instruction = None
-        rest_of_content = content
-    return agent_name, instruction, rest_of_content
-
-# TODO: MOVE TO EXTRACTORS
-def get_docstring_of_tool(tool, function_name='tool_main'):
-    """
-    Return the docstring of the file as a dict.
-
-    Parameters:
-    - file: The file to retrieve the docstring from.
-    - function_name: The name of the function to retrieve the docstring from. Default is 'tool_main'.
-
-    Returns (str):
-    - The docstring of the file.
-    """
-    # Import the module
-    module_name = f"tools.{tool}"
-    module = importlib.import_module(module_name)
-    # Get the function object from the module
-    function = getattr(module, function_name, None)
-    if function is None:
-        return f"No function named '{function_name}' found in 'tools.{tool}'."
-
-    # Get the docstring
-    docstring = inspect.getdoc(function)
-    return docstring if docstring else "No docstring available."
-
-# TODO: MOVE TO EXTRACTORS
-def get_docstring_of_tools(tool_list):
-    """
-    Given the list of tools, get their docstrings.
-
-    Parameters:
-    - tool_list: A list of tools to get the docstrings of.  This should be the name of the python file in the "tools" directory.
-
-    Returns (dict):
-    - A dictionary of the tool name and the docstring of the tool.
-    """
-    tools = {}
-    for tool in tool_list:
-        file = os.path.join(os.path.dirname(__file__), 'tools', f"{tool}.py")
-        tools[tool] = get_docstring_of_tool(tool)
-    return tools
-
-
-def available_tools():
-    """
-    Look at the tools folder to see what tools are available for agents to use.
-    Return the file name and the doc string of the file as a dict.
-    """
-    tools = {}
-    for file in os.listdir(os.path.join(os.path.dirname(__file__), 'tools')):
-        if file.endswith('.py'):
-            tools[file] = get_docstring_of_tool(file)
-    return tools
-
 
 class Agent:
     # Class variable to store message history
@@ -149,13 +75,25 @@ class Agent:
             YOU CAN FIND THE DOCSTRING OF THE TOOLS BELOW:
 
             """
-            tools = get_docstring_of_tools(self.tools)
+            tools = st.session_state.extractor.get_docstring_of_tools(self.tools)
             
             for tool in tools:
                 add_to_instruction += f"===\n\n{tool}: {tools[tool]}\n\n"
             
         
-        return remove_indents_in_lines(add_to_instruction)
+        return st.session_state.extractor.remove_indents_in_lines(add_to_instruction)
+
+    def available_tools(self):
+        """
+        Look at the tools folder to see what tools are available for agents to use.
+        Return the file name and the doc string of the file as a dict.
+        """
+        tools = {}
+        for file in os.listdir(os.path.join(os.path.dirname(__file__), 'tools')):
+            if file.endswith('.py'):
+                tools[file] = get_docstring_of_tool(file)
+        return tools
+
 
     def send_response_to_chat_framework(self):
         """

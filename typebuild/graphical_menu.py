@@ -170,7 +170,6 @@ class GraphicalMenu:
             parent, children = self.get_children_and_parent(st.session_state['selected_node'])
             options += children
     
-        # options.append('Google Search~tools.google_search')
         # Display the options
         display_menu_bar(options)
         

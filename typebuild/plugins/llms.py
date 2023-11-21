@@ -29,24 +29,6 @@ def last_few_messages(messages):
     last_messages.extend(user_assistant_messages[-7:])
     return last_messages
 
-def extract_message_to_agent(content):
-    """
-    Extracts the message to the agent from the content.
-    This is found within <<< and >>>.
-    There will at least be one set of triple angle brackets
-    for this function to be invoked.
-    """
-    pattern = r"<<<([\s\S]*?)>>>"
-    matches = re.findall(pattern, content)
-    if len(matches) == 1:
-        message_to_agent = matches[0].strip()
-    else:
-        message_to_agent = '\n'.join(matches)
-    
-    # Add it to the session state
-    st.session_state.message_to_agent = message_to_agent
-    return message_to_agent
-
 def get_llm_output(messages, max_tokens=2500, temperature=0.4, model='gpt-4', functions=[]):
     """
     This checks if there is a custom_llm.py in the plugins directory 
@@ -95,30 +77,6 @@ def get_llm_output(messages, max_tokens=2500, temperature=0.4, model='gpt-4', fu
 
     return content
 
-def parse_json_from_response(response):
-    """
-    Returns the JSON from the response from LLM.
-    In the prompt to JSON, we have asked the LLM to return the JSON inside triple backticks.
-
-    Args:
-    - response (str): The response from LLM
-
-    Returns:
-    - json_dict (dict): A dictionary containing the parsed JSON
-    """
-
-    pattern = r"```json([\s\S]*?)```"
-    matches = re.findall(pattern, response)
-    if len(matches) > 0:
-        json_str = '\n'.join(matches)
-        try:
-            json_dict = json.loads(json_str)
-            return json_dict
-        except json.JSONDecodeError:
-            # Handle JSON decoding error
-            return None
-    else:
-        return None
 
 def get_openai_output(messages, max_tokens=3000, temperature=0.4, model='gpt-4', functions=[]):
     """
@@ -180,88 +138,3 @@ def get_claude_response(messages, max_tokens=2000):
     )
     return response.completion
 
-def parse_func_call_info(response):
-    """
-    The LLM can return code or requirements in the content.  
-    Ideally, requirements come in triple pipe delimiters, 
-    but sometimes they come in triple backticks.
-
-    Figure out which one it is and return the extracted code or requirements.
-    """
-    # If there are ```, it could be code or requirements
-    function_name = None
-    if '```' in response:
-        # If it's python code, it should have at least one function in it
-        if 'def ' in response:
-            extracted = parse_code_from_response(response)
-            function_name = 'save_code_to_file'
-        elif 'data_agent' in response:
-            extracted = parse_modified_user_requirements_from_response(response)
-            function_name = 'data_agent'
-
-        elif 'json' in response:
-            extracted = parse_json_from_response(response)
-            function_name = ''
-        # If it's not python code, it's probably requirements
-        else:
-            extracted = parse_modified_user_requirements_from_response(response)
-            function_name = 'save_requirements_to_file'
-    # If there are |||, it's probably requirements
-    elif '|||' in response:
-        extracted = parse_modified_user_requirements_from_response(response)
-        function_name = 'save_requirements_to_file'
-    else:
-        extracted = None
-    return extracted, function_name
-            
-
-
-
-def parse_code_from_response(response):
-
-    """
-    Returns the code from the response from LLM.
-    In the prompt to code, we have asked the LLM to return the code inside triple backticks.
-
-    Args:
-    - response (str): The response from LLM
-
-    Returns:
-    - matches (list): A list of strings with the code
-
-    """
-
-    pattern = r"```python([\s\S]*?)```"
-    matches = re.findall(pattern, response)
-    if len(matches) > 0:
-        matches = '\n'.join(matches)
-    else:
-        matches = matches[0]
-    return matches
-
-def parse_modified_user_requirements_from_response(response):
-    
-    """
-    Returns the modified user requirements from the response from LLM. 
-    In the prompt to modify, we have asked the LLM to return the modified user requirements inside triple pipe delimiters.
-
-    Args:
-    - response (str): The response from LLM
-
-    Returns:
-    - matches (list): A list of strings with the modified user requirements
-
-    """
-    if '|||' in response:
-        pattern = r"\|\|\|([\s\S]*?)\|\|\|"
-    if '```' in response:
-        # It shouldnt have ```python in it
-        pattern = r"```([\s\S]*?)```"
-
-    matches = re.findall(pattern, response)
-    # if there are multiple matches, join by new line
-    if len(matches) > 0:
-        matches = '\n'.join(matches)
-    else:
-        matches = matches[0]
-    return matches
