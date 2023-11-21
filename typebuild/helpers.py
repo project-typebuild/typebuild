@@ -307,8 +307,8 @@ def google_search_interface_for_menu():
     This function calls the `google_search_interface` function from the `tools.google_search` module.
     It is used to provide a menu interface for performing Google searches.
     """
-    from tools.google_search import GoogleSearch
-    google_tool = GoogleSearch()
+    from tools.google_search import GoogleSearcher
+    google_tool = GoogleSearcher()
     google_tool.google_search_interface()
     return None
 
@@ -317,8 +317,8 @@ def youtube_search_interface_for_menu():
     This function serves as an interface for searching YouTube transcripts.
     It imports the 'youtube_transcript_search' module and calls its 'main' function.
     """
-    from tools.youtube_transcript_search import YoutubeSearch
-    youtube_tool = YoutubeSearch()
+    from tools.youtube_transcript_search import YoutubeSearcher
+    youtube_tool = YoutubeSearcher()
     youtube_tool.youtube_search_interface()
 
     return None

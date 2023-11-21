@@ -272,8 +272,6 @@ class YoutubeSearcher:
             new_data_model.to_parquet(data_model_file, index=False)
         return None
 
-
-
     def youtube_search_interface(self):
         search_term = st.text_input("Search YouTube")
         num_videos = st.number_input("How many videos?", min_value=1, max_value=20, value=10, step=2)
@@ -285,21 +283,23 @@ class YoutubeSearcher:
             self.save_search_results()
         return None
 
-    def tool_main(self,search_term, num_results=10):
-        """
-        Given a search term, this fetches the youtube transcripts.
-        The transcripts are saved to a parquet file and the file path is returned.
-        
-        Parameters:
-        - search_term (str): The search term.
-        - num_results (int): The number of results to return. Default is 10.
+def tool_main(search_term, num_results=5):
+    """
+    Given a search term, this fetches the youtube transcripts.
+    The transcripts are saved to a parquet file and the file path is returned.
+    
+    Parameters:
+    - search_term (str): The search term.
+    - num_results (int): The number of results to return. Default is 5.
 
-        Returns (str):
-        - Path to the parquet file where the results are saved.
-        """
+    Returns (str):
+    - Path to the parquet file where the results are saved.
+    """
 
-        # Use the class method to perform the search and save results
-        self.search_youtube(search_term=search_term, num_videos=num_results)
-        # Save the results to a parquet file
-        self.save_search_results()
-        return fetcher.file_name
+    fetcher = YoutubeSearcher()
+
+    # Use the class method to perform the search and save results
+    fetcher.search_youtube(search_term=search_term, num_videos=num_results)
+    # Save the results to a parquet file
+    fetcher.save_search_results()
+    return fetcher.file_name
