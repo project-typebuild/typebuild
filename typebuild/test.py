@@ -7,6 +7,7 @@ from agents import AgentManager, Agent
 import importlib
 import json    
 import time
+import inspect
 
 def test_main():
     # Add a test menu
@@ -112,14 +113,24 @@ def manage_tool_interaction(agent_manager, res_dict):
     It will also request a response from the LLM.
     """
     tool_name = res_dict['tool_name']
-    tool_module = importlib.import_module(f'tools.{tool_name}')
-    tool_function = getattr(tool_module, 'tool_main')
-    tool_result = tool_function(**res_dict['kwargs'])
+
+    if tool_name not in st.session_state:
+        tool_module = importlib.import_module(f'tools.{tool_name}')
+        # Get all classes in the module, using inspect module
+        classes = inspect.getmembers(tool_module, inspect.isclass)
+        # Get the class that starts with tools.
+        tool_class_name = next((t for t in classes if 'tools.' in str(t[1])), None)[0]
+        st.sidebar.info(f"Tool class name: {tool_class_name}")
+        tool_class = getattr(tool_module, tool_class_name)()
+        st.session_state[tool_name] = tool_class
+
+    tool_class = st.session_state[tool_name]
+    tool_result = tool_class.tool_main(**res_dict['kwargs'])
     st.info(tool_result)
     # Add this to the agent's messages
     agent_manager.set_user_message(tool_result)
 
-    with st.spinner("Let me study the seach results..."):
+    with st.spinner("Let me study the search results..."):
         st.session_state.ask_llm = True
         st.sidebar.warning(f"Ask llm: {st.session_state.ask_llm}\n\nAsk agent: {st.session_state.ask_agent}")
         time.sleep(2)
