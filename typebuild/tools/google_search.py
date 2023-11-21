@@ -132,20 +132,21 @@ class GoogleSearcher:
                 st.write(f"Data saved to {file_name}")
         return None
 
-    def tool_main(self, query="", num_results=1):
-        """
-        This tool performs a Google search and returns the
-        content of the results.  All results are concatenated and returned as one string.
+def tool_main(query="", num_results=1):
+    """
+    This tool performs a Google search and returns the
+    content of the results.  All results are concatenated and returned as one string.
 
-        Parameters:
-        - query (str): The query to search with.
-        - num_results (int): The number of results to return.  Default is 1.
-        
-        Returns (str):
-        - The content of the results as one string.
-        """
-        with st.spinner(f"Searching for {query}..."):
-            self.get_google_search_results(query, num_results=num_results)
-            return self.result_text
-        
+    Parameters:
+    - query (str): The query to search with.
+    - num_results (int): The number of results to return.  Default is 1.
+    
+    Returns (str):
+    - The content of the results as one string.
+    """
+    with st.spinner(f"Searching for {query}..."):
+        google_searcher = GoogleSearcher()
+        google_searcher.get_google_search_results(query, num_results=num_results)
+        return google_searcher.result_text
+    
 

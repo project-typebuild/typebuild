@@ -3,6 +3,9 @@ TODO:
 - (Vivek) Graphs for tasks, not agents
 - (Ranu) Convert tools to classes.  Each tool should have a run method & a visual method forh the UP.
     - (Ranu) Make sure that the agent knows how to use tools.
+- (Ranu) Create a menu tool and agent.  Connect the agent to current projects, views, and research projects.
+- (Ranu) Work on the LLM for reserch agent that creates the instruction first, runs samples, and then runs it on all text.
+
 - (Ranu) Create a requests tool, separate that from the google search tool.
 - (Ranu) Save messages by default, may be just save the graph.
 - (later) Allow the user to retrieve not just the main thread but also subthreads, may be with expanders.
@@ -14,6 +17,7 @@ import os
 import streamlit as st
 
 from extractors import Extractors
+from collections import namedtuple
 
 class Agent:
     # Class variable to store message history
@@ -54,8 +58,9 @@ class Agent:
         instructions += self.get_tool_defs()
 
         instructions += """You can use tools multiple times and talk to the user.  
-        When your job is done, pass it back to the agent_manager with the final message.:
-        <<<agent_manager: final_message>>>
+        When your job is done, pass it back to the orchestration with the final message.
+        It should be valid json in this format:
+        {"transfer_to_task": "orchestration", "final_message": "Your final message here"}
         """
         return instructions
 
@@ -92,6 +97,7 @@ class Agent:
         Returns a dictionary containing all the instance variables of the object.
         """
         return self.__dict__
+
 
     def get_tool_defs(self):
         """
@@ -153,10 +159,11 @@ class AgentManager(Agent):
     def __init__(self, agent_name, available_agents):
         super().__init__(agent_name)
 
+        self.available_agents = available_agents
         # TODO: Create a graph of tasks rather than a dict of agents
         # Agents who are currently in action
-        self.managed_agents = {}
-        
+        self.managed_tasks = {}
+        self.task_tuple = namedtuple('Task', ['agent_name', 'agent', 'task_name', 'task_description'])
         # Agent names and descriptions of all available agents
         # All the agents available to this manager
         
@@ -167,7 +174,7 @@ class AgentManager(Agent):
         self.current_agent = 'agent_manager'
         
 
-    def add_agent(self, agent_name):
+    def add_task(self, agent_name, task_name, task_description):
         """
         Add a new agent to the list of managed agents.
 
@@ -177,9 +184,10 @@ class AgentManager(Agent):
         Returns:
             None
         """
-        if agent_name not in self.managed_agents:
+        if task_name not in self.managed_tasks:
+            # Create an named tuple with the agent name, agent and description
             agent = Agent(agent_name)
-            self.managed_agents[agent_name] = agent
+            self.managed_tasks[task_name] = self.task_tuple(agent_name, agent, task_name, task_description)
         return None
 
     def set_available_agent_descriptions(self, available_agents):
@@ -199,7 +207,7 @@ class AgentManager(Agent):
                 self.agent_descriptions[agent_name] = description
         return None
     
-    def get_system_instruction(self, agent_name):
+    def get_system_instruction(self, task):
         """
         Add the agent name and description to the system instructions
 
@@ -209,8 +217,8 @@ class AgentManager(Agent):
         Returns:
             str: The system instruction with the agent name and description
         """
-        if agent_name in self.managed_agents:
-            instruction = self.managed_agents[agent_name].get_system_instruction()
+        if task in self.managed_tasks:
+            instruction = self.managed_tasks[task].get_system_instruction()
         else:
             instruction = self.system_instruction
             # Add tools to the instruction
@@ -220,7 +228,7 @@ class AgentManager(Agent):
                 instruction += f"{agent_name}: {description}"
         return instruction
 
-    def get_agent(self, agent_name):
+    def get_agent(self, task):
         """
         Returns the agent for the given agent_name
 
@@ -228,17 +236,17 @@ class AgentManager(Agent):
         agent_name (str): The name of the agent to retrieve.
 
         Returns:
-        agent: The agent object associated with the given agent_name. If the agent_name is not found in the managed_agents dictionary, returns self.
+        agent: The agent object associated with the given agent_name. If the agent_name is not found in the managed_tasks dictionary, returns self.
         """
-        if agent_name in self.managed_agents:
-            agent = self.managed_agents[agent_name]
+        if task in self.managed_tasks:
+            agent = self.managed_tasks[task]
         else:
             agent = self
         return agent
     
-    def remove_agent(self, agent_name):
-        if agent_name in self.managed_agents:
-            del self.managed_agents[agent_name]
+    def remove_agent(self, task):
+        if task in self.managed_tasks:
+            del self.managed_tasks[task]
 
     def set_user_message(self, message):
         """
@@ -247,14 +255,14 @@ class AgentManager(Agent):
         Args:
             message (str): The message content from the user.
         """
-        current_agent = st.session_state.ask_agent
-        if current_agent in self.managed_agents:
-            self.managed_agents[current_agent].messages.append({'role': 'user', 'content': message})
+        current_task = st.session_state.current_task
+        if current_task in self.managed_tasks:
+            self.managed_tasks[current_task].messages.append({'role': 'user', 'content': message})
         
         # Always add the user message to the agent manager
         self.messages.append({'role': 'user', 'content': message})
 
-    def set_assistant_message(self, message, agent='agent_manager'):
+    def set_assistant_message(self, message, task='orchestration'):
         """
         Adds an assistant message to the chat.
 
@@ -262,9 +270,10 @@ class AgentManager(Agent):
             message (str): The message content from the assistant.
         """
         
-        if agent in self.managed_agents:
-            self.managed_agents[agent].messages.append({'role': 'assistant', 'content': message})
+        if task in self.managed_tasks:
+            self.managed_tasks[task].agent.messages.append({'role': 'assistant', 'content': message})
         else:
+            # TODO: Check if this works.  This is not a named tuple.  
             self.messages.append({'role': 'assistant', 'content': message})
 
     def chat_input_method(self):

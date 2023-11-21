@@ -60,15 +60,24 @@ def manage_llm_interaction(agent_manager):
         res = get_llm_output(messages, model=agent.default_model)
         st.info(f"LLM output: {res}")
         time.sleep(2)
+    return res
 
+def manage_task(agent_manager, res_dict):
     # If the response is a request for a new agent, create the agent, if it does not exist
-    if "<<<" in res:
-        agent_name, instruction, res = st.session_state.extractor.extract_agent_name_and_message(res)
-        st.session_state.ask_agent = agent_name
+    if 'transfer_to_task' in res_dict:
+        agent_name = res_dict.get('agent_name', 'agent_manager')
+        task_name = res_dict.get('transfer_to_task', 'orchestration')
+        task_description = res_dict.get('task_description', 'No description provided.')
 
-        if agent_name != agent_manager.current_agent:
-            st.info(f"Changing agent from {agent_manager.current_agent} to {st.session_state.ask_agent}")
-            agent_manager.add_agent(st.session_state.ask_agent)
+        st.session_state.current_task = task_name
+
+        if task_name != agent_manager.current_task:
+            st.info(f"Changing agent from {agent_manager.current_task} to {task_name}")
+            agent_manager.add_task(
+                agent_name=agent_name, 
+                task_name=task_name, 
+                task_description=task_description
+                )
 
 
     # Agents that use tools may have to work more than once
@@ -85,23 +94,23 @@ def manage_llm_interaction(agent_manager):
         res = '\n'.join([i for i in res.split('\n') if not i.lower().strip().startswith('final response')])
         
         # TEMP: Save agent messages to session state for debugging
-        st.session_state.agent_messages = agent_manager.managed_agents[st.session_state.ask_agent].messages
+        st.session_state.agent_messages = agent_manager.managed_tasks[st.session_state.current_task].agent.messages
         
         # Get the current agent so that we can delete it
         current_agent = agent_manager.current_agent
         # Set the current agent to the agent manager
-        agent_manager.current_agent = 'agent_manager'
+        agent_manager.current_task = 'orchestration'
         # Set ask agent to agent manager
-        st.session_state.ask_agent = 'agent_manager'
-        # Delete the agent
-        agent_manager.remove_agent(current_agent)
+        st.session_state.current_task = 'orchestration'
+        # Delete the agent (We are not deleting the agent or task anymore so that we can retain the messages)
+        # agent_manager.remove_agent(current_agent)
         st.session_state.ask_llm = False
     else:
         # Set the message to the worker agent via the agent manager
         st.session_state.ask_llm = True
 
-    # Add the response to the current agent
-    agent_manager.set_assistant_message(res, agent=st.session_state.ask_agent)
+    # Add the response to the current task
+    agent_manager.set_assistant_message(res, task=st.session_state.current_task)
 
     return res
 
@@ -156,6 +165,7 @@ def chat():
         # Get the response from the llm
         res = manage_llm_interaction(agent_manager)        
         res_dict = st.session_state.extractor.extract_dict_from_response(res)
+        manage_task(agent_manager, res_dict)
         # If a tool is used, ask the llm to respond again
         if 'tool_name' in res_dict:
             manage_tool_interaction(agent_manager, res_dict)
