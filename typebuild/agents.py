@@ -171,7 +171,7 @@ class AgentManager(Agent):
         self.set_available_agent_descriptions(available_agents)
         
         # Only one agent can work at a time.  The default is the manager
-        self.current_agent = 'agent_manager'
+        self.current_task = 'orchestration'
         
 
     def add_task(self, agent_name, task_name, task_description):
@@ -218,7 +218,8 @@ class AgentManager(Agent):
             str: The system instruction with the agent name and description
         """
         if task in self.managed_tasks:
-            instruction = self.managed_tasks[task].get_system_instruction()
+            agent = self.get_agent(task)
+            instruction = agent.get_system_instruction()
         else:
             instruction = self.system_instruction
             # Add tools to the instruction
@@ -239,16 +240,15 @@ class AgentManager(Agent):
         agent: The agent object associated with the given agent_name. If the agent_name is not found in the managed_tasks dictionary, returns self.
         """
         if task in self.managed_tasks:
-            agent = self.managed_tasks[task]
+            agent = self.managed_tasks[task].agent
         else:
             agent = self
         return agent
     
-    def remove_agent(self, task):
+    def remove_task(self, task):
         if task in self.managed_tasks:
             del self.managed_tasks[task]
 
-    
     def set_user_message(self, message):
         """
         Adds a user message to the chat.
@@ -257,11 +257,10 @@ class AgentManager(Agent):
             message (str): The message content from the user.
         """
         current_task = st.session_state.current_task
-        if current_task in self.managed_tasks:
-            self.managed_tasks[current_task].messages.append({'role': 'user', 'content': message})
+        agent = self.get_agent(current_task)
         
-        # Always add the user message to the agent manager
-        self.messages.append({'role': 'user', 'content': message})
+        agent.messages.append({'role': 'user', 'content': message})
+        return None
 
     def set_assistant_message(self, message, task='orchestration'):
         """
@@ -271,11 +270,9 @@ class AgentManager(Agent):
             message (str): The message content from the assistant.
         """
         
-        if task in self.managed_tasks:
-            self.managed_tasks[task].agent.messages.append({'role': 'assistant', 'content': message})
-        else:
-            # TODO: Check if this works.  This is not a named tuple.  
-            self.messages.append({'role': 'assistant', 'content': message})
+        agent = self.get_agent(task)
+        agent.messages.append({'role': 'assistant', 'content': message})
+        return None
 
     def chat_input_method(self):
         """
