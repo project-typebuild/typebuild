@@ -67,14 +67,18 @@ def manage_llm_interaction(agent_manager):
     - The response from the LLM.
     """
     # Get messages for the LLM
-    system_instruction = agent_manager.get_system_instruction(st.session_state.current_task)
+    system_instruction = agent_manager.get_system_instruction(agent_manager.current_task)
     st.success(f"System instruction: {system_instruction}")
+    prompt = None
+    st.header(f"Current task: {agent_manager.current_task}")
     if agent_manager.current_task == 'orchestration':
         agent = agent_manager
     else:
-        agent = agent_manager.get_agent(st.session_state.current_task)
+        task = agent_manager.get_task(agent_manager.current_task)
+        agent = task.agent
+        prompt = task.prompt
 
-    messages = agent.get_messages_with_instruction(system_instruction)
+    messages = agent.get_messages_with_instruction(system_instruction, prompt=prompt)
     st.session_state.last_request = messages
 
     # Get the response from the LLM
@@ -89,15 +93,13 @@ def manage_task(agent_manager, res_dict, res):
         agent_name = res_dict.get('agent_name', 'agent_manager')
         task_name = res_dict.get('transfer_to_task', 'orchestration')
         task_description = res_dict.get('task_description', 'No description provided.')
-
-        st.session_state.current_task = task_name
         
-        if task_name != agent_manager.current_task:
+        if task_name != agent_manager.current_task and task_name != 'orchestration':
             st.info(f"Changing agent from {agent_manager.current_task} to {task_name}")
             agent_manager.add_task(
                 agent_name=agent_name, 
                 task_name=task_name, 
-                task_description=task_description
+                prompt=task_description
                 )
             
 
@@ -107,7 +109,7 @@ def manage_task(agent_manager, res_dict, res):
     # It sends a final response to the agent manager.  
     # If it is the final response, set the message to the agent manager
     # If not, set the message to the agent and ask LLM for another response
-
+    content = res
     if agent_manager.current_task == 'orchestration':
         st.session_state.ask_llm = False
     # If it is a final response from a worker agent
@@ -118,40 +120,39 @@ def manage_task(agent_manager, res_dict, res):
         agent_manager.complete_task(completed_task)
 
         # TEMP: Save agent messages to session state for debugging
-        st.session_state.agent_messages = agent_manager.managed_tasks[st.session_state.current_task].agent.messages
+        st.session_state.agent_messages = agent_manager.managed_tasks[agent_manager.current_task].agent.messages
         
         agent_manager.current_task = 'orchestration'
-        # Set ask task to orchestration
-        st.session_state.current_task = 'orchestration'
+        
         # Delete the agent (We are not deleting the agent or task anymore so that we can retain the messages)
         # agent_manager.remove_agent(current_agent)
         st.session_state.ask_llm = False
-    elif 'activeStep' in res_dict:
+    elif 'output' in res_dict:
         completed_task = agent_manager.current_task
         agent_manager.complete_task(completed_task)
         agent_manager.current_task = 'orchestration'
-        st.session_state.current_task = 'orchestration'
         st.session_state.ask_llm = False
+        content = res_dict['output']
     else:
         # Set the message to the worker agent via the agent manager
+        st.write(res_dict)
         st.session_state.ask_llm = True
 
 
     # If the current task is still orchestration, check for next task, if any.
-    if st.session_state.current_task == 'orchestration':
+    if agent_manager.current_task == 'orchestration':
         # Get the next task
         next_task = agent_manager.get_next_task()
         # If there is a next task, set the current task to the next task
         if next_task is not None:
             st.balloons()
             st.header(f"Next task is: {next_task}")
-            st.sidebar.subheader(f"Ask llm: {st.session_state.ask_llm}\n\nCurrent task: {st.session_state.current_task}")
-            time.sleep(2)
+            st.sidebar.subheader(f"Ask llm: {st.session_state.ask_llm}\n\nCurrent task: {agent_manager.current_task}")
             st.session_state.ask_llm = True
         
 
     # Add the response to the current task
-    agent_manager.set_assistant_message(res, task=st.session_state.current_task)
+    agent_manager.set_assistant_message(content, task=agent_manager.current_task)
 
     return res
 
@@ -180,7 +181,7 @@ def manage_tool_interaction(agent_manager, res_dict):
 
     with st.spinner("Let me study the seach results..."):
         st.session_state.ask_llm = True
-        st.sidebar.warning(f"Ask llm: {st.session_state.ask_llm}\n\nCurrent task: {st.session_state.current_task}")
+        st.sidebar.warning(f"Ask llm: {st.session_state.ask_llm}\n\nCurrent task: {agent_manager.current_task}")
         time.sleep(2)
     return None
 
@@ -192,13 +193,14 @@ def add_next_tasks(agent_manager):
     agent_manager.add_task(
         agent_name='haiku_agent', 
         task_name='cricket_haiku', 
-        task_description='Write a haiku about crickets'
+        prompt='Write a haiku about crickets'
         )
     agent_manager.add_task(
         agent_name='haiku_agent', 
         task_name='haiku_christmas', 
-        task_description='Write a haiku about Christmas'
+        prompt='Write a haiku about Christmas'
         )
+    
     return None
 
 # TODO: MAKE THIS A CHAT FRAMEWORK CLASS
@@ -208,13 +210,14 @@ def chat():
     add_agent_manager_to_session_state()
     agent_manager = st.session_state.agent_manager
     
-    add_next_tasks(agent_manager)
+    # add_next_tasks(agent_manager)
+
     # Create the chat input and display
     st.sidebar.success(f"Scheduled tasks: {agent_manager.scheduled_tasks}")
     agent_manager.chat_input_method()    
     display_messages(agent_manager.messages, expanded=True)
 
-    st.sidebar.info(f"Ask llm: {st.session_state.ask_llm}\n\nCurrent task: {st.session_state.current_task}")
+    st.sidebar.info(f"Ask llm: {st.session_state.ask_llm}\n\nCurrent task: {agent_manager.current_task}")
 
     # ask_llm took can be set to true by agents or by tools
     # that add to the message queue without human input
@@ -224,6 +227,8 @@ def chat():
         res = manage_llm_interaction(agent_manager)        
         # Extract the response dictionary
         res_dict = st.session_state.extractor.extract_dict_from_response(res)
+        st.write(res_dict)
+        st.code(res)
         manage_task(agent_manager, res_dict, res)
         # If a tool is used, ask the llm to respond again
         if 'tool_name' in res_dict:

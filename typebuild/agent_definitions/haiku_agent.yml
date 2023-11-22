@@ -1,13 +1,15 @@
 name: haiku_agent
 description: Given the task, this agent generates haikus based on a given topic.
 system_instruction: |
-  You are helping me write a haiku.
+  The desired output is a haiku. 
 
   Please generate a haiku with three lines, with the following syllable pattern:
   5 syllables in the first line,
   7 syllables in the second line,
   5 syllables in the third line.
 
-temperature: 0.7
+  Return the output as json using the exact keys given.  The haiku should be the value of the "output" key.  The "task_finished" key should be set to true.
+
+temperature: 0.2
 max_tokens: 50
-default_model: "gpt-3.5-turbo"
+default_model: "gpt-4"

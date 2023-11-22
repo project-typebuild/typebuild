@@ -31,7 +31,7 @@ class Agent:
         return None
    
 
-    def get_messages_with_instruction(self, system_instruction):
+    def get_messages_with_instruction(self, system_instruction, prompt=None):
         """
         Returns a copy of the messages list with a new system instruction message added at the beginning.
 
@@ -43,6 +43,8 @@ class Agent:
         """
         messages = self.messages.copy()
         messages.insert(0, {'role': 'system', 'content': system_instruction})
+        if prompt:
+            messages.append({'role': 'user', 'content': prompt})
         return messages
 
     def add_context_to_system_instruction(self):
@@ -81,9 +83,11 @@ class Agent:
         instruction += self.get_tool_defs()
 
         instruction += """You can use tools multiple times and talk to the user.  
-        When your job is done, pass it back to the orchestration with the final message.
-        It should be valid json in this format:
-        {"transfer_to_task": "orchestration", "final_message": "Your final message here"}
+        When your job is done, pass it back to the orchestration with the final output.
+        Final output should only be valid JSON in this format:
+        {"transfer_to_task": "orchestration", "output": output, "task_finished": true}
+
+        You must return the result in the format above and the keys have to be verbatim. 
         """
         return instruction
 
@@ -190,7 +194,7 @@ class AgentManager(Agent):
         # Only one agent can work at a time.  The default is the manager
         self.current_task = 'orchestration'
         self.managed_tasks = {}
-        self.task_tuple = namedtuple('Task', ['agent_name', 'agent', 'task_name', 'task_description'])
+        self.task_tuple = namedtuple('Task', ['agent_name', 'agent', 'task_name', 'prompt'])
         # Agent names and descriptions of all available agents
         # All the agents available to this manager
         
@@ -199,7 +203,7 @@ class AgentManager(Agent):
         
         
 
-    def add_task(self, agent_name, task_name, task_description):
+    def add_task(self, agent_name, task_name, prompt):
         """
         Add a new agent to the list of managed agents.
 
@@ -212,10 +216,12 @@ class AgentManager(Agent):
         if task_name not in self.managed_tasks:
             # Create an named tuple with the agent name, agent and description
             agent = Agent(agent_name)
-            self.managed_tasks[task_name] = self.task_tuple(agent_name, agent, task_name, task_description)
+            self.managed_tasks[task_name] = self.task_tuple(agent_name, agent, task_name, prompt)
             # Add the task name to scheduled tasks
             self.scheduled_tasks.append(task_name)
             self.current_task = task_name
+            
+            
         return None
 
     def complete_task(self, task_name):
@@ -288,7 +294,13 @@ class AgentManager(Agent):
                 instruction += f"{agent_name}: {description}"
         return instruction
 
-    def get_agent(self, task):
+    def get_agent(self, task_name):
+        if task_name == 'orchestration':
+            return self
+        else:
+            return self.managed_tasks[task_name].agent
+
+    def get_task(self, task_name):
         """
         Returns the agent for the given agent_name
 
@@ -298,11 +310,11 @@ class AgentManager(Agent):
         Returns:
         agent: The agent object associated with the given agent_name. If the agent_name is not found in the managed_tasks dictionary, returns self.
         """
-        if task in self.managed_tasks:
-            agent = self.managed_tasks[task].agent
+        if task_name in self.managed_tasks:
+            task = self.managed_tasks[task_name]
+            return task
         else:
-            agent = self
-        return agent
+            return None
     
     def remove_task(self, task):
         if task in self.managed_tasks:
