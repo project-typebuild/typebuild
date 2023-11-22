@@ -60,13 +60,13 @@ class Agent:
         # Take the data_for_system_instruction and replace the variables in the system_instruction
         if data_for_system_instruction:
             for key, value in data_for_system_instruction.items():
-                instructions = self.system_instruction
-                instructions = instructions.replace(f"{{{key}}}", value) # We are using triple curly braces to avoid conflicts with the f-strings
+                instruction = self.system_instruction
+                instruction = instruction.replace(f"{{{key}}}", value) # We are using triple curly braces to avoid conflicts with the f-strings
         else:
-            instructions = self.system_instruction
+            instruction = self.system_instruction
 
         
-        return instructions
+        return instruction
 
     def get_system_instruction(self):
         """
@@ -77,16 +77,16 @@ class Agent:
         Returns:
             str: The system instruction.
         """
-        instructions = self.add_context_to_system_instruction()
+        instruction = self.add_context_to_system_instruction()
         # Add tools to the instruction
-        instructions += self.get_tool_defs()
+        instruction += self.get_tool_defs()
 
-        instructions += """You can use tools multiple times and talk to the user.  
+        instruction += """You can use tools multiple times and talk to the user.  
         When your job is done, pass it back to the orchestration with the final message.
         It should be valid json in this format:
         {"transfer_to_task": "orchestration", "final_message": "Your final message here"}
         """
-        return instructions
+        return instruction
 
     
     def parse_instructions(self, agent_name):
@@ -264,7 +264,7 @@ class AgentManager(Agent):
             agent = self.get_agent(task)
             instruction = agent.get_system_instruction()
         else:
-            instructions = self.add_context_to_system_instruction()
+            instruction = self.add_context_to_system_instruction()
             # Add tools to the instruction
             instruction += self.get_tool_defs()
             instruction += "THE FOLLOWING IS A LIST OF AGENTS AVAILABLE.  DO NOT MAKE UP OTHER AGENTS.  CALL THEM BY THEIR NAME VERBATIM:\n"
