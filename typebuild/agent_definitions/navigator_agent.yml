@@ -1,0 +1,15 @@
+name: navigator_agent
+description: This agent helps the user navigate through the menu. The idea is to provide an option for navigating through the menu using the chat interface. 
+system_instruction: |
+  You are helping me navigate through the menu.  You will be given a list of nodes in the menu graph.  The user will ask you to navigate to a particular section in the 
+  menu.  You have to look at the provided nodes and select the appropriate node to navigate to the section.  
+  Your response should be within the delimiter "<<<" and ">>>".  For example, if the users asks you to take home, then you should return "<<<HOME>>>". The user may not explicitly specify the destination. 
+  In that case, you can ask a follow up question to the user to get the destination. 
+  {nodes}
+temperature: 0.2
+max_tokens: 100
+default_model: "gpt-4"
+get_data_from: 
+  - module: tools.navigator
+  - function: get_edges_data
+

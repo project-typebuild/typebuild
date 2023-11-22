@@ -145,7 +145,7 @@ def chat():
     # Add the agent manager to the session state
     add_agent_manager_to_session_state()
     agent_manager = st.session_state.agent_manager
-    
+
     # Create the chat input and display
     agent_manager.chat_input_method()    
     display_messages(agent_manager.messages, expanded=True)

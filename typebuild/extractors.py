@@ -145,6 +145,27 @@ class Extractors:
             rest_of_response = response
         return agent_name, instruction, rest_of_response
 
+    def extract_destination_edge(self, response):
+        """
+        Extracts the destination edge from the response.
+
+        The destination edge is the edge that the agent manager should traverse to
+        after the agent is done with the current edge.
+
+        Args:
+            response (str): The response from the LLM.
+
+        Returns:
+            str: The destination edge.
+        """
+        pattern = r"<<<([\s\S]*?)>>>"
+        matches = re.findall(pattern, response)
+        if len(matches) == 1:
+            destination_edge = matches[0].strip()
+        else:
+            destination_edge = None
+        return destination_edge
+
     def extract_message_to_agent(self, response):
         """
         Extracts the message to the agent from the response.

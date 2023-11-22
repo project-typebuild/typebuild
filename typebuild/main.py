@@ -16,7 +16,7 @@ from helpers import starter_code, set_or_get_llm_keys, config_project
 # Starter code has to run early.  Do not move.
 starter_code()
 
-from test import test_main
+from chat import chat
 from graphical_menu import GraphicalMenu
 from tb_settings import settings_main
 from function_management import run_current_functions
@@ -46,7 +46,8 @@ if 'agent_messages' in st.session_state:
     if st.sidebar.checkbox('Show agent messages'):
         st.success(st.session_state.agent_messages)
 
-test_main()
+# test_main()
+
 
 # menu options down below are a list of lists, 
 # the first element of which is the parent node, the second element is the node name, 
@@ -60,3 +61,14 @@ menu_bar_options = [
 menu.add_edges(menu_bar_options) # add the edges to the menu in the GraphicalMenu class
 menu.create_menu() # create the meu bar
 run_current_functions() # run the current functions in the session state
+
+
+chat() # chat interface
+
+# Naviagate through the menu using the chat interface
+
+from tools.navigator import get_nodes_data
+nodes = get_nodes_data()
+st.code(f'Nodes: {nodes}')
+
+st.sidebar.write(f'Active Step: {st.session_state.activeStep}')
