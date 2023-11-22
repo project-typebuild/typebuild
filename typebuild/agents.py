@@ -64,7 +64,6 @@ class Agent:
                 instruction = instruction.replace(f"{{{key}}}", value) # We are using triple curly braces to avoid conflicts with the f-strings
         else:
             instruction = self.system_instruction
-
         
         return instruction
 

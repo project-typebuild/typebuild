@@ -68,13 +68,9 @@ def manage_llm_interaction(agent_manager):
     """
     # Get messages for the LLM
     system_instruction = agent_manager.get_system_instruction(st.session_state.current_task)
+    st.success(f"System instruction: {system_instruction}")
     if st.session_state.current_task == 'orchestration':
-        # Check if there are new tasks
-        next_task = agent_manager.get_next_task()
-        if next_task:
-            agent = agent_manager.get_agent(next_task)
-        else:
-            agent = agent_manager
+        agent = agent_manager
     else:
         agent = agent_manager.get_agent(st.session_state.current_task)
     messages = agent.get_messages_with_instruction(system_instruction)
@@ -121,12 +117,6 @@ def manage_task(agent_manager, res_dict, res):
         # TEMP: Save agent messages to session state for debugging
         st.session_state.agent_messages = agent_manager.managed_tasks[st.session_state.current_task].agent.messages
         
-        # TODO: REMOVE THE COMMENTED LINES BELOW
-        # Get the current agent so that we can delete it
-        # current_agent = agent_manager.current_agent
-        # Set the current agent to the agent manager
-        
-        
         agent_manager.current_task = 'orchestration'
         # Set ask task to orchestration
         st.session_state.current_task = 'orchestration'
@@ -136,6 +126,18 @@ def manage_task(agent_manager, res_dict, res):
     else:
         # Set the message to the worker agent via the agent manager
         st.session_state.ask_llm = True
+
+
+    # If the current task is still orchestration, check for next task, if any.
+    if st.session_state.current_task == 'orchestration':
+        # Get the next task
+        next_task = agent_manager.get_next_task()
+        # If there is a next task, set the current task to the next task
+        if next_task:
+            
+            st.session_state.ask_llm = True
+            st.sidebar.warning(f"Ask llm: {st.session_state.ask_llm}\n\nCurrent task: {st.session_state.current_task}")
+        
 
     # Add the response to the current task
     agent_manager.set_assistant_message(res, task=st.session_state.current_task)
@@ -164,13 +166,30 @@ def manage_tool_interaction(agent_manager, res_dict):
         time.sleep(2)
     return None
 
+def add_next_tasks(agent_manager):
+    """
+    Adds the next tasks to the agent manager.
+    """
+    # Create new search task
+    agent_manager.add_task(
+        agent_name='search_agent', 
+        task_name='movie_releases_thanksgiving', 
+        task_description='What movies are being released in the US on Thanksgiving?'
+        )
+    agent_manager.add_task(
+        agent_name='search_agent', 
+        task_name='movie_releases_christmas', 
+        task_description='What movies are being released in the US on Christmas?'
+        )
+    return None
+
 # TODO: MAKE THIS A CHAT FRAMEWORK CLASS
 def chat():
 
     # Add the agent manager to the session state
     add_agent_manager_to_session_state()
     agent_manager = st.session_state.agent_manager
-
+    add_next_tasks(agent_manager)
     # Create the chat input and display
     agent_manager.chat_input_method()    
     display_messages(agent_manager.messages, expanded=True)
