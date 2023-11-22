@@ -161,7 +161,9 @@ class AgentManager(Agent):
 
         self.available_agents = available_agents
         # TODO: Create a graph of tasks rather than a dict of agents
-        # Agents who are currently in action
+        
+        self.completed_tasks = []
+        self.scheduled_tasks = []
         self.managed_tasks = {}
         self.task_tuple = namedtuple('Task', ['agent_name', 'agent', 'task_name', 'task_description'])
         # Agent names and descriptions of all available agents
@@ -188,6 +190,23 @@ class AgentManager(Agent):
             # Create an named tuple with the agent name, agent and description
             agent = Agent(agent_name)
             self.managed_tasks[task_name] = self.task_tuple(agent_name, agent, task_name, task_description)
+            # Add the task name to scheduled tasks
+            self.scheduled_tasks.append(task_name)
+        return None
+
+    def complete_task(self, task_name):
+        """
+        Mark a task as completed.
+
+        Args:
+            task_name (str): The name of the task to be marked as completed.
+
+        Returns:
+            None
+        """
+        if task_name in self.scheduled_tasks:
+            self.scheduled_tasks.remove(task_name)
+        self.completed_tasks.append(task_name)
         return None
 
     def set_available_agent_descriptions(self, available_agents):
