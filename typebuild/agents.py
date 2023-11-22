@@ -44,6 +44,30 @@ class Agent:
         messages.insert(0, {'role': 'system', 'content': system_instruction})
         return messages
 
+    def add_context_to_system_instruction(self):
+
+        if 'get_data' in self.__dict__:
+            module_name = self.get_data.get('module_name', '')
+            function_name = self.get_data.get('function_name', '')
+            # import the function from the module and run it
+            if module_name and function_name:
+                module = __import__(module_name)
+                function = getattr(module, function_name)
+                data_for_system_instruction = function()
+        else:
+            data_for_system_instruction = None
+
+        # Take the data_for_system_instruction and replace the variables in the system_instruction
+        if data_for_system_instruction:
+            for key, value in data_for_system_instruction.items():
+                instructions = self.system_instruction
+                instructions = instructions.replace(f"{{{key}}}", value) # We are using triple curly braces to avoid conflicts with the f-strings
+        else:
+            instructions = self.system_instruction
+
+        
+        return instructions
+
     def get_system_instruction(self):
         """
         Returns the system instruction for the agent.
@@ -53,7 +77,7 @@ class Agent:
         Returns:
             str: The system instruction.
         """
-        instructions = self.system_instruction
+        instructions = self.add_context_to_system_instruction()
         # Add tools to the instruction
         instructions += self.get_tool_defs()
 
@@ -221,7 +245,7 @@ class AgentManager(Agent):
             agent = self.get_agent(task)
             instruction = agent.get_system_instruction()
         else:
-            instruction = self.system_instruction
+            instructions = self.add_context_to_system_instruction()
             # Add tools to the instruction
             instruction += self.get_tool_defs()
             instruction += "THE FOLLOWING IS A LIST OF AGENTS AVAILABLE.  DO NOT MAKE UP OTHER AGENTS.  CALL THEM BY THEIR NAME VERBATIM:\n"
