@@ -1,5 +1,4 @@
 import streamlit as st
-from chat_framework import display_messages
 from plugins.llms import get_llm_output
 import os
 from glob import glob
@@ -8,6 +7,28 @@ import importlib
 import json    
 import time
 import inspect
+
+def display_messages(messages, expanded=True):
+    """
+    Displays the messages in the chat.
+
+    Utilizes Streamlit's expander and chat_message for displaying messages.
+    This method iterates through the messages list and displays each one based
+    on the role (user, assistant, system).
+
+    Returns:
+        None
+    """
+    if messages:
+        with st.expander("View chat", expanded=expanded):
+            for i, msg in enumerate(messages):
+                if msg['role'] in ['user', 'assistant']:
+                    the_content = msg['content']
+                    with st.chat_message(msg['role']):
+                        st.markdown(the_content)
+    return None
+
+
 
 def test_main():
     # Add a test menu
@@ -47,9 +68,13 @@ def manage_llm_interaction(agent_manager):
     """
     # Get messages for the LLM
     system_instruction = agent_manager.get_system_instruction(st.session_state.current_task)
-    # TODO: The agent has to be in the session state.  Just access from the manager.
     if st.session_state.current_task == 'orchestration':
-        agent = agent_manager
+        # Check if there are new tasks
+        next_task = agent_manager.get_next_task()
+        if next_task:
+            agent = agent_manager.get_agent(next_task)
+        else:
+            agent = agent_manager
     else:
         agent = agent_manager.get_agent(st.session_state.current_task)
     messages = agent.get_messages_with_instruction(system_instruction)

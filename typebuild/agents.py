@@ -188,6 +188,8 @@ class AgentManager(Agent):
         
         self.completed_tasks = []
         self.scheduled_tasks = []
+        # Only one agent can work at a time.  The default is the manager
+        self.current_task = 'orchestration'
         self.managed_tasks = {}
         self.task_tuple = namedtuple('Task', ['agent_name', 'agent', 'task_name', 'task_description'])
         # Agent names and descriptions of all available agents
@@ -196,8 +198,6 @@ class AgentManager(Agent):
         self.agent_descriptions = {}
         self.set_available_agent_descriptions(available_agents)
         
-        # Only one agent can work at a time.  The default is the manager
-        self.current_task = 'orchestration'
         
 
     def add_task(self, agent_name, task_name, task_description):
@@ -232,6 +232,21 @@ class AgentManager(Agent):
             self.scheduled_tasks.remove(task_name)
         self.completed_tasks.append(task_name)
         return None
+
+    def get_next_task(self):
+        """
+        Returns the next task to be completed
+        and sets the current task.
+
+        Returns:
+            str: The name of the next task to be completed.
+        """
+        if self.scheduled_tasks:
+            self.current_task = self.scheduled_tasks[0]
+            st.session_state.current_task = self.current_task
+            return self.scheduled_tasks[0]
+        else:
+            return None
 
     def set_available_agent_descriptions(self, available_agents):
         """
