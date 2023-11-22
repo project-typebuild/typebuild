@@ -69,7 +69,7 @@ def manage_llm_interaction(agent_manager):
     # Get messages for the LLM
     system_instruction = agent_manager.get_system_instruction(st.session_state.current_task)
     st.success(f"System instruction: {system_instruction}")
-    if st.session_state.current_task == 'orchestration':
+    if agent_manager.current_task == 'orchestration':
         agent = agent_manager
     else:
         agent = agent_manager.get_agent(st.session_state.current_task)
@@ -81,7 +81,6 @@ def manage_llm_interaction(agent_manager):
     with st.spinner("Getting response from LLM..."):      
         res = get_llm_output(messages, model=agent.default_model)
         st.info(f"LLM output: {res}")
-        time.sleep(2)
     return res
 
 def manage_task(agent_manager, res_dict, res):
@@ -92,7 +91,7 @@ def manage_task(agent_manager, res_dict, res):
         task_description = res_dict.get('task_description', 'No description provided.')
 
         st.session_state.current_task = task_name
-
+        
         if task_name != agent_manager.current_task:
             st.info(f"Changing agent from {agent_manager.current_task} to {task_name}")
             agent_manager.add_task(
@@ -100,6 +99,7 @@ def manage_task(agent_manager, res_dict, res):
                 task_name=task_name, 
                 task_description=task_description
                 )
+            
 
 
     # Agents that use tools may have to work more than once
@@ -108,13 +108,15 @@ def manage_task(agent_manager, res_dict, res):
     # If it is the final response, set the message to the agent manager
     # If not, set the message to the agent and ask LLM for another response
 
-    if st.session_state.current_task == 'orchestration':
+    if agent_manager.current_task == 'orchestration':
         st.session_state.ask_llm = False
     # If it is a final response from a worker agent
     elif 'final response' in res.lower():
         # Remove the line with the phrase "final response"
         res = '\n'.join([i for i in res.split('\n') if not i.lower().strip().startswith('final response')])
-        
+        completed_task = agent_manager.current_task
+        agent_manager.complete_task(completed_task)
+
         # TEMP: Save agent messages to session state for debugging
         st.session_state.agent_messages = agent_manager.managed_tasks[st.session_state.current_task].agent.messages
         
@@ -125,6 +127,10 @@ def manage_task(agent_manager, res_dict, res):
         # agent_manager.remove_agent(current_agent)
         st.session_state.ask_llm = False
     elif 'activeStep' in res_dict:
+        completed_task = agent_manager.current_task
+        agent_manager.complete_task(completed_task)
+        agent_manager.current_task = 'orchestration'
+        st.session_state.current_task = 'orchestration'
         st.session_state.ask_llm = False
     else:
         # Set the message to the worker agent via the agent manager
@@ -136,10 +142,12 @@ def manage_task(agent_manager, res_dict, res):
         # Get the next task
         next_task = agent_manager.get_next_task()
         # If there is a next task, set the current task to the next task
-        if next_task:
-            
+        if next_task is not None:
+            st.balloons()
+            st.header(f"Next task is: {next_task}")
+            st.sidebar.subheader(f"Ask llm: {st.session_state.ask_llm}\n\nCurrent task: {st.session_state.current_task}")
+            time.sleep(2)
             st.session_state.ask_llm = True
-            st.sidebar.warning(f"Ask llm: {st.session_state.ask_llm}\n\nCurrent task: {st.session_state.current_task}")
         
 
     # Add the response to the current task
@@ -182,14 +190,14 @@ def add_next_tasks(agent_manager):
     """
     # Create new search task
     agent_manager.add_task(
-        agent_name='search_agent', 
-        task_name='movie_releases_thanksgiving', 
-        task_description='What movies are being released in the US on Thanksgiving?'
+        agent_name='haiku_agent', 
+        task_name='cricket_haiku', 
+        task_description='Write a haiku about crickets'
         )
     agent_manager.add_task(
-        agent_name='search_agent', 
-        task_name='movie_releases_christmas', 
-        task_description='What movies are being released in the US on Christmas?'
+        agent_name='haiku_agent', 
+        task_name='haiku_christmas', 
+        task_description='Write a haiku about Christmas'
         )
     return None
 
@@ -199,8 +207,10 @@ def chat():
     # Add the agent manager to the session state
     add_agent_manager_to_session_state()
     agent_manager = st.session_state.agent_manager
+    
     add_next_tasks(agent_manager)
     # Create the chat input and display
+    st.sidebar.success(f"Scheduled tasks: {agent_manager.scheduled_tasks}")
     agent_manager.chat_input_method()    
     display_messages(agent_manager.messages, expanded=True)
 

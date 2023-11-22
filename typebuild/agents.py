@@ -215,6 +215,7 @@ class AgentManager(Agent):
             self.managed_tasks[task_name] = self.task_tuple(agent_name, agent, task_name, task_description)
             # Add the task name to scheduled tasks
             self.scheduled_tasks.append(task_name)
+            self.current_task = task_name
         return None
 
     def complete_task(self, task_name):
@@ -227,9 +228,10 @@ class AgentManager(Agent):
         Returns:
             None
         """
-        if task_name in self.scheduled_tasks:
-            self.scheduled_tasks.remove(task_name)
-        self.completed_tasks.append(task_name)
+        if len(self.scheduled_tasks) > 0:
+            removed = self.scheduled_tasks.pop(0)
+            self.completed_tasks.append(removed)
+        
         return None
 
     def get_next_task(self):
@@ -240,7 +242,7 @@ class AgentManager(Agent):
         Returns:
             str: The name of the next task to be completed.
         """
-        if self.scheduled_tasks:
+        if len(self.scheduled_tasks) > 0:
             self.current_task = self.scheduled_tasks[0]
             st.session_state.current_task = self.current_task
             return self.scheduled_tasks[0]
