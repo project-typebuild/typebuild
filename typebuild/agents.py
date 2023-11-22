@@ -15,6 +15,7 @@ TODO:
 import yaml
 import os
 import streamlit as st
+import importlib
 
 from extractors import Extractors
 from collections import namedtuple
@@ -45,15 +46,14 @@ class Agent:
         return messages
 
     def add_context_to_system_instruction(self):
-
-        if 'get_data' in self.__dict__:
-            module_name = self.get_data.get('module_name', '')
-            function_name = self.get_data.get('function_name', '')
+        
+        if hasattr(self, 'get_data_from'):
+            module_name = self.get_data_from.get('module_name', '')
+            function_name = self.get_data_from.get('function_name', '')
             # import the function from the module and run it
-            if module_name and function_name:
-                module = __import__(module_name)
-                function = getattr(module, function_name)
-                data_for_system_instruction = function()
+            tool_module = importlib.import_module(module_name)
+            tool_function = getattr(tool_module, function_name)
+            data_for_system_instruction = tool_function()
         else:
             data_for_system_instruction = None
 

@@ -67,8 +67,8 @@ chat() # chat interface
 
 # Naviagate through the menu using the chat interface
 
-from tools.navigator import get_nodes_data
-nodes = get_nodes_data()
-st.code(f'Nodes: {nodes}')
+from tools.navigator import get_available_destinations
+nodes = get_available_destinations()
+# st.json(f'{nodes}')
 
 st.sidebar.write(f'Active Step: {st.session_state.activeStep}')

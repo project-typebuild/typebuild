@@ -90,7 +90,6 @@ class GraphicalMenu:
 
             # Add the edge to the graph with the function name and module name as properties
             if node_1 not in G.nodes:
-                st.sidebar.error(f'node_1: {node_1} node_name {edge[1]} func_name {edge[2]} module_name {source}')
                 G.add_node(node_1, node_name=edge[1], func_name=edge[2], module_name=source)
             G.add_edge(node_0, node_1)
 
