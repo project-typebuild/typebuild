@@ -77,6 +77,7 @@ def manage_llm_interaction(agent_manager):
             agent = agent_manager
     else:
         agent = agent_manager.get_agent(st.session_state.current_task)
+
     messages = agent.get_messages_with_instruction(system_instruction)
     st.session_state.last_request = messages
 
@@ -133,6 +134,8 @@ def manage_task(agent_manager, res_dict, res):
         # Delete the agent (We are not deleting the agent or task anymore so that we can retain the messages)
         # agent_manager.remove_agent(current_agent)
         st.session_state.ask_llm = False
+    elif 'activeStep' in res_dict:
+        st.session_state.ask_llm = False
     else:
         # Set the message to the worker agent via the agent manager
         st.session_state.ask_llm = True
@@ -153,7 +156,14 @@ def manage_tool_interaction(agent_manager, res_dict):
     tool_name = res_dict['tool_name']
     tool_module = importlib.import_module(f'tools.{tool_name}')
     tool_function = getattr(tool_module, 'tool_main')
-    tool_result = tool_function(**res_dict['kwargs'])
+
+    # Get the tool arguments
+    tool_args = inspect.getfullargspec(tool_function).args
+
+    # select the arguments that are in the res_dict and pass them to the tool
+    kwargs = {k: v for k, v in res_dict.items() if k in tool_args}
+
+    tool_result = tool_function(**kwargs)
     st.info(tool_result)
     # Add this to the agent's messages
     agent_manager.set_user_message(tool_result)
@@ -183,6 +193,7 @@ def chat():
     if st.session_state.ask_llm:
         # Get the response from the llm
         res = manage_llm_interaction(agent_manager)        
+        # Extract the response dictionary
         res_dict = st.session_state.extractor.extract_dict_from_response(res)
         manage_task(agent_manager, res_dict, res)
         # If a tool is used, ask the llm to respond again
