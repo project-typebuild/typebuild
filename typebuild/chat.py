@@ -70,13 +70,19 @@ def manage_llm_interaction(agent_manager):
     system_instruction = agent_manager.get_system_instruction(agent_manager.current_task)
     st.success(f"System instruction: {system_instruction}")
     prompt = None
-    st.header(f"Current task: {agent_manager.current_task}")
     if agent_manager.current_task == 'orchestration':
         agent = agent_manager
     else:
         task = agent_manager.get_task(agent_manager.current_task)
         agent = task.agent
-        prompt = task.prompt
+        task_name = task.task_name
+        status = task.status
+        if status == 'just_started':
+            prompt = task.prompt
+            agent_manager.set_task_status(task_name, 'current_task')
+            prompt = task.prompt
+        else:
+            prompt = None
 
     messages = agent.get_messages_with_instruction(system_instruction, prompt=prompt)
     st.session_state.last_request = messages
@@ -103,7 +109,6 @@ def manage_task(agent_manager, res_dict, res):
                 )
             
 
-
     # Agents that use tools may have to work more than once
     # with the tool to get the desired result.  When the agent is done
     # It sends a final response to the agent manager.  
@@ -127,17 +132,25 @@ def manage_task(agent_manager, res_dict, res):
         # Delete the agent (We are not deleting the agent or task anymore so that we can retain the messages)
         # agent_manager.remove_agent(current_agent)
         st.session_state.ask_llm = False
-    elif 'output' in res_dict:
+    elif res_dict.get('task_finished', False):
         completed_task = agent_manager.current_task
         agent_manager.complete_task(completed_task)
         agent_manager.current_task = 'orchestration'
         st.session_state.ask_llm = False
-        content = res_dict['output']
+    elif res_dict.get('ask_human', False):
+        # Set the message to the worker agent via the agent manager
+        st.session_state.ask_llm = False
     else:
         # Set the message to the worker agent via the agent manager
-        st.write(res_dict)
         st.session_state.ask_llm = True
+      
 
+    # Add the response to the current task
+    with st.spinner("# Adding response messages..."):
+        content = res_dict.get('output', res)
+
+        st.error(f"**{agent_manager.current_task}**: {content}")
+        agent_manager.set_assistant_message(content, task=agent_manager.current_task)
 
     # If the current task is still orchestration, check for next task, if any.
     if agent_manager.current_task == 'orchestration':
@@ -146,13 +159,15 @@ def manage_task(agent_manager, res_dict, res):
         # If there is a next task, set the current task to the next task
         if next_task is not None:
             st.balloons()
-            st.header(f"Next task is: {next_task}")
+            st.header(f"Switching to task: {next_task}")
             st.sidebar.subheader(f"Ask llm: {st.session_state.ask_llm}\n\nCurrent task: {agent_manager.current_task}")
             st.session_state.ask_llm = True
-        
+            time.sleep(2)
 
-    # Add the response to the current task
-    agent_manager.set_assistant_message(content, task=agent_manager.current_task)
+
+    # If ask_human is true in the response, set the ask_llm to false
+    if res_dict.get('ask_human', False):
+        st.session_state.ask_llm = False
 
     return res
 
@@ -175,7 +190,6 @@ def manage_tool_interaction(agent_manager, res_dict):
     kwargs = {k: v for k, v in res_dict.items() if k in tool_args}
 
     tool_result = tool_function(**kwargs)
-    st.info(tool_result)
     # Add this to the agent's messages
     agent_manager.set_user_message(tool_result)
 
@@ -189,17 +203,25 @@ def add_next_tasks(agent_manager):
     """
     Adds the next tasks to the agent manager.
     """
-    # Create new search task
-    agent_manager.add_task(
-        agent_name='haiku_agent', 
-        task_name='cricket_haiku', 
-        prompt='Write a haiku about crickets'
-        )
-    agent_manager.add_task(
-        agent_name='haiku_agent', 
-        task_name='haiku_christmas', 
-        prompt='Write a haiku about Christmas'
-        )
+    tasks_to_add = ['cricket_haiku', 'haiku_christmas']
+    # Tasks not in managed tasks
+    tasks_to_add = [i for i in tasks_to_add if i not in agent_manager.managed_tasks]
+    if tasks_to_add:
+        st.info("There are new tasks to add.  Click the button below to add them.")
+        if st.button("Add new tasks"):
+            # Create new search task
+            agent_manager.add_task(
+                agent_name='haiku_agent', 
+                task_name='cricket_haiku', 
+                prompt='Write a haiku about crickets'
+                )
+            agent_manager.add_task(
+                agent_name='haiku_agent', 
+                task_name='haiku_christmas', 
+                prompt='Write a haiku about Christmas'
+                )
+            # Set ask llm to true
+            st.session_state.ask_llm = True
     
     return None
 
@@ -209,13 +231,14 @@ def chat():
     # Add the agent manager to the session state
     add_agent_manager_to_session_state()
     agent_manager = st.session_state.agent_manager
-    
-    # add_next_tasks(agent_manager)
+     
+    add_next_tasks(agent_manager)
 
     # Create the chat input and display
     st.sidebar.success(f"Scheduled tasks: {agent_manager.scheduled_tasks}")
     agent_manager.chat_input_method()    
-    display_messages(agent_manager.messages, expanded=True)
+    messages = agent_manager.get_messages()    
+    display_messages(messages, expanded=True)
 
     st.sidebar.info(f"Ask llm: {st.session_state.ask_llm}\n\nCurrent task: {agent_manager.current_task}")
 
@@ -229,11 +252,12 @@ def chat():
         res_dict = st.session_state.extractor.extract_dict_from_response(res)
         st.write(res_dict)
         st.code(res)
+        time.sleep(1)
         manage_task(agent_manager, res_dict, res)
         # If a tool is used, ask the llm to respond again
         if 'tool_name' in res_dict:
             manage_tool_interaction(agent_manager, res_dict)
 
         st.rerun()
-
+    
     return None

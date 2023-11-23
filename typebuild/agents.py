@@ -12,6 +12,7 @@ TODO:
 
 """
 
+import time
 import yaml
 import os
 import streamlit as st
@@ -60,16 +61,15 @@ class Agent:
             data_for_system_instruction = None
 
         # Take the data_for_system_instruction and replace the variables in the system_instruction
+        instruction = self.system_instruction
         if data_for_system_instruction:
             for key, value in data_for_system_instruction.items():
-                instruction = self.system_instruction
                 instruction = instruction.replace(f"{{{key}}}", value) # We are using triple curly braces to avoid conflicts with the f-strings
-        else:
-            instruction = self.system_instruction
+            
         
         return instruction
 
-    def get_system_instruction(self):
+    def get_system_instruction_for_agent(self):
         """
         Returns the system instruction for the agent.
 
@@ -82,10 +82,15 @@ class Agent:
         # Add tools to the instruction
         instruction += self.get_tool_defs()
 
-        instruction += """You can use tools multiple times and talk to the user.  
-        When your job is done, pass it back to the orchestration with the final output.
-        Final output should only be valid JSON in this format:
-        {"transfer_to_task": "orchestration", "output": output, "task_finished": true}
+        instruction += """You can use tools multiple times and talk to the user.
+        If you need human input, you have to do two things:
+        1. Set the ask_human flag to true.
+        2. Pose a question in the output so that the user know to respond.
+
+        When your job is done, set the task_finished flag to true.  Until then, task_finished should be false.
+
+        In every turn, your response should only be a valid JSON in this format:
+        {"output": output, "task_finished": boolean, "ask_human": boolean}
 
         You must return the result in the format above and the keys have to be verbatim. 
         """
@@ -191,17 +196,35 @@ class AgentManager(Agent):
         
         self.completed_tasks = []
         self.scheduled_tasks = []
+        self.agent_name = "agent_manager"
         # Only one agent can work at a time.  The default is the manager
         self.current_task = 'orchestration'
         self.managed_tasks = {}
-        self.task_tuple = namedtuple('Task', ['agent_name', 'agent', 'task_name', 'prompt'])
+        self.task_tuple = namedtuple('Task', ['agent_name', 'agent', 'task_name', 'prompt', 'status'])
         # Agent names and descriptions of all available agents
         # All the agents available to this manager
         
         self.agent_descriptions = {}
         self.set_available_agent_descriptions(available_agents)
         
-        
+    def get_messages(self):
+        """
+        Returns the messages in the agent manager followed by messages of the 
+        current task in one list.
+
+        Parameters:
+        None
+
+        Returns:
+        list: The messages in the agent manager followed by messages of the current task in one list.
+        """
+        messages = self.messages.copy()
+        if self.current_task != 'orchestration':
+            task = self.get_task(self.current_task)
+            agent_messages = task.agent.messages.copy()
+            
+            messages.extend(agent_messages)
+        return messages
 
     def add_task(self, agent_name, task_name, prompt):
         """
@@ -216,12 +239,12 @@ class AgentManager(Agent):
         if task_name not in self.managed_tasks:
             # Create an named tuple with the agent name, agent and description
             agent = Agent(agent_name)
-            self.managed_tasks[task_name] = self.task_tuple(agent_name, agent, task_name, prompt)
+            self.managed_tasks[task_name] = self.task_tuple(agent_name, agent, task_name, prompt, 'just_started')
             # Add the task name to scheduled tasks
             self.scheduled_tasks.append(task_name)
             self.current_task = task_name
             
-            
+
         return None
 
     def complete_task(self, task_name):
@@ -234,9 +257,14 @@ class AgentManager(Agent):
         Returns:
             None
         """
-        if len(self.scheduled_tasks) > 0:
-            removed = self.scheduled_tasks.pop(0)
+        if task_name in self.scheduled_tasks:
+            task_index = self.scheduled_tasks.index(task_name)
+            removed = self.scheduled_tasks.pop(task_index)
             self.completed_tasks.append(removed)
+        else:
+            with st.spinner(f"Task {task_name} not found."):
+                st.error(f"Task {task_name} not found.")
+                time.sleep(2)
         
         return None
 
@@ -284,7 +312,7 @@ class AgentManager(Agent):
         """
         if task in self.managed_tasks:
             agent = self.get_agent(task)
-            instruction = agent.get_system_instruction()
+            instruction = agent.get_system_instruction_for_agent()
         else:
             instruction = self.add_context_to_system_instruction()
             # Add tools to the instruction
@@ -319,6 +347,14 @@ class AgentManager(Agent):
     def remove_task(self, task):
         if task in self.managed_tasks:
             del self.managed_tasks[task]
+        return None
+    
+    def set_task_status(self, task_name, status):
+        if task_name in self.managed_tasks:
+            task = self.managed_tasks[task_name]
+            self.managed_tasks[task_name] = task._replace(status=status)
+        return None
+
 
     def set_user_message(self, message):
         """
@@ -327,10 +363,15 @@ class AgentManager(Agent):
         Args:
             message (str): The message content from the user.
         """
-        current_task = st.session_state.current_task
-        agent = self.get_agent(current_task)
-        
-        agent.messages.append({'role': 'user', 'content': message})
+        current_task = self.current_task
+        if current_task == 'orchestration':
+            self.messages.append({'role': 'user', 'content': message})
+        else:
+            task = self.get_task(current_task)
+            agent = task.agent
+            agent_name = task.agent_name
+            agent.messages.append({'role': 'user', 'content': message})
+    
         return None
 
     def set_assistant_message(self, message, task='orchestration'):
@@ -340,9 +381,11 @@ class AgentManager(Agent):
         Args:
             message (str): The message content from the assistant.
         """
-        
-        agent = self.get_agent(task)
-        agent.messages.append({'role': 'assistant', 'content': message})
+        if task != 'orchestration':
+            agent = self.get_agent(task)
+            agent.messages.append({'role': 'assistant', 'content': message})
+        else:
+            self.messages.append({'role': 'assistant', 'content': message})
         return None
 
     def chat_input_method(self):
