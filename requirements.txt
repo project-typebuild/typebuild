@@ -8,3 +8,4 @@ googlesearch-python
 tldextract
 bs4
 youtube-transcript-api
+duckduckgo_search
