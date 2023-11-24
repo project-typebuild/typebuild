@@ -68,7 +68,7 @@ def manage_llm_interaction(agent_manager):
     """
     # Get messages for the LLM
     system_instruction = agent_manager.get_system_instruction(agent_manager.current_task)
-    st.success(f"System instruction: {system_instruction}")
+    # st.success(f"System instruction: {system_instruction}")
     prompt = None
     if agent_manager.current_task == 'orchestration':
         agent = agent_manager
@@ -146,28 +146,24 @@ def manage_task(agent_manager, res_dict, res):
       
 
     # Add the response to the current task
-    with st.spinner("# Adding response messages..."):
-        content = res_dict.get('output', res)
-
-        st.error(f"**{agent_manager.current_task}**: {content}")
+    content = res_dict.get('output', None)
+    if content:
         agent_manager.set_assistant_message(content, task=agent_manager.current_task)
-
-    # If the current task is still orchestration, check for next task, if any.
-    if agent_manager.current_task == 'orchestration':
-        # Get the next task
-        next_task = agent_manager.get_next_task()
-        # If there is a next task, set the current task to the next task
-        if next_task is not None:
-            st.balloons()
-            st.header(f"Switching to task: {next_task}")
-            st.sidebar.subheader(f"Ask llm: {st.session_state.ask_llm}\n\nCurrent task: {agent_manager.current_task}")
-            st.session_state.ask_llm = True
-            time.sleep(2)
-
 
     # If ask_human is true in the response, set the ask_llm to false
     if res_dict.get('ask_human', False):
         st.session_state.ask_llm = False
+    else:
+        # If the current task is still orchestration, check for next task, if any.
+        if agent_manager.current_task == 'orchestration':
+            # Get the next task
+            next_task = agent_manager.get_next_task()
+            # If there is a next task, set the current task to the next task
+            if next_task is not None:
+                st.session_state.ask_llm = True
+
+
+    
 
     return res
 
@@ -183,12 +179,11 @@ def manage_tool_interaction(agent_manager, res_dict):
     tool_module = importlib.import_module(f'tools.{tool_name}')
     tool_function = getattr(tool_module, 'tool_main')
 
-    # Get the tool arguments
+    # Get the tool arguments needed by the tool
     tool_args = inspect.getfullargspec(tool_function).args
 
-    # select the arguments that are in the res_dict and pass them to the tool
-    kwargs = res_dict['kwargs']
-    kwargs = {k: v for k, v in kwargs.items() if k in tool_args}
+    # select the required arguments from res_dict and pass them to the tool
+    kwargs = {k: v for k, v in res_dict.items() if k in tool_args}
     tool_result = tool_function(**kwargs)
     # Add this to the agent's messages
     agent_manager.set_user_message(tool_result)
@@ -196,7 +191,6 @@ def manage_tool_interaction(agent_manager, res_dict):
     with st.spinner("Let me study the seach results..."):
         st.session_state.ask_llm = True
         st.sidebar.warning(f"Ask llm: {st.session_state.ask_llm}\n\nCurrent task: {agent_manager.current_task}")
-        time.sleep(2)
     return None
 
 def add_next_tasks(agent_manager):
@@ -207,8 +201,8 @@ def add_next_tasks(agent_manager):
     # Tasks not in managed tasks
     tasks_to_add = [i for i in tasks_to_add if i not in agent_manager.managed_tasks]
     if tasks_to_add:
-        st.info("There are new tasks to add.  Click the button below to add them.")
-        if st.button("Add new tasks"):
+        st.sidebar.info("There are new tasks to add.  Click the button below to add them.")
+        if st.sidebar.button("Add new tasks"):
             # Create new search task
             agent_manager.add_task(
                 agent_name='haiku_agent', 
@@ -250,14 +244,13 @@ def chat():
         res = manage_llm_interaction(agent_manager)        
         # Extract the response dictionary
         res_dict = st.session_state.extractor.extract_dict_from_response(res)
-        st.write(res_dict)
-        st.code(res)
-        time.sleep(1)
+        # st.write(res_dict)
+        # st.code(res)
         manage_task(agent_manager, res_dict, res)
         # If a tool is used, ask the llm to respond again
         if 'tool_name' in res_dict:
             manage_tool_interaction(agent_manager, res_dict)
 
         st.rerun()
-    
+
     return None

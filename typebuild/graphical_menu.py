@@ -5,7 +5,6 @@ from streamlit_elements import elements, mui, html, sync
 import streamlit as st
 
 
-# set Streamlit page layout to wide
 def display_menu_bar(menu_options):
     """
     Display a menu bar with clickable buttons based on the given menu options.
@@ -209,3 +208,17 @@ class GraphicalMenu:
         if st.session_state.should_rerun == True:
             st.session_state.should_rerun = False
             st.rerun()
+    
+def show_node_properties():
+    """
+    Allow the user to select a node and show the properties of the selected node.
+    """
+    G = st.session_state.menu.G
+    # Get the list of nodes
+    nodes = G.nodes
+    node_name = st.selectbox("Select a node", nodes)
+    node_info = G.nodes[node_name]
+    st.markdown(f"**Node name:** {node_info.get('node_name')}")
+    st.markdown(f"**Function name:** {node_info.get('func_name')}")
+    st.markdown(f"**Module name:** {node_info.get('module_name')}")
+    return None

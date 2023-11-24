@@ -243,7 +243,6 @@ class AgentManager(Agent):
             # Add the task name to scheduled tasks
             self.scheduled_tasks.append(task_name)
             self.current_task = task_name
-            
 
         return None
 
@@ -264,7 +263,6 @@ class AgentManager(Agent):
         else:
             with st.spinner(f"Task {task_name} not found."):
                 st.error(f"Task {task_name} not found.")
-                time.sleep(2)
         
         return None
 

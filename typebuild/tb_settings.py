@@ -1,4 +1,6 @@
 import streamlit as st
+from project_management.project_management import ProjectManagement
+from llm_access import LLMConfigurator
 
 def settings_main():
     # Add a test menu
@@ -7,7 +9,7 @@ def settings_main():
     settings_menu_items = [
         ["HOME", "Projects", "projects","tb_settings"],
         ["HOME", "Settings", "settings","tb_settings"],
-        ["Settings", "LLM Access", "llm_access","tb_settings"],
+        ["Settings", "LLM Access", "llm_access_settings","tb_settings"],
 
     ]
     
@@ -20,10 +22,17 @@ def settings():
 
 def projects():
     st.title("Projects")
-    st.info("This is the projects page")
+    if 'project_manager' not in st.session_state:
+        st.session_state.project_manager = ProjectManagement(st.session_state.user_folder)
+    pm = st.session_state.project_manager
+    pm.manage_project()
+    st.info(f"Selected project: {pm.selected_project}")
     return None
 
-def llm_access():
+def llm_access_settings():
     st.title("LLM Access")
-    st.info("This is the LLM Access page")
+    if 'llm_configurator' not in st.session_state:
+        st.session_state.llm_configurator = LLMConfigurator()
+    lc = st.session_state.llm_configurator
+    lc.config_project()
     return None
