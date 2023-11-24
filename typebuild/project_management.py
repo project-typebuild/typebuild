@@ -1,3 +1,4 @@
+# NOTE: THIS FILE HAS BEEN MIGRATED
 """
 Create projects, upload files, fetch file names in the project
 and other aspects of understanding and manageing assets in the project folder
@@ -32,7 +33,7 @@ sys.path.append(dir_path)
 plugins_path = os.path.join(dir_path, 'plugins')
 sys.path.append(plugins_path)
 
-# TODO: Deprecate.
+# NOT MIGRATED: NOT USED ANYWHERE
 def get_project_database():
 
     """
