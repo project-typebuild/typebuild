@@ -187,8 +187,8 @@ def manage_tool_interaction(agent_manager, res_dict):
     tool_args = inspect.getfullargspec(tool_function).args
 
     # select the arguments that are in the res_dict and pass them to the tool
-    kwargs = {k: v for k, v in res_dict.items() if k in tool_args}
-
+    kwargs = res_dict['kwargs']
+    kwargs = {k: v for k, v in kwargs.items() if k in tool_args}
     tool_result = tool_function(**kwargs)
     # Add this to the agent's messages
     agent_manager.set_user_message(tool_result)

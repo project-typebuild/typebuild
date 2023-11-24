@@ -1,63 +1,56 @@
+from duckduckgo_search import DDGS
 import streamlit as st
-from googlesearch import search
 from datetime import datetime
 import requests
 import tldextract
+from bs4 import BeautifulSoup
 import pandas as pd
 import os
-from bs4 import BeautifulSoup
-import requests
+import time
 
-class GoogleSearcher:
-    """
-    Class to perform Google search, store results, and optionally save them to a Parquet file.
 
-    Attributes:
-    - results (list): List of search results.
-    - file_name (str): Name of the saved Parquet file, if saved.
-    """
+class DuckDuckGo:
 
     def __init__(self):
         self.results = []
         self.file_name = None
-
-
-    def get_google_search_results(self, search_term, sleep_interval=2, num_results=10, timeout=30, full_text=False):
+    
+    def get_ddg_search_results(self, search_term, num_results=1, full_text=False):
         """
-        Perform a Google search and store the results.
+        Perform a DuckDuckGo search and store the results.
 
         Args:
         - search_term (str): The search term.
-        - sleep_interval (int): The interval between searches. Default is 2 seconds.
-        - num_results (int): Number of results to return. Default is 10.
-        - timeout (int): Timeout for the request in seconds. Default is 5 seconds.
+        - num_results (int): Maximum number of results to return. Default is 1.
         - full_text (bool): Whether to retrieve the full text of the page. Default is False.
 
         Returns:
         - List of dictionaries containing search results.
-        
         """
-        res = search(search_term, num_results=num_results, advanced=True, timeout=timeout)
-        # Compile the results into a markdown text with url, title, and snippet
+        with DDGS() as ddgs:
+            time.sleep(2)
+            results = [r for r in ddgs.text(search_term, max_results=num_results)]
         result_text = ""
-        for result in res:
-            result_text += f"[{result.title}]({result.url})\n\n{result.description}\n\n"
+        for result in results:
+            result_text += f"[{result['title']}]({result['href']})\n\n{result['body']}\n\n"
             if full_text:
                 try:
-                    content = requests.get(result.url, timeout=timeout).content
+                    content = requests.get(result['href'], timeout=timeout).content
                     page_content = BeautifulSoup(content).get_text()
                     self.results.append({
-                        'url': result.url,
-                        'title': result.title,
-                        'description': result.description,
+                        'url': result['href'],
+                        'title': result['title'],
+                        'description': result['body'],
                         'text_content': page_content,
-                        'domain': tldextract.extract(result.url).domain
+                        'domain': tldextract.extract(result['href']).domain
                     })
                 except requests.exceptions.Timeout:
-                    st.write(f"Request to {result.url} timed out.")
+                    st.write(f"Request to {result['href']} timed out.")
             # Add result text to instance var
         self.result_text = result_text
-    
+        # return results
+
+
     def get_results_as_list(self):
         """
         Retrieve the stored search results as a list.
@@ -90,7 +83,7 @@ class GoogleSearcher:
         df_results['search_date'] = pd.to_datetime(datetime.now())
 
         cleaned_search_term_for_filename = self._clean_search_term_for_filename(search_term)
-        self.file_name = os.path.join(project_folder, 'data', f'google_{cleaned_search_term_for_filename}.parquet')
+        self.file_name = os.path.join(project_folder, 'data', f'ddg_{cleaned_search_term_for_filename}.parquet')
         df_results.to_parquet(self.file_name, index=False)
 
     def get_file_name(self):
@@ -117,7 +110,8 @@ class GoogleSearcher:
         return cleaned[:500]  # Limit the length to 500 characters
 
 
-    def google_search_interface(self):
+
+    def ddg_search_interface(self):
 
         search_term = st.text_input('Enter search term')
         num_results = st.number_input('Enter number of results', min_value=1, max_value=50, value=10)
@@ -125,7 +119,7 @@ class GoogleSearcher:
         if st.button('Get results'):
             with st.spinner('Getting results...'):
                 # Perform the Google search
-                self.get_google_search_results(search_term, num_results=num_results)
+                self.get_ddg_search_results(search_term, num_results=num_results)
                 # Save results to a Parquet file
                 st.session_state.project_folder = 'tmp'
                 self.store_to_db(search_term, project_folder=st.session_state.project_folder)
@@ -137,9 +131,10 @@ class GoogleSearcher:
                 st.write(f"Data saved to {file_name}")
         return None
 
-def tool_main(search_term="", num_results=1):
+
+def tool_main(search_term, num_results=1, full_text=False):
     """
-    This tool performs a Google search and returns the
+    This tool performs a DuckDukGo search and returns the
     content of the results.  All results are concatenated and returned as one string.
 
     Parameters:
@@ -150,8 +145,7 @@ def tool_main(search_term="", num_results=1):
     - The content of the results as one string.
     """
     with st.spinner(f"Searching for {search_term}..."):
-        google_searcher = GoogleSearcher()
-        google_searcher.get_google_search_results(search_term, num_results=num_results)
-        return google_searcher.result_text
-    
+        ddg_searcher = DuckDuckGo()
+        ddg_searcher.get_ddg_search_results(search_term, num_results=num_results, full_text=full_text)
+        return ddg_searcher.result_text
 
