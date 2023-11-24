@@ -56,6 +56,8 @@ menu_bar_options = [
     ['HOME', 'Search', 'search_placeholder', 'helpers'], # search_placeholder is a placeholder function because when Search is clicked, it should not do anything and should just show the children of Search
     ['Search', 'Google Search', 'google_search_interface_for_menu', 'helpers'],
     ['Search', 'YouTube Search', 'youtube_search_interface_for_menu', 'helpers'],
+    ['HOME','Data','search_placeholder','helpers'],
+    ['Data','Upload Data','data_management_interface','helpers']
     ['HOME', 'Nodes', 'show_node_properties', 'graphical_menu'],
     ]
 
