@@ -10,7 +10,6 @@ def settings_main():
         ["HOME", "Projects", "projects","tb_settings"],
         ["HOME", "Settings", "settings","tb_settings"],
         ["Settings", "LLM Access", "llm_access_settings","tb_settings"],
-
     ]
     
     menu.add_edges(settings_menu_items)
@@ -21,12 +20,17 @@ def settings():
     return None
 
 def projects():
+    """
+    Activities in TypeBuild are housed under projects.  This function opens a UI 
+    that allows users to create new projects and select existing projects.
+    Once a project is selected, the user can manage data, create apps, and use LLMs.
+    """
     st.title("Projects")
     if 'project_manager' not in st.session_state:
         st.session_state.project_manager = ProjectManagement(st.session_state.user_folder)
     pm = st.session_state.project_manager
     pm.manage_project()
-    st.info(f"Selected project: {pm.selected_project}")
+    
     return None
 
 def llm_access_settings():

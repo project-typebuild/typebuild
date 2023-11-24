@@ -148,7 +148,11 @@ def manage_task(agent_manager, res_dict, res):
     # Add the response to the current task
     content = res_dict.get('output', None)
     if content:
-        agent_manager.set_assistant_message(content, task=agent_manager.current_task)
+        agent_manager.set_message(
+            role="assistant", 
+            content=content, 
+            task=agent_manager.current_task
+            )
 
     # If ask_human is true in the response, set the ask_llm to false
     if res_dict.get('ask_human', False):
@@ -186,9 +190,9 @@ def manage_tool_interaction(agent_manager, res_dict):
     kwargs = {k: v for k, v in res_dict.items() if k in tool_args}
     tool_result = tool_function(**kwargs)
     # Add this to the agent's messages
-    agent_manager.set_user_message(tool_result)
+    agent_manager.set_message(role='system', content=tool_result)
 
-    with st.spinner("Let me study the seach results..."):
+    with st.spinner("Let me study the results..."):
         st.session_state.ask_llm = True
         st.sidebar.warning(f"Ask llm: {st.session_state.ask_llm}\n\nCurrent task: {agent_manager.current_task}")
     return None

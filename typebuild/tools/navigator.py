@@ -1,5 +1,7 @@
 import streamlit as st
 
+from function_management import get_docstring_of_function
+
 def get_available_destinations():
         
     G = st.session_state['menu'].G
@@ -30,5 +32,10 @@ def tool_main(activeStep, tool_name='navigator'):
     """
 
     st.session_state.activeStep = activeStep
+    docstring = get_docstring_of_function(activeStep)
     st.sidebar.success(f'The path is {activeStep}')
-    return 'Done.'
+
+    helpful_chat_hints = """\n\nAsk the user to use the UI above.  Offer further help
+    if necessary."""
+
+    return docstring + helpful_chat_hints

@@ -354,7 +354,7 @@ class AgentManager(Agent):
         return None
 
 
-    def set_user_message(self, message):
+    def set_message(self, role, message, task='orchestration'):
         """
         Adds a user message to the chat.
 
@@ -363,14 +363,16 @@ class AgentManager(Agent):
         """
         current_task = self.current_task
         if current_task == 'orchestration':
-            self.messages.append({'role': 'user', 'content': message})
+            self.messages.append({'role': role, 'content': message})
         else:
             task = self.get_task(current_task)
             agent = task.agent
             agent_name = task.agent_name
-            agent.messages.append({'role': 'user', 'content': message})
+            agent.messages.append({'role': role, 'content': message})
     
         return None
+
+
 
     def set_assistant_message(self, message, task='orchestration'):
         """
@@ -399,7 +401,7 @@ class AgentManager(Agent):
         """
         prompt = st.chat_input("Enter your message", key="chat_input")
         if prompt:
-            self.set_user_message(prompt)
+            self.set_message(role="user", content=prompt)
             self.ask_llm = True
             st.session_state.ask_llm = True
             self.display_expanded = True

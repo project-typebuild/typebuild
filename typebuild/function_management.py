@@ -9,6 +9,23 @@ def run_function(module_name: str, func_name: str):
     func()
     return None
 
+def get_module_and_function(selected_node):
+    """
+    Get the module and function name from the selected node.
+    """
+    if not selected_node:
+        selected_node = st.session_state.activeStep
+    menu = st.session_state.menu
+
+    if selected_node == 'HOME':
+        module_name = 'home_page'
+        func_name = 'home_page'
+    else:
+        mynode = menu.G.nodes[selected_node]
+        module_name = mynode.get('module_name')
+        func_name = mynode.get('func_name')
+    return module_name, func_name
+
 def run_current_functions():
     """
     Runs the functions selected in the menu.
@@ -27,16 +44,8 @@ def run_current_functions():
     Returns:
     None
     """
-    menu = st.session_state.menu
-    if st.session_state.activeStep == 'HOME':
-        module_name = 'home_page'
-        func_name = 'home_page'
-    else:
-        mynode = menu.G.nodes[st.session_state.activeStep]
-        module_name = mynode.get('module_name')
-        func_name = mynode.get('func_name')
-    # If module name and func name are not None, run the function
-    # Otherwise, do nothing
+
+    module_name, func_name = get_module_and_function(st.session_state.activeStep)
     if module_name == 'home_page':
         pass
     elif module_name and func_name:  
@@ -47,3 +56,15 @@ def run_current_functions():
             st.error("Module name was None")
         if not func_name:
             st.error("Function name was None")
+
+def get_docstring_of_function(active_step):
+    """
+    Gets the docstring of the function selected in the menu.
+    """
+    if not active_step:
+        active_step = st.session_state.activeStep
+    module_name, func_name = get_module_and_function(active_step)
+    st.info(f"M: {module_name}, F: {func_name}")
+    module = importlib.import_module(module_name)
+    func = getattr(module, func_name)
+    return func.__doc__

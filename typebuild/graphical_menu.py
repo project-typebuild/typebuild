@@ -221,4 +221,8 @@ def show_node_properties():
     st.markdown(f"**Node name:** {node_info.get('node_name')}")
     st.markdown(f"**Function name:** {node_info.get('func_name')}")
     st.markdown(f"**Module name:** {node_info.get('module_name')}")
+
+    from function_management import get_docstring_of_function
+    docstring = get_docstring_of_function(node_name)
+    st.markdown(f"### Docstring\n{docstring}")
     return None
