@@ -1,3 +1,40 @@
+import streamlit as st
+
+# RANU: I CREATED THIS NEW FUNCTION JUST TO LET YOU KNOW THAT WE 
+# HAVE TO ADD THESE FUNCTIONALITIES SOMEWHERE.
+def data_menus():
+    options = [
+        'Upload your data',
+        'Fetch data',
+    ]
+
+
+    default_index = 0
+
+    selected_option = st.radio(
+        "Select an option", 
+        options, 
+        captions=["CSV, XLSX, TXT, VTT, etc.", "YouTube, Google Search"],
+        horizontal=True, 
+        index=default_index
+        )
+    st.markdown("---")
+    if selected_option == 'Upload your data':
+        file_upload_and_save()
+        get_data_model()
+        st.stop()
+
+    if selected_option == 'Fetch data':
+        if st.checkbox("Get data from YouTube"):
+            from tools.yt_search import main as yt_search
+            yt_search()
+            st.warning("Uncheck get data from YouTube to go to project settings")
+        if st.checkbox("Get data from Google"):
+            from tools.google_search import main as google_search
+            google_search()
+            st.warning("Uncheck get data from Google to go to project settings")
+        st.stop()
+
 
 
 def export_sqlite_to_parquet(uploaded_file, output_dir):

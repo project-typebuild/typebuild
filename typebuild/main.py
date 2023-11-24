@@ -12,7 +12,7 @@ st.set_page_config(layout="wide", page_title='TB Chat Framework')
 token = simple_auth.simple_auth()
 st.session_state.token = token
 
-from helpers import starter_code, set_or_get_llm_keys, config_project 
+from helpers import starter_code
 # Starter code has to run early.  Do not move.
 starter_code()
 
@@ -56,6 +56,7 @@ menu_bar_options = [
     ['HOME', 'Search', 'search_placeholder', 'helpers'], # search_placeholder is a placeholder function because when Search is clicked, it should not do anything and should just show the children of Search
     ['Search', 'Google Search', 'google_search_interface_for_menu', 'helpers'],
     ['Search', 'YouTube Search', 'youtube_search_interface_for_menu', 'helpers'],
+    ['HOME', 'Nodes', 'show_node_properties', 'graphical_menu'],
     ]
 
 menu.add_edges(menu_bar_options) # add the edges to the menu in the GraphicalMenu class
