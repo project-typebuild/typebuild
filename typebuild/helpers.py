@@ -23,6 +23,7 @@ def update_text_file(file, value):
         f.write(value)
     return None
 
+# MIGRATED
 def upload_custom_llm_file():
     """
     This function allows the user to upload a custom LLM file.
@@ -73,7 +74,7 @@ def upload_custom_llm_file():
     return None
 
 import ast
-
+# MIGRATED
 def verify_functions(file_path, function_dict):
     # Parse the Python file using the ast library
     with open(file_path, 'r') as f:
@@ -112,7 +113,7 @@ def verify_functions(file_path, function_dict):
         else:
             return True
 
-
+# MIGRATED
 def config_project():
     """
     For a new project, there should be a config.json file in the project_settings folder. if not, then this function will create one.
@@ -307,6 +308,7 @@ def create_user_folder():
     
     return None
 
+# MIGRATED
 def set_or_get_llm_keys():
 
     # Check if the user has a secrets file and openai key in the secrets.toml file. if yes, then set the openai key
