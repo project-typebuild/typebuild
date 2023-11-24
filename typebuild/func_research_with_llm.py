@@ -397,7 +397,7 @@ def create_llm_output(selected_res_project):
                         # Get the full text and the res for it.  Add it to the first row.
                         full_text = df[selected_column].str.cat(sep='\n\n')
                         
-                        res_text = row_by_row_llm_res(full_text, system_instruction, word_limit=word_limit, model='claude-2')
+                        res_text = row_by_row_llm_res(full_text, system_instruction, word_limit=word_limit, model='claude-2', sample=False, show_progress=True)
                         # res_text = '\n\n'.join(res)
                         df.iloc[0, df.columns.get_loc(output_col_name)] = res_text
                     else:
@@ -522,7 +522,7 @@ def clean_markdown(text):
     return text
 
 
-def row_by_row_llm_res(text_or_list, system_instruction, sample=True, word_limit=1000, model='claude-2'):
+def row_by_row_llm_res(text_or_list, system_instruction, sample=True, word_limit=1000, model='claude-2', show_progress=False):
 
     if isinstance(text_or_list, str):
         text = text_or_list
@@ -546,8 +546,11 @@ def row_by_row_llm_res(text_or_list, system_instruction, sample=True, word_limit
         output = []
         if sample:
             chunks = chunks[:2]
-        
-        for chunk in chunks:
+        progress_bar = st.empty()        
+        for i,chunk in enumerate(chunks):
+            if show_progress:
+                progress_text = f"Analyzing chunk {i+1} of {len(chunks)}"
+                progress_bar.progress(i/len(chunks), progress_text)
             max_tokens = int(word_limit * 4/3)
             
             # If max tokens is too small, make it 800

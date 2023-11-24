@@ -31,6 +31,8 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(dir_path)
 plugins_path = os.path.join(dir_path, 'plugins')
 sys.path.append(plugins_path)
+
+# TODO: Deprecate.
 def get_project_database():
 
     """
@@ -56,7 +58,7 @@ def get_project_database():
         table_dict[table_name] = pd.read_sql_query(f"SELECT * FROM {table_name}", con).head(2).to_markdown()
     return table_dict
 
-
+# MIGRATED
 def get_project_file_folder():
     """
     Returns the path to the project folder for the current user.
@@ -69,7 +71,6 @@ def get_project_file_folder():
     Returns:
     - project_file (str): The path to the project file.
     """
-    token_name = st.session_state.token
     user_folder = st.session_state.user_folder 
     # Get just the directory names, ignore the files
     try:
@@ -107,7 +108,6 @@ def get_project_file_folder():
             st.info(f"Please go to 'Functionalities' in the menu above and select what you want to do next.  Your options are given below.")
             what_can_you_do()    
     selected_project = st.session_state.selected_project
-    manage_project_toggle = False
     if selected_project == 'Create new project':
         create_new_project()        
         st.stop()
@@ -118,6 +118,7 @@ def get_project_file_folder():
     
     return None
 
+# NOT MIGRATED: NOT USED ANYWHERE
 def add_llm_data_model(data_model_pkl_file):
     import pickle as pk
     with open(data_model_pkl_file, 'rb') as f:
@@ -138,6 +139,7 @@ def add_llm_data_model(data_model_pkl_file):
         llm_data += f"Column info:\n{col_info}\n"
     return llm_data
 
+# NOT MIGRATED: NOT USED ANYWHERE
 def show_project_settings():
     show_settings = False
     if st.session_state.new_menu == 'data':
@@ -150,6 +152,7 @@ def show_project_settings():
     
     return show_settings
 
+# NOT MIGRATED: NEW MENU SYSTEM
 def manage_project():
     """
     Allows the user to manage key aspects of the selected project:
@@ -163,6 +166,7 @@ def manage_project():
 
     return None
 
+# MIGRATED
 def project_settings():
     """
     This function allows the user to manage key aspects of the selected project:
@@ -217,6 +221,7 @@ def project_settings():
     
     return None
 
+# MIGRATED
 def ideate_project():
     """
     This stores the user requirement for the given view,
@@ -233,7 +238,7 @@ def ideate_project():
     ideation_chat()
     return None
 
-
+# MIGRATED
 def ideation_chat():
     """
     A chat on the project description.
@@ -265,6 +270,7 @@ def ideation_chat():
 
     return None
 
+# MIGRATED
 def set_user_requirements():
     """
     This stores the user requirement for the given view,
@@ -282,6 +288,7 @@ def set_user_requirements():
     st.stop()
     return None
 
+# MIGRATED
 def user_requirements_chat():
 
     """
@@ -311,7 +318,7 @@ def user_requirements_chat():
 
     return None
 
-
+# MIGRATED
 def create_new_project():
     """
     Creates a new project folder, main.py file, and __init__.py file.
@@ -375,7 +382,7 @@ def create_new_project():
         reset_menu(new_menu='project_settings')
     return None
 
-
+# NOT MIGRATED: NOT USED ANYWHERE
 def get_project_df():
 
     """
@@ -398,6 +405,7 @@ def get_project_df():
 
     return None
 
+# MIGRATED
 def export_sqlite_to_parquet(uploaded_file, output_dir):
     
     tmp_folder = os.path.join(st.session_state.project_folder, 'documents')
@@ -429,7 +437,7 @@ def export_sqlite_to_parquet(uploaded_file, output_dir):
     conn.close()
     return None
 
-
+# MIGRATED
 def upload_data_file(uploaded_file, file_extension):
     """
     Upload data files to import them into the project.
@@ -510,6 +518,7 @@ def upload_data_file(uploaded_file, file_extension):
 
     return None
 
+# MIGRATED
 def clean_col_formats(df):
     """
     Apache arrow requires clearn formatting.  Look at the 
@@ -564,6 +573,7 @@ def clean_col_formats(df):
 
     return df
 
+# MIGRATED
 def upload_document_file(uploaded_file, file_extension):
     """
     This function allows the user to upload a document file and save it to the project folder.
@@ -594,6 +604,7 @@ def upload_document_file(uploaded_file, file_extension):
         uploaded_file = None
     return None
 
+# MIGRATED
 def file_upload_and_save():
     """
     This function allows the user to upload a CSV or a parquet file, load it as a dataframe,
@@ -672,7 +683,7 @@ def file_upload_and_save():
 
     return None
 
-
+# MIGRATED
 def append_data_to_exisiting_file():
 
     """
