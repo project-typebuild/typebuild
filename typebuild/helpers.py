@@ -163,14 +163,16 @@ def data_management_interface():
     This function serves as an interface for managing data.
     It imports the 'data_management' module and calls its 'main' function.
     """
-    from data_management import DataManager
-    if 'DataManager' not in st.session_state:
-        data_manager = DataManager()
-        st.session_state.DataManager = data_manager
+    from data_management.uploader import DataUploader
+    if 'DataUploader' not in st.session_state:
+        data_manager = DataUploader()
+        st.session_state.DataUploader = data_manager
     else:
-        data_manager = st.session_state.DataManager
-    st.session_state.show_data_uploader = True
-    data_manager.file_upload_and_save()
+        data_manager = st.session_state.DataUploader
+    if st.session_state.selected_node == 'Upload Data':
+        data_manager.upload_tabular_data()
+    data_manager.upload_document_files()
+    
     return None
 
 

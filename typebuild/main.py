@@ -58,6 +58,7 @@ menu_bar_options = [
     ['Search', 'YouTube Search', 'youtube_search_interface_for_menu', 'helpers'],
     ['HOME','Data','search_placeholder','helpers'],
     ['Data','Upload Data','data_management_interface','helpers'],
+    ['Data','Upload Documents','data_management_interface','helpers'],
     ['HOME', 'Nodes', 'show_node_properties', 'graphical_menu'],
     ]
 
