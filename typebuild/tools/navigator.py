@@ -37,5 +37,9 @@ def tool_main(activeStep, tool_name='navigator'):
 
     helpful_chat_hints = """\n\nAsk the user to use the UI above.  Offer further help
     if necessary."""
-
-    return docstring + helpful_chat_hints
+    res = {
+        'content': f'{docstring}\n{helpful_chat_hints}',
+        'ask_llm': True,
+        'task_finished': True,
+        }
+    return res

@@ -22,7 +22,8 @@ def display_messages(messages, expanded=True):
     if messages:
         with st.expander("View chat", expanded=expanded):
             for i, msg in enumerate(messages):
-                if msg['role'] in ['user', 'assistant']:
+                # TODO: REMOVE SYSTEM MESSAGES AFTER FIXING BUGS
+                if msg['role'] in ['user', 'assistant', 'system']:
                     the_content = msg['content']
                     with st.chat_message(msg['role']):
                         st.markdown(the_content)
@@ -93,7 +94,29 @@ def manage_llm_interaction(agent_manager):
         st.info(f"LLM output: {res}")
     return res
 
+def populate_res_dict(res_dict, res):
+    """
+    If res dict is empty, use the string response to populate it.
+    """
+    if not res_dict:
+        res_dict = {
+            'output': res, 
+            'task_finished': False,
+            'ask_human': False,
+            'ask_llm': True,
+            }
+    
+    # If there is a final response, set the task_finished flag to true
+    if 'final response' in res.lower():
+        res_dict['task_finished'] = True
+        res_dict['ask_llm'] = False
+        res_dict['ask_human'] = False
+
+    return res_dict
+
 def manage_task(agent_manager, res_dict, res):
+
+    res_dict = populate_res_dict(res_dict, res)
     # If the response is a request for a new agent, create the agent, if it does not exist
     if 'transfer_to_task' in res_dict:
         agent_name = res_dict.get('agent_name', 'agent_manager')
@@ -107,32 +130,14 @@ def manage_task(agent_manager, res_dict, res):
                 task_name=task_name, 
                 prompt=task_description
                 )
-            
+            # Add the message to the new task
+            agent_manager.set_message(
+                role="assistant", 
+                content=task_description, 
+                task=task_name
+                )
 
-    # Agents that use tools may have to work more than once
-    # with the tool to get the desired result.  When the agent is done
-    # It sends a final response to the agent manager.  
-    # If it is the final response, set the message to the agent manager
-    # If not, set the message to the agent and ask LLM for another response
-    content = res
-    if agent_manager.current_task == 'orchestration':
-        st.session_state.ask_llm = False
-    # If it is a final response from a worker agent
-    elif 'final response' in res.lower():
-        # Remove the line with the phrase "final response"
-        res = '\n'.join([i for i in res.split('\n') if not i.lower().strip().startswith('final response')])
-        completed_task = agent_manager.current_task
-        agent_manager.complete_task(completed_task)
-
-        # TEMP: Save agent messages to session state for debugging
-        st.session_state.agent_messages = agent_manager.managed_tasks[agent_manager.current_task].agent.messages
-        
-        agent_manager.current_task = 'orchestration'
-        
-        # Delete the agent (We are not deleting the agent or task anymore so that we can retain the messages)
-        # agent_manager.remove_agent(current_agent)
-        st.session_state.ask_llm = False
-    elif res_dict.get('task_finished', False):
+    if res_dict.get('task_finished', False):
         completed_task = agent_manager.current_task
         agent_manager.complete_task(completed_task)
         agent_manager.current_task = 'orchestration'
@@ -141,12 +146,12 @@ def manage_task(agent_manager, res_dict, res):
         # Set the message to the worker agent via the agent manager
         st.session_state.ask_llm = False
     else:
-        # Set the message to the worker agent via the agent manager
-        st.session_state.ask_llm = True
+        # If we are not sure, ask LLM.
+        st.session_state.ask_llm = res_dict.get('ask_llm', True)
       
 
     # Add the response to the current task
-    content = res_dict.get('output', None)
+    content = res_dict.get('output', str(res_dict))
     if content:
         agent_manager.set_message(
             role="assistant", 
@@ -155,21 +160,15 @@ def manage_task(agent_manager, res_dict, res):
             )
 
     # If ask_human is true in the response, set the ask_llm to false
-    if res_dict.get('ask_human', False):
-        st.session_state.ask_llm = False
-    else:
-        # If the current task is still orchestration, check for next task, if any.
-        if agent_manager.current_task == 'orchestration':
-            # Get the next task
-            next_task = agent_manager.get_next_task()
-            # If there is a next task, set the current task to the next task
-            if next_task is not None:
-                st.session_state.ask_llm = True
+    # If the current task is still orchestration, check for next task, if any.
+    if agent_manager.current_task == 'orchestration':
+        # Get the next task
+        next_task = agent_manager.get_next_task()
+        # If there is a next task, set the current task to the next task
+        if next_task is not None:
+            st.session_state.ask_llm = True
 
-
-    
-
-    return res
+    return res_dict
 
 
 def manage_tool_interaction(agent_manager, res_dict):
@@ -186,22 +185,72 @@ def manage_tool_interaction(agent_manager, res_dict):
     # Get the tool arguments needed by the tool
     tool_args = inspect.getfullargspec(tool_function).args
 
+    # Arguments for tool will be in res_dict under the key kwargs
+    args_for_tool = res_dict.get('kwargs', {})
+
     # select the required arguments from res_dict and pass them to the tool
-    kwargs = {k: v for k, v in res_dict.items() if k in tool_args}
+    kwargs = {k: v for k, v in args_for_tool.items() if k in tool_args}
     tool_result = tool_function(**kwargs)
     # TODO: Some tools like search need to consume the tool results.
     # Others like navigator need not.  Create a system to pass to the
     # correct task. 
+    if isinstance(tool_result, str):
+        tool_result = {'content': tool_result}
 
-    # Add this to the agent's messages
-    agent_manager.set_message(role='system', content=tool_result)
+    # Check if the the task is done and can be transferred to orchestration.
+    if tool_result.get('task_finished', False):
+        # Add a message from the tool to the agent manager
+        content = f"""MESSAGE TO THE AGENT MANAGER.  
+        The {agent_manager.current_task} task is done.\n"""
+
+        if tool_result.get('content', None):
+            content += f"""Here are some notes from the completed task that you can use to help the user:  
+            {tool_result['content']}"""
+        # Set the current task to orchestration
+        agent_manager.current_task = 'orchestration'
+        # Message to agent manager goes as system message
+        role = 'system'
+    else:
+        content = tool_result.get('content', '')
+        role = 'user'
+    # Set ask_llm status
+    st.session_state.ask_llm = tool_result.get('ask_llm', True)
+    if content:
+        # Add this to the agent's messages
+        agent_manager.set_message(
+            role=role, 
+            content=content,
+            task=agent_manager.current_task
+            )
 
     with st.spinner("Let me study the results..."):
-        st.session_state.ask_llm = True
         st.sidebar.warning(f"Ask llm: {st.session_state.ask_llm}\n\nCurrent task: {agent_manager.current_task}")
     return None
 
-def add_next_tasks(agent_manager):
+def show_task_messages(agent_manager):
+    """
+    Show the task names in a drop down
+    and the messages for the selected task.
+    """
+    # Get the task names
+    task_names = agent_manager.managed_tasks.keys()
+    # Show the task names in a drop down
+    all_tasks = list(task_names)
+    all_tasks.insert(0, 'orchestration')
+    all_tasks.insert(0, 'SELECT')
+    selected_task = st.sidebar.selectbox("Select task", all_tasks)
+    # Show the messages for the selected task
+    if selected_task != 'SELECT':
+        if selected_task == 'orchestration':
+            messages = agent_manager.messages
+        else:
+            messages = agent_manager.managed_tasks[selected_task].agent.messages
+        st.header(f"Messages for {selected_task}")
+        display_messages(messages)
+        st.stop()
+    return None
+
+def add_objective(agent_manager):
     """
     Adds the next tasks to the agent manager.
     """
@@ -234,11 +283,12 @@ def chat():
     add_agent_manager_to_session_state()
     agent_manager = st.session_state.agent_manager
      
-    add_next_tasks(agent_manager)
+    add_objective(agent_manager)
 
     # Create the chat input and display
     st.sidebar.success(f"Scheduled tasks: {agent_manager.scheduled_tasks}")
     agent_manager.chat_input_method()    
+    show_task_messages(agent_manager)
     messages = agent_manager.get_messages()    
     display_messages(messages, expanded=True)
 
@@ -254,7 +304,7 @@ def chat():
         res_dict = st.session_state.extractor.extract_dict_from_response(res)
         # st.write(res_dict)
         # st.code(res)
-        manage_task(agent_manager, res_dict, res)
+        res_dict = manage_task(agent_manager, res_dict, res)
         # If a tool is used, ask the llm to respond again
         if 'tool_name' in res_dict:
             manage_tool_interaction(agent_manager, res_dict)

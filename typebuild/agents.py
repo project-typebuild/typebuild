@@ -364,11 +364,13 @@ class AgentManager(Agent):
         current_task = self.current_task
         if current_task == 'orchestration':
             self.messages.append({'role': role, 'content': content})
+            st.session_state.all_messages.append({'role': role, 'content': content, 'task': 'orchestration'})
         else:
             task = self.get_task(current_task)
             agent = task.agent
             agent_name = task.agent_name
             agent.messages.append({'role': role, 'content': content})
+            st.session_state.all_messages.append({'role': role, 'content': content, 'task': agent_name})    
     
         return None
 

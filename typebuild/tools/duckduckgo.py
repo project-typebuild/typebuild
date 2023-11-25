@@ -147,5 +147,11 @@ def tool_main(search_term, num_results=1, full_text=False):
     with st.spinner(f"Searching for {search_term}..."):
         ddg_searcher = DuckDuckGo()
         ddg_searcher.get_ddg_search_results(search_term, num_results=num_results, full_text=full_text)
-        return ddg_searcher.result_text
+        output = f"HERE ARE THE SEARCH RESULTS.  USE THIS TO ANSWER THE QUESTION:\n\n{ddg_searcher.result_text}"
+        res = {
+            'content': output,
+            'ask_llm': True,
+            'task_finished': False,
+        }
+        return res
 
