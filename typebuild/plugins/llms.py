@@ -68,6 +68,7 @@ def get_llm_output(messages, max_tokens=2500, temperature=0.4, model='gpt-4', fu
     # If there is, use that
     # Get just the last few messages
     messages = last_few_messages(messages)
+    # st.session_state.all_messages.extend(messages)
     st.session_state.last_request = messages
     typebuild_root = st.session_state.typebuild_root
     if os.path.exists(os.path.join(typebuild_root, 'custom_llm.py')):
@@ -88,6 +89,7 @@ def get_llm_output(messages, max_tokens=2500, temperature=0.4, model='gpt-4', fu
     
     if content:
         st.session_state.last_response = content
+        # st.session_state.all_messages.append({'role': 'assistant', 'content': content})
     # We can get back code or requirements in multiple forms
     # Look for each form and extract the code or requirements
 

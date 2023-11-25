@@ -22,6 +22,7 @@ def add_default_session_states():
         'profile_dict_path': os.path.join(os.path.expanduser("~"), '.typebuild', 'users', 'admin', 'profile_dict.pk'),
         'should_rerun': False,
         'selected_node': 'HOME',
+        'all_messages': [],
         }
 
     for key in ss_vars:
