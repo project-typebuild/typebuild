@@ -317,7 +317,7 @@ class AgentManager(Agent):
             instruction += self.get_tool_defs()
             instruction += "THE FOLLOWING IS A LIST OF AGENTS AVAILABLE.  DO NOT MAKE UP OTHER AGENTS.  CALL THEM BY THEIR NAME VERBATIM:\n"
             for agent_name, description in self.agent_descriptions.items():
-                instruction += f"{agent_name}: {description}"
+                instruction += f"- {agent_name}: {description}\n"
         return instruction
 
     def get_agent(self, task_name):
@@ -354,21 +354,21 @@ class AgentManager(Agent):
         return None
 
 
-    def set_message(self, role, message, task='orchestration'):
+    def set_message(self, role, content, task='orchestration'):
         """
-        Adds a user message to the chat.
+        Adds a user, assistant or system content to the chat.
 
         Args:
-            message (str): The message content from the user.
+            content (str): The content to add.
         """
         current_task = self.current_task
         if current_task == 'orchestration':
-            self.messages.append({'role': role, 'content': message})
+            self.messages.append({'role': role, 'content': content})
         else:
             task = self.get_task(current_task)
             agent = task.agent
             agent_name = task.agent_name
-            agent.messages.append({'role': role, 'content': message})
+            agent.messages.append({'role': role, 'content': content})
     
         return None
 
