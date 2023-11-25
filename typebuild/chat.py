@@ -189,6 +189,10 @@ def manage_tool_interaction(agent_manager, res_dict):
     # select the required arguments from res_dict and pass them to the tool
     kwargs = {k: v for k, v in res_dict.items() if k in tool_args}
     tool_result = tool_function(**kwargs)
+    # TODO: Some tools like search need to consume the tool results.
+    # Others like navigator need not.  Create a system to pass to the
+    # correct task. 
+
     # Add this to the agent's messages
     agent_manager.set_message(role='system', content=tool_result)
 
@@ -254,6 +258,7 @@ def chat():
         # If a tool is used, ask the llm to respond again
         if 'tool_name' in res_dict:
             manage_tool_interaction(agent_manager, res_dict)
+            
 
         st.rerun()
 
