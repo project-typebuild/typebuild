@@ -17,6 +17,7 @@ def add_default_session_states():
         'typebuild_root' : os.path.join(os.path.expanduser("~"), '.typebuild'),
         'user_folder': os.path.join(os.path.expanduser("~"), '.typebuild', 'users', st.session_state.token),
         'project_folder': os.path.join(os.path.expanduser("~"), '.typebuild', 'users', st.session_state.token),
+        'data_folder': os.path.join(os.path.expanduser("~"), '.typebuild', 'users', st.session_state.token, 'data'),
         'secrets_file_path' : os.path.join(os.path.expanduser("~"), '.typebuild', 'users', st.session_state.token, 'secrets.toml'),
         'profile_dict_path': os.path.join(os.path.expanduser("~"), '.typebuild', 'users', 'admin', 'profile_dict.pk'),
         'should_rerun': False,

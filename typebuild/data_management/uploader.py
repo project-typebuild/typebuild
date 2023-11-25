@@ -2,7 +2,7 @@ import streamlit as st
 import os
 import pandas as pd
 import time
-from data_management.data_model import DataModeler
+from data_management.modeler import DataModeler
 from glob import glob
 
 
@@ -59,7 +59,7 @@ class DataUploader:
         df.to_parquet(file_path, index=False)
         st.session_state.files_uploaded = False
 
-    def upload_tabular_data(self):
+    def upload_tabular_data(self, append=False):
         # Define the data folder
         data_folder = os.path.join(st.session_state.project_folder, 'data')
 
@@ -69,7 +69,7 @@ class DataUploader:
 
         # Let the user upload a file and it must be a csv, parquet, tsv, or xlsx file for now. 
         allowed_tabular_file_extensions = ['csv', 'parquet', 'tsv', 'xlsx']
-        uploaded_file = st.file_uploader("Choose a file", type=allowed_tabular_file_extensions, key = f'table_upload_{st.session_state.ss_num}')
+        uploaded_file = st.file_uploader(r"$\textsf{\ Choose your file}$", type=allowed_tabular_file_extensions, key = f'table_upload_{st.session_state.ss_num}')
         if uploaded_file is None:
             st.warning('Please upload a file')
             st.stop()
@@ -104,6 +104,10 @@ class DataUploader:
         col2.info('The below table is our understanding of your data. \nRead the column_info column to understand what we think about your data.')
         col2.data_editor(df_data_model)
 
+        # if append: then return the dataframe 
+        if append:
+            return df
+
         # Save the dataframe
 
         if col1.button('Save your data'):
@@ -131,6 +135,81 @@ class DataUploader:
                 time.sleep(3)
                 st.rerun()
 
+    def tabular_data(self):
+        # Add a markdown empty lines
+        st.markdown('<br>', unsafe_allow_html=True) # Add a line break
+
+        # Check if the user wants to upload a file or append data to an existing file
+        selection = st.radio(r"$\textsf{\ Do you want to upload a new file or append data to an existing file?}$", \
+            ['Upload a new file', 'Append data to an existing file'], key = f'tabular_data_{st.session_state.ss_num}', horizontal=True)
+        
+        # Add a markdown empty lines
+        st.markdown('<br>', unsafe_allow_html=True) # Add a line break
+
+        if selection == 'Upload a new file':
+            self.upload_tabular_data()
+
+        elif selection == 'Append data to an existing file':
+            self.append_tabular_data()
+
+        return None
+
+
+
+    def append_tabular_data(self):
+
+        # Select the file to append data to
+        data_folder = os.path.join(st.session_state.project_folder, 'data')
+
+        files = glob(os.path.join(data_folder, '*.parquet'))
+        # Add Select a file to the beginning of the list
+        files = ['Select a file'] + files
+
+        # Remove the documents.parquet file from the list
+        files = [file for file in files if 'documents.parquet' not in file]
+
+        # Remove the directory path from the file names and extensions
+        clean_file_names = [os.path.basename(file) for file in files]
+
+        # remove the .parquet extension from the file names
+        clean_file_names = [file.replace('.parquet', '') for file in clean_file_names]
+
+        # Create a mapping of file name to file path
+        file_name_to_path = {file_name: file_path for file_name, file_path in zip(clean_file_names, files)}
+
+        selected_file_name = st.selectbox(r"$\textsf{\ Select a file to append data to}$", clean_file_names, key = f'tabular_data_append_{st.session_state.ss_num}')
+        if selected_file_name == 'Select a file':
+            st.warning('Please select a file')
+            st.stop()
+
+        selected_file = file_name_to_path[selected_file_name]
+        df1 = pd.read_parquet(selected_file)
+
+        # Upload a new file
+        df = self.upload_tabular_data(append=True)
+        df['file_name'] = selected_file
+
+        # If the columns are different, show the missing columns
+        df1_cols = set(df1.columns.tolist())
+        df2_cols = set(df.columns.tolist())
+        if df1_cols != df2_cols:
+            missing_cols = df1_cols.difference(df2_cols)
+            st.warning(f'The following columns are missing in the uploaded file: {missing_cols} from the existing file. If you are okay with this, click the button below to append the data.')
+        else:
+            st.info("The columns in the uploaded file match the columns in the existing file")
+
+        # Create a button to append the data to the existing file
+        if st.button('Append data'):
+            # Append the data
+            df = pd.concat([df1, df])
+            # Save the file to the data folder
+            df.to_parquet(selected_file, index=False)
+            st.success(f'Data appended successfully')
+            st.session_state.files_uploaded = False
+            st.session_state.ss_num += 1
+            st.rerun()
+
+
 
     def create_document_chunk_df(self, documents_folder):
         """
@@ -151,7 +230,7 @@ class DataUploader:
                 contents = f.read()
                 tmp_dict['text'] = contents
 
-            tmp_dict['filename'] = os.path.basename(document)
+            tmp_dict['file_name'] = os.path.basename(document)
             documents.append(tmp_dict)
         
         return pd.DataFrame(documents)
@@ -173,7 +252,7 @@ class DataUploader:
         """
         
         allowed_document_file_extensions = ['txt', 'vtt']
-        uploaded_files = st.file_uploader("Upload your documents", \
+        uploaded_files = st.file_uploader(r"$\textsf{\ Upload your documents}$", \
             type=allowed_document_file_extensions, key = f'document_upload_{st.session_state.ss_num}', \
                 accept_multiple_files=True,
                 help='Upload your documents here. You may upload multiple documents at once.')
@@ -209,6 +288,10 @@ class DataUploader:
             data_folder = os.path.join(st.session_state.project_folder, 'data')
             file_path = os.path.join(data_folder, 'documents.parquet')
 
+            # Change the column name to file_name if it is not already file_name
+            if 'file_name' not in df_chunks.columns.tolist():
+                df_chunks = df_chunks.rename(columns={'filename': 'file_name'})
+
             if os.path.exists(file_path):
                 df = pd.read_parquet(file_path)
                 df = pd.concat([df, df_chunks])
@@ -227,4 +310,4 @@ class DataUploader:
             st.session_state.ss_num += 1
             st.rerun()
 
-        
+        return None

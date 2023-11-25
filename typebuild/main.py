@@ -59,6 +59,7 @@ menu_bar_options = [
     ['HOME','Data','search_placeholder','helpers'],
     ['Data','Upload Data','data_management_interface','helpers'],
     ['Data','Upload Documents','data_management_interface','helpers'],
+    ['Data','Delete Data','data_management_interface','helpers'],
     ['HOME', 'Nodes', 'show_node_properties', 'graphical_menu'],
     ]
 
@@ -76,3 +77,6 @@ nodes = get_available_destinations()
 # st.json(f'{nodes}')
 
 st.sidebar.write(f'Active Step: {st.session_state.activeStep}')
+# print selected node
+if 'selected_node' in st.session_state:
+    st.sidebar.code(f'{st.session_state.selected_node}')

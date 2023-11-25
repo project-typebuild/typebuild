@@ -164,15 +164,29 @@ def data_management_interface():
     It imports the 'data_management' module and calls its 'main' function.
     """
     from data_management.uploader import DataUploader
+    from data_management.deleter import DataDeleter
+
+
     if 'DataUploader' not in st.session_state:
-        data_manager = DataUploader()
-        st.session_state.DataUploader = data_manager
+        data_uploader = DataUploader()
+        st.session_state.DataUploader = data_uploader
     else:
-        data_manager = st.session_state.DataUploader
-    if st.session_state.selected_node == 'Upload Data':
-        data_manager.upload_tabular_data()
-    data_manager.upload_document_files()
+        data_uploader = st.session_state.DataUploader
+
+    if st.session_state.selected_node == 'Upload Data~helpers':
+        data_uploader.tabular_data()
+    elif st.session_state.selected_node == 'Upload Documents~helpers':
+        data_uploader.upload_document_files()
     
+    if 'DataDeleter' not in st.session_state:
+        data_deleter = DataDeleter()
+        st.session_state.DataDeleter = data_deleter
+
+    data_deleter = st.session_state.DataDeleter
+
+    if st.session_state.selected_node == 'Delete Data~helpers':
+        data_deleter.delete_files()
+
     return None
 
 
