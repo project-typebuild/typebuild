@@ -23,11 +23,18 @@ def display_messages(messages, expanded=True):
         with st.expander("View chat", expanded=expanded):
             for i, msg in enumerate(messages):
                 # TODO: REMOVE SYSTEM MESSAGES AFTER FIXING BUGS
-                if msg['role'] in ['user', 'assistant', 'system']:
-                    the_content = msg['content']
+                the_content = msg['content']
+                if msg['role'] in ['user', 'assistant']:
                     with st.chat_message(msg['role']):
-                        
-                        st.markdown(str(the_content).replace('\n', '\n\n'))
+                        if the_content.startswith('{'):
+                            the_content = eval(the_content)
+                            st.json(the_content)
+                        if isinstance(the_content, dict):
+                            st.json(the_content)
+                        else:
+                            st.markdown(the_content.replace('\n', '\n\n'))
+                if msg['role'] == 'system':
+                    st.info(the_content)        
     return None
 
 
@@ -139,13 +146,13 @@ def manage_task(agent_manager, res_dict, res):
             agent_manager.add_task(
                 agent_name=agent_name, 
                 task_name=task_name, 
-                prompt=task_description
+                task_description=task_description
                 )
             # Add the message to the new task
             agent_manager.set_message(
                 role="assistant", 
                 content=task_description, 
-                task=task_name
+                task=task_name,
                 )
 
     if res_dict.get('task_finished', False):
@@ -209,7 +216,7 @@ def manage_tool_interaction(agent_manager, res_dict):
         tool_result = {'content': tool_result}
 
     # Check if the the task is done and can be transferred to orchestration.
-    if tool_result.get('task_finished', False):
+    if tool_result.get('task_finished', True):
         # Add a message from the tool to the agent manager
         content = f"""MESSAGE TO THE AGENT MANAGER.  
         The {agent_manager.current_task} task is done.\n"""
@@ -280,7 +287,7 @@ def add_objective(agent_manager):
                 agent_manager.add_task(
                     agent_name='agent_manager', 
                     task_name=task, 
-                    prompt=f'Write a haiku about {task}'
+                    task_description=f'Write a haiku about {task}'
                     )
                 # Set ask llm to true
             st.session_state.ask_llm = True

@@ -202,7 +202,9 @@ class AgentManager(Agent):
         self.current_task = 'orchestration'
         self.managed_tasks = {}
         self.objectives = OrderedDict()
-        self.task_tuple = namedtuple('Task', ['agent_name', 'agent', 'task_name', 'prompt', 'status'])
+        self.task_tuple = namedtuple(
+            'Task', 
+            ['agent_name', 'agent', 'task_name', 'prompt', 'status'])
         # Agent names and descriptions of all available agents
         # All the agents available to this manager
         
@@ -227,6 +229,30 @@ class AgentManager(Agent):
             
             messages.extend(agent_messages)
         return messages
+
+    def add_task(self, agent_name, task_name, task_description):
+        """
+        Add a new agent to the list of managed agents.
+
+        Args:
+            agent_name (str): The name of the agent to be added.
+
+        Returns:
+            None
+        """
+        if task_name not in self.managed_tasks:
+            # Create an named tuple with the agent name, agent and description
+            agent = Agent(agent_name)
+            self.managed_tasks[task_name] = self.task_tuple(
+                agent_name=agent_name, 
+                agent=agent, 
+                task_name=task_name, 
+                prompt=task_description,
+                status='just_started'
+                )
+            # Add the task name to scheduled tasks
+            self.scheduled_tasks.append(task_name)
+        return None
 
     def add_objective(self, objective_name, task_list):
         """
