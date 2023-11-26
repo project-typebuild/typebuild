@@ -75,6 +75,9 @@ def manage_llm_interaction(agent_manager):
     Returns (str):
     - The response from the LLM.
     """
+    # FETC
+
+    current_task = agent_manager.current_task
     # Get messages for the LLM
     system_instruction = agent_manager.get_system_instruction(agent_manager.current_task)
     # st.success(f"System instruction: {system_instruction}")
@@ -275,7 +278,7 @@ def add_objective(agent_manager):
 
     # TODO: FIND OUT WHY THIS GETS REPEATED MANY TIMES.
     objective = "Haiku collection on each season"
-    tasks = ['summer_haiku']
+    tasks = ['summer', 'winter']
     # Tasks not in managed tasks
     tasks_to_add = [i for i in tasks if i not in agent_manager.managed_tasks]
     
@@ -286,7 +289,7 @@ def add_objective(agent_manager):
                 # Create new search task
                 agent_manager.add_task(
                     agent_name='agent_manager', 
-                    task_name=task, 
+                    task_name=f'{task}_haiku', 
                     task_description=f'Write a haiku about {task}'
                     )
                 # Set ask llm to true

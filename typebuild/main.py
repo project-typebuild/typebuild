@@ -31,24 +31,30 @@ else:
     settings_main()
 
 # If latest request or response are there, show checkbox to show them
+please_stop = False
 if 'last_request' in st.session_state:
     show_request = st.sidebar.checkbox('Show latest request')
     if show_request:
+        please_stop = True
         st.write(st.session_state.last_request)
     show_all_messages = st.sidebar.checkbox('Show all messages')
     if show_all_messages:
+        please_stop = True
         st.write(st.session_state.all_messages)
 if 'last_response' in st.session_state:
     show_response = st.sidebar.checkbox('Show latest response')
     if show_response:
+        please_stop = True
         res = st.session_state.last_response
         st.warning(st.session_state.last_response)
 
 # If there is a message from the agent, show it (temporary)
 if 'agent_messages' in st.session_state:
     if st.sidebar.checkbox('Show agent messages'):
+        please_stop = True
         st.success(st.session_state.agent_messages)
-
+if please_stop:
+    st.stop()
 # test_main()
 
 

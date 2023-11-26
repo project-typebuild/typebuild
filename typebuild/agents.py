@@ -242,7 +242,10 @@ class AgentManager(Agent):
         """
         if task_name not in self.managed_tasks:
             # Create an named tuple with the agent name, agent and description
-            agent = Agent(agent_name)
+            if agent_name == 'agent_manager':
+                agent = self
+            else:
+                agent = Agent(agent_name)
             self.managed_tasks[task_name] = self.task_tuple(
                 agent_name=agent_name, 
                 agent=agent, 
