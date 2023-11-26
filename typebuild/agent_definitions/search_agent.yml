@@ -15,4 +15,3 @@ default_model: "gpt-4"
 tools:
   - duckduckgo
   - youtube_transcript_search
-

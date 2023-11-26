@@ -11,8 +11,20 @@ system_instruction: |
     "agent_name": "agent_name",
     "transfer_to_task": "concise name for the task",
     "task_description": "detailed description of the task",
+    "explain_to_user": "tell the user what you are doing"
   }
+
   When their task is done, the agent may send you a message.  Study this message and respond to the user to be helpful.
+  Let the user know that the task is done and ask if they need anything else.
+  
+  When you talk to the user, use this json format:
+  {
+    "output": "message to the user",
+    "ask_human": true
+  }
+  Tip: Since you want the human to respond, you should always set ask_human to true.
+
+  
 temperature: 0.3
 max_tokens: 500
 default_model: "gpt-4"

@@ -26,7 +26,8 @@ def display_messages(messages, expanded=True):
                 if msg['role'] in ['user', 'assistant', 'system']:
                     the_content = msg['content']
                     with st.chat_message(msg['role']):
-                        st.markdown(the_content)
+                        
+                        st.markdown(str(the_content).replace('\n', '\n\n'))
     return None
 
 
@@ -115,14 +116,24 @@ def populate_res_dict(res_dict, res):
     return res_dict
 
 def manage_task(agent_manager, res_dict, res):
-
+    
+    # Convert the response to a dict even if it is a string
     res_dict = populate_res_dict(res_dict, res)
+    
     # If the response is a request for a new agent, create the agent, if it does not exist
     if 'transfer_to_task' in res_dict:
         agent_name = res_dict.get('agent_name', 'agent_manager')
         task_name = res_dict.get('transfer_to_task', 'orchestration')
         task_description = res_dict.get('task_description', 'No description provided.')
-        
+        explain_to_user = res_dict.get('explain_to_user', None)
+        # Add explanation as content to the messages
+        if explain_to_user:
+            agent_manager.set_message(
+                role="assistant", 
+                content=explain_to_user, 
+                task=task_name
+                )    
+
         if task_name != agent_manager.current_task and task_name != 'orchestration':
             st.info(f"Changing agent from {agent_manager.current_task} to {task_name}")
             agent_manager.add_task(
@@ -186,7 +197,7 @@ def manage_tool_interaction(agent_manager, res_dict):
     tool_args = inspect.getfullargspec(tool_function).args
 
     # Arguments for tool will be in res_dict under the key kwargs
-    args_for_tool = res_dict.get('kwargs', {})
+    args_for_tool = res_dict.get('kwargs', res_dict)
 
     # select the required arguments from res_dict and pass them to the tool
     kwargs = {k: v for k, v in args_for_tool.items() if k in tool_args}
@@ -254,26 +265,39 @@ def add_objective(agent_manager):
     """
     Adds the next tasks to the agent manager.
     """
-    tasks_to_add = ['cricket_haiku', 'haiku_christmas']
+
+    # TODO: FIND OUT WHY THIS GETS REPEATED MANY TIMES.
+    objective = "Haiku collection on each season"
+    tasks = ['summer_haiku']
     # Tasks not in managed tasks
-    tasks_to_add = [i for i in tasks_to_add if i not in agent_manager.managed_tasks]
+    tasks_to_add = [i for i in tasks if i not in agent_manager.managed_tasks]
+    
     if tasks_to_add:
         st.sidebar.info("There are new tasks to add.  Click the button below to add them.")
         if st.sidebar.button("Add new tasks"):
-            # Create new search task
-            agent_manager.add_task(
-                agent_name='haiku_agent', 
-                task_name='cricket_haiku', 
-                prompt='Write a haiku about crickets'
-                )
-            agent_manager.add_task(
-                agent_name='haiku_agent', 
-                task_name='haiku_christmas', 
-                prompt='Write a haiku about Christmas'
-                )
-            # Set ask llm to true
+            for task in tasks_to_add:
+                # Create new search task
+                agent_manager.add_task(
+                    agent_name='agent_manager', 
+                    task_name=task, 
+                    prompt=f'Write a haiku about {task}'
+                    )
+                # Set ask llm to true
             st.session_state.ask_llm = True
-    
+    completed_tasks = "\n- ".join([i for i in tasks if i in agent_manager.completed_tasks])
+    if completed_tasks:
+        completed_tasks = f"### Completed tasks:\n\n- {completed_tasks}"
+    scheduled_tasks = "\n- ".join([i for i in tasks if i in agent_manager.scheduled_tasks])
+    if scheduled_tasks:
+        scheduled_tasks = f"### Scheduled tasks:\n\n- {scheduled_tasks}"
+    task_info = f"""# {objective}
+    There are {len(tasks)} tasks in this objective.
+    {completed_tasks}
+    {scheduled_tasks}
+    """
+    # Remove indents
+    task_info = "\n".join([i.strip() for i in task_info.split('\n')])
+    st.sidebar.markdown(task_info)
     return None
 
 # TODO: MAKE THIS A CHAT FRAMEWORK CLASS

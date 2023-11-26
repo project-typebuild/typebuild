@@ -19,7 +19,7 @@ import streamlit as st
 import importlib
 
 from extractors import Extractors
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 
 class Agent:
     # Class variable to store message history
@@ -49,7 +49,8 @@ class Agent:
         return messages
 
     def add_context_to_system_instruction(self):
-        
+        # TODO: DOCUMENT WHAT THIS DOES.  
+        # Should we rename this so we understand what context means?
         if hasattr(self, 'get_data_from'):
             module_name = self.get_data_from.get('module_name', '')
             function_name = self.get_data_from.get('function_name', '')
@@ -200,6 +201,7 @@ class AgentManager(Agent):
         # Only one agent can work at a time.  The default is the manager
         self.current_task = 'orchestration'
         self.managed_tasks = {}
+        self.objectives = OrderedDict()
         self.task_tuple = namedtuple('Task', ['agent_name', 'agent', 'task_name', 'prompt', 'status'])
         # Agent names and descriptions of all available agents
         # All the agents available to this manager
@@ -226,25 +228,26 @@ class AgentManager(Agent):
             messages.extend(agent_messages)
         return messages
 
-    def add_task(self, agent_name, task_name, prompt):
+    def add_objective(self, objective_name, task_list):
         """
-        Add a new agent to the list of managed agents.
+        Add a new objective to the objectives attribute, which is an ordered dictionary.
 
         Args:
-            agent_name (str): The name of the agent to be added.
+            objective_name (str): The name of the objective to be added as the key
+            task_list (list): A list of tasks that are part of the objective.  
+                These are prompts that will be passed to the agent manager to initiate each task.
 
         Returns:
             None
         """
-        if task_name not in self.managed_tasks:
-            # Create an named tuple with the agent name, agent and description
-            agent = Agent(agent_name)
-            self.managed_tasks[task_name] = self.task_tuple(agent_name, agent, task_name, prompt, 'just_started')
-            # Add the task name to scheduled tasks
-            self.scheduled_tasks.append(task_name)
-            self.current_task = task_name
-
+        # Note: The ideal thing to do is to have unique names for each task, so that they can be
+        # completed at any time.  However, we are not doing that for now.
+        self.objectives[objective_name] = {
+            'scheduled': task_list, 
+            'completed': [], 
+            'status': 'not_started'}
         return None
+
 
     def complete_task(self, task_name):
         """
@@ -298,7 +301,7 @@ class AgentManager(Agent):
                 self.agent_descriptions[agent_name] = description
         return None
     
-    def get_system_instruction(self, task):
+    def get_system_instruction(self, task_name):
         """
         Add the agent name and description to the system instructions
 
@@ -308,16 +311,26 @@ class AgentManager(Agent):
         Returns:
             str: The system instruction with the agent name and description
         """
-        if task in self.managed_tasks:
-            agent = self.get_agent(task)
-            instruction = agent.get_system_instruction_for_agent()
-        else:
+
+        if task_name == 'orchestration':
             instruction = self.add_context_to_system_instruction()
             # Add tools to the instruction
             instruction += self.get_tool_defs()
             instruction += "THE FOLLOWING IS A LIST OF AGENTS AVAILABLE.  DO NOT MAKE UP OTHER AGENTS.  CALL THEM BY THEIR NAME VERBATIM:\n"
             for agent_name, description in self.agent_descriptions.items():
                 instruction += f"- {agent_name}: {description}\n"
+            if self.scheduled_tasks:
+                scheduled_tasks = '- ' + '\n- '.join(self.scheduled_tasks)
+                instruction += f"""The following are the scheduled tasks:
+                {scheduled_tasks}
+                Explain to the user what you are working on."""
+
+        else:
+            task = self.get_task(task_name)
+            agent_name = task.agent_name
+            agent = task.agent
+            instruction = agent.get_system_instruction_for_agent()
+        
         return instruction
 
     def get_agent(self, task_name):

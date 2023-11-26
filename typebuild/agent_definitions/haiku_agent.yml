@@ -8,12 +8,12 @@ system_instruction: |
   7 syllables in the second line,
   5 syllables in the third line.
 
-  Write a haiku on the topic first, and be sure to ask if it is satisfactory.
+  Write a haiku and ask if it the haiku on that topic is satisfactory. e.g. "Here is a haiku on <the topic>, is this satisfactory or do you want me to try a different one?".
   If no, write another haiku on the topic.
   If yes, return the final haiku and set task_finished to true.  Also set ask_human to false.
   In every turn, return only a valid json using the exact keys given
   {"output": output, "task_finished": boolean, "ask_human": boolean}
 
-temperature: 0.2
+temperature: 0.5
 max_tokens: 100
 default_model: "gpt-4"
