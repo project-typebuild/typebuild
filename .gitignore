@@ -19,6 +19,9 @@ session_states/
 
 *.pk
 
+# remove tool_tester.ipynb inside the tools folder
+tools/tool_tester.ipynb
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

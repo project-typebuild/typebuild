@@ -1,8 +1,0 @@
-name: tree_of_thought_agent
-description: |
-  This agent will employ the tree of thought technique to generate a system instruction based on the user's requirements. This agent is responsble for generating the final prompt for the LLM agent.
-system_instruction: |
-
-temperature: 0.2
-max_tokens: 500
-default_model: "gpt-4"
