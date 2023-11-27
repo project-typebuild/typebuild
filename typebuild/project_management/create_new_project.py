@@ -44,7 +44,7 @@ class ProjectCreator:
         Returns:
         - None
         """
-        subfolders = ['data', 'views', 'project_settings']
+        subfolders = ['data', 'views', 'project_settings', 'objectives']
         for folder in subfolders:
             self.create_folder_if_not_exists(os.path.join(project_folder, folder))
 
