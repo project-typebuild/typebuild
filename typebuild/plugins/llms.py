@@ -99,11 +99,14 @@ def get_llm_output(messages, max_tokens=2500, temperature=0.4, model='gpt-4', fu
     extractors = Extractors()
     if '```' in str(content) or '|||' in str(content):
         # NOTE: THERE IS AN ASSUMPTION THAT WE CAN'T GET BOTH CODE AND REQUIREMENTS
-        extracted, function_name = extractors.parse_func_call_info(content)
+        extracted, function_name = extractors.extract_func_call_info(content)
         func_call = {'name': function_name, 'arguments': {'content':extracted}}
         st.session_state.last_function_call = func_call
 
-
+    import time
+    st.success(f"Response from LLM: {content}")
+    st.balloons()
+    time.sleep(2)
     return content
 
 
@@ -180,4 +183,3 @@ def get_claude_response(messages, max_tokens=2000):
         max_tokens_to_sample=max_tokens,
     )
     return response.completion
-
