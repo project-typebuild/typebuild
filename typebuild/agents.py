@@ -12,6 +12,17 @@ TODO:
 
 """
 
+"""
+REVISING AGENTS
+
+- One class now, which will be like AgentManager
+- Orchestration will have all agents, while others will find out from definitions.
+- All the task & objective related methods will move to task_graph.py
+- Add _ to all private methods
+- Simplify get_agent & get_task.  Make sure that the correct task gets the correct message.
+
+"""
+
 import time
 import yaml
 import os
@@ -48,7 +59,7 @@ class Agent:
             messages.append({'role': 'user', 'content': prompt})
         return messages
 
-    def add_context_to_system_instruction(self):
+    def replace_placeholder_with_actual_values(self):
         # TODO: DOCUMENT WHAT THIS DOES.  
         # Should we rename this so we understand what context means?
         if hasattr(self, 'get_data_from'):
@@ -79,7 +90,7 @@ class Agent:
         Returns:
             str: The system instruction.
         """
-        instruction = self.add_context_to_system_instruction()
+        instruction = self.replace_placeholder_with_actual_values()
         # Add tools to the instruction
         instruction += self.get_tool_defs()
 
@@ -342,7 +353,7 @@ class AgentManager(Agent):
         """
 
         if task_name == 'orchestration':
-            instruction = self.add_context_to_system_instruction()
+            instruction = self.replace_placeholder_with_actual_values()
             # Add tools to the instruction
             instruction += self.get_tool_defs()
             instruction += "THE FOLLOWING IS A LIST OF AGENTS AVAILABLE.  DO NOT MAKE UP OTHER AGENTS.  CALL THEM BY THEIR NAME VERBATIM:\n"
@@ -416,21 +427,6 @@ class AgentManager(Agent):
     
         return None
 
-
-
-    def set_assistant_message(self, message, task='orchestration'):
-        """
-        Adds an assistant message to the chat.
-
-        Args:
-            message (str): The message content from the assistant.
-        """
-        if task != 'orchestration':
-            agent = self.get_agent(task)
-            agent.messages.append({'role': 'assistant', 'content': message})
-        else:
-            self.messages.append({'role': 'assistant', 'content': message})
-        return None
 
     def chat_input_method(self):
         """
