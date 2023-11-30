@@ -2,11 +2,13 @@ import streamlit as st
 from plugins.llms import get_llm_output
 import os
 from glob import glob
-from agents import AgentManager, Agent
+from task import Task
+from task_graph import TaskGraph
 import importlib
 import json    
 import time
 import inspect
+from messages import Messages
 
 def display_messages(messages, expanded=True):
     """
@@ -23,18 +25,18 @@ def display_messages(messages, expanded=True):
         with st.expander("View chat", expanded=expanded):
             for i, msg in enumerate(messages):
                 # TODO: REMOVE SYSTEM MESSAGES AFTER FIXING BUGS
-                the_content = msg['content']
-                if msg['role'] in ['user', 'assistant']:
-                    with st.chat_message(msg['role']):
-                        if the_content.startswith('{'):
-                            the_content = eval(the_content)
-                            st.json(the_content)
-                        if isinstance(the_content, dict):
-                            st.json(the_content)
+                
+                if msg.role in ['user', 'assistant']:
+                    with st.chat_message(msg.role):
+                        if msg.content.startswith('{'):
+                            msg.content = eval(msg.content)
+                            st.json(msg.content)
+                        if isinstance(msg.content, dict):
+                            st.json(msg.content)
                         else:
-                            st.markdown(the_content.replace('\n', '\n\n'))
-                if msg['role'] == 'system':
-                    st.info(the_content)        
+                            st.markdown(msg.content.replace('\n', '\n\n'))
+                if msg.role == 'system':
+                    st.info(msg.content)        
     return None
 
 
@@ -49,8 +51,26 @@ def test_main():
     menu.add_edges(test_menu_items)
     return None
 
-def add_agent_manager_to_session_state():
-    if 'agent_manager' not in st.session_state:
+def get_template():
+    task_graph = TaskGraph("Create haikus on all seasons")
+    # Example Usage
+    task_graph.add_task(
+        task_name='Fall haiku', 
+        agent_name='haiku_agent',
+        task_description='Write a haiku about the Fall season',
+        )
+
+    task_graph.add_task(
+        task_name='Winter haiku', 
+        agent_name='haiku_agent',
+        task_description='Write a haiku about winter',
+        )
+    return task_graph
+
+def add_orchestration_to_session_state():
+    if 'orchestration' not in st.session_state:
+        task_graph = get_template()
+        st.session_state.task_graph = task_graph
         # Get all the agents from the agent_definitions folder, in os independent way
         # Current directory plus agent_definitions
         agent_definitions = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'agent_definitions')
@@ -59,11 +79,21 @@ def add_agent_manager_to_session_state():
         # Get the agent names
         agent_names = [os.path.basename(i).replace('.yml', '') for i in agent_files]
         # Add the agent names to AgentManager
-        agent_manager = AgentManager('agent_manager', agent_names)
-        st.session_state.agent_manager = agent_manager
+        orchestration_task_desc = f"""
+        You are helping the user complete the task: {task_graph.name}.  It has {task_graph.graph.number_of_nodes()}.
+        """
+        orchestration = Task(
+            task_name='orchestration', 
+            task_description=orchestration_task_desc,
+            agent_name='agent_manager',
+            available_agents=agent_names,
+            )
+        st.session_state.orchestration = orchestration
+        st.markdown(task_graph.generate_markdown())
+        st.session_state.current_task = 'orchestration'
     return None
 
-def manage_llm_interaction(agent_manager):
+def manage_llm_interaction_old():
     """
     This function sends messages to the LLM and gets a response.
     Based on the response, it could create additional specialized agents
@@ -104,6 +134,17 @@ def manage_llm_interaction(agent_manager):
         res = get_llm_output(messages, model=agent.default_model)
         st.info(f"LLM output: {res}")
     return res
+
+def manage_llm_interaction():
+
+    orchestration = st.session_state.orchestration
+    tg = st.session_state.task_graph
+    messages = tg.messages.get_messages_for_task('orchestration')
+    system_instruction = orchestration.get_system_instruction()
+    messages = tg.messages.get_messages_with_instruction(system_instruction)
+    res = get_llm_output(messages, model=orchestration.default_model)
+    return res
+
 
 def populate_res_dict(res_dict, res):
     """
@@ -248,67 +289,6 @@ def manage_tool_interaction(agent_manager, res_dict):
         st.sidebar.warning(f"Ask llm: {st.session_state.ask_llm}\n\nCurrent task: {agent_manager.current_task}")
     return None
 
-def show_task_messages(agent_manager):
-    """
-    Show the task names in a drop down
-    and the messages for the selected task.
-    """
-    # Get the task names
-    task_names = agent_manager.managed_tasks.keys()
-    # Show the task names in a drop down
-    all_tasks = list(task_names)
-    all_tasks.insert(0, 'orchestration')
-    all_tasks.insert(0, 'SELECT')
-    selected_task = st.sidebar.selectbox("Select task", all_tasks)
-    # Show the messages for the selected task
-    if selected_task != 'SELECT':
-        if selected_task == 'orchestration':
-            messages = agent_manager.messages
-        else:
-            messages = agent_manager.managed_tasks[selected_task].agent.messages
-        st.header(f"Messages for {selected_task}")
-        display_messages(messages)
-        st.stop()
-    return None
-
-def add_objective(agent_manager):
-    """
-    Adds the next tasks to the agent manager.
-    """
-
-    # TODO: FIND OUT WHY THIS GETS REPEATED MANY TIMES.
-    objective = "Haiku collection on each season"
-    tasks = ['summer', 'winter']
-    # Tasks not in managed tasks
-    tasks_to_add = [i for i in tasks if i not in agent_manager.managed_tasks]
-    
-    if tasks_to_add:
-        st.sidebar.info("There are new tasks to add.  Click the button below to add them.")
-        if st.sidebar.button("Add new tasks"):
-            for task in tasks_to_add:
-                # Create new search task
-                agent_manager.add_task(
-                    agent_name='agent_manager', 
-                    task_name=f'{task}_haiku', 
-                    task_description=f'Write a haiku about {task}'
-                    )
-                # Set ask llm to true
-            st.session_state.ask_llm = True
-    completed_tasks = "\n- ".join([i for i in tasks if i in agent_manager.completed_tasks])
-    if completed_tasks:
-        completed_tasks = f"### Completed tasks:\n\n- {completed_tasks}"
-    scheduled_tasks = "\n- ".join([i for i in tasks if i in agent_manager.scheduled_tasks])
-    if scheduled_tasks:
-        scheduled_tasks = f"### Scheduled tasks:\n\n- {scheduled_tasks}"
-    task_info = f"""# {objective}
-    There are {len(tasks)} tasks in this objective.
-    {completed_tasks}
-    {scheduled_tasks}
-    """
-    # Remove indents
-    task_info = "\n".join([i.strip() for i in task_info.split('\n')])
-    st.sidebar.markdown(task_info)
-    return None
 
 
 
@@ -316,30 +296,29 @@ def add_objective(agent_manager):
 def chat():
 
     # Add the agent manager to the session state
-    add_agent_manager_to_session_state()
-    agent_manager = st.session_state.agent_manager
+    add_orchestration_to_session_state()
+    tg = st.session_state.task_graph    
+    orchestration = st.session_state.orchestration
      
-    add_objective(agent_manager)
-
     # Create the chat input and display
-    st.sidebar.success(f"Scheduled tasks: {agent_manager.scheduled_tasks}")
-    agent_manager.chat_input_method()    
-    show_task_messages(agent_manager)
-    messages = agent_manager.get_messages()    
+    tg.messages.chat_input_method()    
+    messages = tg.messages.get_all_messages()
+    
     display_messages(messages, expanded=True)
+    st.sidebar.info(f"Ask llm: {st.session_state.ask_llm}\n\nCurrent task: {st.session_state.current_task}")
 
-    st.sidebar.info(f"Ask llm: {st.session_state.ask_llm}\n\nCurrent task: {agent_manager.current_task}")
 
     # ask_llm took can be set to true by agents or by tools
     # that add to the message queue without human input
     # and request a response from the llm
     if st.session_state.ask_llm:
         # Get the response from the llm
-        res = manage_llm_interaction(agent_manager)        
+        res = manage_llm_interaction()        
         # Extract the response dictionary
         res_dict = st.session_state.extractor.extract_dict_from_response(res)
-        # st.write(res_dict)
-        # st.code(res)
+        st.write(res_dict)
+        st.code(res)
+        st.stop()
         res_dict = manage_task(agent_manager, res_dict, res)
         # If a tool is used, ask the llm to respond again
         if 'tool_name' in res_dict:

@@ -16,7 +16,8 @@ from helpers import starter_code
 # Starter code has to run early.  Do not move.
 starter_code()
 
-from chat import chat
+# from chat import chat
+from new_chat import chat
 from graphical_menu import GraphicalMenu
 from tb_settings import settings_main
 from function_management import run_current_functions

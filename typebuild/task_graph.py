@@ -12,22 +12,91 @@ import os
 import networkx as nx
 import pickle
 import streamlit as st
-
+from messages import Messages
+from task import Task
 class TaskGraph:
     def __init__(self, name):
         self.graph = nx.DiGraph()
         self.name = name
+        self.messages = Messages(name)
     
-    # TODO: Add other arguments to the constructor
-    # TODO: Some nodes are just categories with children tasks that don't need to be done themselves.
-    def add_task(self, task_name, sequence, completed=False):
-        self.graph.add_node(task_name, sequence=sequence, completed=completed)
+    def add_task(self, task_name, task_description, agent_name, sequence=None, available_agents=[], decision_function=None, **kwargs):
+        """
+        Adds a node to the graph. The node can be a regular task or a decision node,
+        depending on the 'decision' flag and additional keyword arguments.
+
+        Args:
+            task_name: The name of the task to add.
+            task: Text describing the task to be given to the language model.
+            sequence: The sequence number of the node.
+            completed: Whether the node is completed.
+            decision_function: The function to call if this is a decision node.
+            **kwargs: Additional keyword arguments for decision nodes.
+        """
+
+        node_attributes = {
+            'sequence': sequence,
+            'completed': False,
+            'decision_function': decision_function,
+            'task': Task(
+                task_name=task_name, 
+                task_description=task_description,
+                agent_name=agent_name, 
+                available_agents=available_agents
+                ),
+        }
+
+        if decision_function and not kwargs.get('branches', None):
+            raise Exception("Decision nodes must have branches.")
+        # Add additional attributes for decision nodes
+        if kwargs:
+            node_attributes.update(kwargs)
+
+        self.graph.add_node(task_name, **node_attributes)
+        return None
+
+    def calculate_sequence_number(self, parent_name=None, before_node=None, after_node=None):
+        """
+        Calculates a non-conflicting sequence number for a new node based on the specified parameters.
+        """
+        def find_gap(sequences, start, increment):
+            seq = start
+            while seq in sequences:
+                seq += increment
+            return seq
+
+        sibling_sequences = []
+        if parent_name and parent_name in self.graph:
+            sibling_sequences = [self.graph.nodes[sib]['sequence'] for sib in self.graph.successors(parent_name)]
+
+        if before_node and before_node in self.graph:
+            before_sequence = self.graph.nodes[before_node]['sequence']
+            return find_gap(sibling_sequences, before_sequence - 0.1, -0.01)
+        elif after_node and after_node in self.graph:
+            after_sequence = self.graph.nodes[after_node]['sequence']
+            return find_gap(sibling_sequences, after_sequence + 0.1, 0.01)
+        else:
+            return max(sibling_sequences, default=0) + 1
+
+
+    def find_parent(self, node_name):
+        """
+        Finds the parent of the given node. Returns the parent node's name,
+        or None if the node has no parent or does not exist.
+        """
+        if node_name in self.graph:
+            for parent, child in self.graph.edges():
+                if child == node_name:
+                    return parent
+        return None
+
 
     def add_dependency(self, parent_task, child_task):
         if parent_task in self.graph and child_task in self.graph:
             self.graph.add_edge(parent_task, child_task)
         else:
             st.warning("Both tasks must exist in the graph to add a dependency.")
+
 
     def update_task(self, task_name, sequence=None, completed=None, other_attributes={}):
         if task_name in self.graph:
@@ -59,6 +128,20 @@ class TaskGraph:
         # If the current node is completed, return None
         return None
 
+    def _find_next_task(self, node):
+        if not self.graph.nodes[node]['completed']:
+            if self.graph.nodes[node].get('decision', None):
+                condition = self.graph.nodes[node]['condition']
+                outcome = condition()
+                next_branch = self.graph.nodes[node]['branches'][outcome]
+                return self._find_next_task(next_branch)
+            else:
+                for neighbor in sorted(self.graph.neighbors(node), key=lambda x: self.graph.nodes[x]['sequence']):
+                    next_task = self._find_next_task(neighbor)
+                    if next_task:
+                        return next_task
+                return node
+        return None
 
     def get_next_task(self, start_node=None):
         """
@@ -113,3 +196,18 @@ class TaskGraph:
             self.graph = pickle.load(file)
         return None
 
+    def generate_markdown(self):
+        """
+        Generates a markdown text from the task graph with hierarchical tasks.
+        """
+        md_text = f'# {self.name}\n\n'
+        def format_task(node, level=0):
+            task_info = self.graph.nodes[node]
+            md_line = f"{'  ' * level}- **{node}**: {task_info.get('task', {}).task_description}\n"
+            for child in sorted(self.graph.successors(node), key=lambda x: self.graph.nodes[x]['sequence']):
+                md_line += format_task(child, level + 1)
+            return md_line
+
+        for node in [n for n, d in self.graph.in_degree() if d == 0]:  # Root nodes
+            md_text += format_task(node)
+        return md_text

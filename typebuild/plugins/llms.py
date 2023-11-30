@@ -1,7 +1,7 @@
 import os
 import re
 import streamlit as st
-import openai
+from openai import OpenAI
 from anthropic import Anthropic, HUMAN_PROMPT, AI_PROMPT
 from tenacity import (
     retry,
@@ -79,12 +79,12 @@ def get_llm_output(messages, max_tokens=2500, temperature=0.4, model='gpt-4', fu
     elif model == 'claude-2' and 'claude_key' in st.session_state:
         content = get_claude_response(messages, max_tokens=max_tokens)
     else:
-        msg = get_openai_output(messages, max_tokens=max_tokens, temperature=temperature, model=model, functions=functions)
-        content = msg.get('content', None)
-        if 'function_call' in msg:
-            func_call = msg.get('function_call', None)
-            st.session_state.last_function_call = func_call
-            st.sidebar.info("Got a function call from LLM")
+        content = get_openai_output(messages, max_tokens=max_tokens, temperature=temperature, model=model, functions=functions)
+        # content = msg.get('content', None)
+        # if 'function_call' in msg:
+        #     func_call = msg.get('function_call', None)
+        #     st.session_state.last_function_call = func_call
+        #     st.sidebar.info("Got a function call from LLM")
     
     
     if content:
@@ -126,24 +126,31 @@ def get_openai_output(messages, max_tokens=3000, temperature=0.4, model='gpt-4',
     - max_tokens (int): The maximum number of tokens to generate, default 800
     - temperature (float): The temperature for the model. The higher the temperature, the more random the output
     """
+    # Enable adding the key here.
+    client = OpenAI()
+    if '4' in model:
+        model = "gpt-4-1106-preview"
+    params = {
+        "model": model,
+        "max_tokens": max_tokens,
+        "temperature": temperature,
+        "n": 1,
+        "messages": messages
+    }
     if functions:
-        response = openai.ChatCompletion.create(
-                    model="gpt-4-0613",
-                    messages = messages,
-                    max_tokens=max_tokens,
-                    temperature=temperature,
-                    n=1,
-                    functions=functions,
-                )
-    else:
-        response = openai.ChatCompletion.create(
-                    model=model,
-                    messages = messages,
-                    max_tokens=max_tokens,
-                    temperature=temperature,
-                    n=1,
-                )
-    msg = response.choices[0].message
+        params['functions'] = functions
+    
+    # If the word "json" is found in the content, ask for a json object as response
+    json_found = False
+    for i in messages:
+        if "json" in i['content'].lower():
+            json_found = True
+            break
+    if json_found:
+        params['response_format'] = {"type": "json_object"}
+
+    response = client.chat.completions.create(**params)
+    msg = response.choices[0].message.content
     
     return msg
 
