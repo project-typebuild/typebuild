@@ -70,6 +70,7 @@ menu_bar_options = [
     ['Data','Upload Documents','data_management_interface','helpers'],
     ['Data','Delete Data','data_management_interface','helpers'],
     ['HOME', 'Nodes', 'show_node_properties', 'graphical_menu'],
+    ['HOME','LLM Research','llm_research_interface','helpers'],
     ]
 
 menu.add_edges(menu_bar_options) # add the edges to the menu in the GraphicalMenu class

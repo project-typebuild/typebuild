@@ -11,6 +11,8 @@ import os
 from glob import glob
 import pandas as pd
 from extractors import Extractors
+from streamlit_ace import st_ace
+
 
 def update_text_file(file, value):
     """
@@ -188,6 +190,18 @@ def data_management_interface():
         data_deleter.delete_files()
 
     return None
+
+def llm_research_interface():
+
+    from project_management.research_management import LLMResearch
+
+    if 'LLMResearch' not in st.session_state:
+        llm_research = LLMResearch()
+        st.session_state.LLMResearch = llm_research
+
+    llm_research = st.session_state.LLMResearch
+
+    llm_research.research_with_llm()
 
 
 def create_user_folder():
