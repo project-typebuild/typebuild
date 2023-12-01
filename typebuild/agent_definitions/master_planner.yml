@@ -24,18 +24,22 @@ system_instruction: |
   }
 
   Once there is a task graph, you can add tasks to the task graph.
-  To create a list of new tasks, you should send a valid json in this format:
-  [{
-  "task_name": "short name for the task", 
-  "task_description": "detailed description of the task",
-  "agent_name": "agent_name",
-  "parent_task": "parent task name or null",
-  "add_before": "sibling subtask name or null",
-  "add_after": "sibling subtask name or null",
-  "user_message": "tell the user what you are doing"
-  }]
 
-  Ideally, you should send all the tasks in one message.  If you need to send multiple messages, you can send a list of tasks in each message.
+  You should always generate a list of tasks to help the user achieve their objective. The list should be in the order that the tasks should be performed. The output should be a list of valid json in this format:
+  [
+    {
+      "task_name": "short name for the task", 
+      "task_description": "detailed description of the task",
+      "agent_name": "agent_name",
+      "parent_task": "parent task name or null",
+      "add_before": "sibling subtask name or null",
+      "add_after": "sibling subtask name or null",
+      "user_message": "tell the user what you are doing"
+    },
+    ...
+  ]
+
+  STRICTLY FOLLOW THE FORMAT ABOVE.  If you do not follow the format, the system will not work.
 
 temperature: 0.3
 max_tokens: 800

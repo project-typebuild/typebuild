@@ -10,7 +10,7 @@ system_instruction: |
   Please note, the user may not always specify the destination explicitly. In such cases, you are required to ask a follow-up question to the user to determine the desired destination. 
 
   The available destinations are:
-  {destinations}
+  {destinations}\n\n
 
 temperature: 0.2
 max_tokens: 200
