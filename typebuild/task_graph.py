@@ -9,18 +9,23 @@
 """
 
 import os
+import time
 import networkx as nx
 import pickle
 import streamlit as st
 from messages import Messages
 from task import Task
 class TaskGraph:
-    def __init__(self, name):
+    def __init__(self, name=None, objective=None):
         self.graph = nx.DiGraph()
+        self.graph.add_node('root', sequence=0, completed=False)
         self.name = name
+        self.objective = objective
         self.messages = Messages(name)
+        # If true, this conversation is sent to the planner.
+        self.send_to_planner = True
     
-    def add_task(self, task_name, task_description, agent_name, sequence=None, available_agents=[], decision_function=None, **kwargs):
+    def add_task(self, task_name, task_description, agent_name, parent_task=None, sequence=None, available_agents=[], decision_function=None, **kwargs):
         """
         Adds a node to the graph. The node can be a regular task or a decision node,
         depending on the 'decision' flag and additional keyword arguments.
@@ -33,7 +38,16 @@ class TaskGraph:
             decision_function: The function to call if this is a decision node.
             **kwargs: Additional keyword arguments for decision nodes.
         """
+        if kwargs.get('before_task') and not parent_task:
+            parent_task = self.find_parent(kwargs['before_task'])
+        
+        if kwargs.get('after_task') and not parent_task:
+            parent_task = self.find_parent(kwargs['after_task'])
 
+        if not parent_task:
+            parent_task = 'root'
+        if not sequence:
+            sequence = self.calculate_sequence_number(parent_task)
         node_attributes = {
             'sequence': sequence,
             'completed': False,
@@ -53,9 +67,14 @@ class TaskGraph:
             node_attributes.update(kwargs)
 
         self.graph.add_node(task_name, **node_attributes)
+        # Add a parent task. If there's no parent, add a root node.
+        self.add_parent(task_name, parent_task)
+        # Provide confirmation
+        st.success(f"Added task '{task_name}' to the graph.")
+        time.sleep(2)
         return None
 
-    def calculate_sequence_number(self, parent_name=None, before_node=None, after_node=None):
+    def calculate_sequence_number(self, parent_task, before_node=None, after_node=None):
         """
         Calculates a non-conflicting sequence number for a new node based on the specified parameters.
         """
@@ -65,11 +84,11 @@ class TaskGraph:
                 seq += increment
             return seq
 
-        sibling_sequences = []
-        if parent_name and parent_name in self.graph:
-            sibling_sequences = [self.graph.nodes[sib]['sequence'] for sib in self.graph.successors(parent_name)]
+        sibling_sequences = [self.graph.nodes[sib]['sequence'] for sib in self.graph.successors(parent_task)]
 
-        if before_node and before_node in self.graph:
+        if not sibling_sequences:
+            return 1
+        elif before_node and before_node in self.graph:
             before_sequence = self.graph.nodes[before_node]['sequence']
             return find_gap(sibling_sequences, before_sequence - 0.1, -0.01)
         elif after_node and after_node in self.graph:
@@ -96,7 +115,16 @@ class TaskGraph:
             self.graph.add_edge(parent_task, child_task)
         else:
             st.warning("Both tasks must exist in the graph to add a dependency.")
-
+    
+    def add_parent(self, child_task, parent_task=None):
+        if child_task in self.graph:
+            if parent_task:
+                self.graph.add_edge(parent_task, child_task)
+            else:
+                self.graph.add_edge('root', child_task)
+        else:
+            st.warning("The child task must exist in the graph to add a parent.")
+        return None
 
     def update_task(self, task_name, sequence=None, completed=None, other_attributes={}):
         if task_name in self.graph:
@@ -203,7 +231,7 @@ class TaskGraph:
         md_text = f'# {self.name}\n\n'
         def format_task(node, level=0):
             task_info = self.graph.nodes[node]
-            md_line = f"{'  ' * level}- **{node}**: {task_info.get('task', {}).task_description}\n"
+            md_line = f"{'  ' * level}- **{node}**: {task_info.get('task', {})}\n"
             for child in sorted(self.graph.successors(node), key=lambda x: self.graph.nodes[x]['sequence']):
                 md_line += format_task(child, level + 1)
             return md_line

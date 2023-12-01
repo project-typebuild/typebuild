@@ -60,6 +60,15 @@ instruction: |
 
     Write concise code based on the instructions above, fixing errors, if any.  Document it with detailed docstrings, and comments.
 
-temperature: 0.5
-max_tokens: 100
-default_model: "gpt-3.5-turbo"
+    Return a valid json with the following fields:
+    {
+      "user_message": your message to the user,
+      "ask_human": boolean
+      "task_finished": boolean
+      "type": "code",
+      "save_to_file": boolean
+      "content": the code
+    }
+temperature: 0.2
+max_tokens: 2000
+default_model: "gpt-4"

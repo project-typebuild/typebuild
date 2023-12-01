@@ -13,7 +13,7 @@ system_instruction: |
   {destinations}
 
 temperature: 0.2
-max_tokens: 100
+max_tokens: 200
 default_model: "gpt-4"
 get_data_from: 
   module_name: tools.navigator

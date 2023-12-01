@@ -17,7 +17,7 @@ from helpers import starter_code
 starter_code()
 
 # from chat import chat
-from new_chat import chat
+from chat_with_planning import chat
 from graphical_menu import GraphicalMenu
 from tb_settings import settings_main
 from function_management import run_current_functions

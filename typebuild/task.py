@@ -166,7 +166,14 @@ class Task:
             instruction += "THE FOLLOWING IS A LIST OF AGENTS AVAILABLE.  DO NOT MAKE UP OTHER AGENTS.  CALL THEM BY THEIR NAME VERBATIM:\n"
             for agent_name, description in self.agent_descriptions.items():
                 instruction += f"- {agent_name}: {description}\n"
-                
+
+        instruction += """Your response must always be a valid json.  It could contain different keys based on the task.
+        The following keys should always be present in the response:
+        - user_message: Your message to the user
+        - ask_human: boolean.  If True, the agent will ask for human intervention.        
+        """        
+        if self.task_name != 'orchestration':
+            instruction += "\n- task_finished: boolean"
         return instruction
 
 

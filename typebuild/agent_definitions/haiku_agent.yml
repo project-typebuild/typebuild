@@ -12,7 +12,7 @@ system_instruction: |
   If no, write another haiku on the topic.
   If yes, return the final haiku and set task_finished to true.  Also set ask_human to false.
   In every turn, return only a valid json using the exact keys given
-  {"output": output, "task_finished": boolean, "ask_human": boolean}
+  {"user_message": haiku output, "task_finished": boolean, "ask_human": boolean}
 
 temperature: 0.5
 max_tokens: 100

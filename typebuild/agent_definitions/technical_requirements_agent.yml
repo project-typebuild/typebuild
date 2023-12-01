@@ -54,7 +54,16 @@ instruction: |
 
     When the I am happy with the requirements, offer to save the requirements to a file.
 
+    Return a valid json with the following fields:
+    {
+      "user_message": your message to the user,
+      "ask_human": boolean
+      "task_finished": boolean
+      "type": "user_requirement",
+      "save_to_file": boolean
+      "content": the requirement
+    }
 temperature: 0.5
-max_tokens: 100
-default_model: "gpt-3.5-turbo"
+max_tokens: 800
+default_model: "gpt-4"
 

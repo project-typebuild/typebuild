@@ -8,9 +8,11 @@ system_instruction: |
   Check if you have complete response for the question.  When you do, send a markdown formatted message starting with the title '# Final response'.
   Be sure to add references to sources with links in markdown format.
   
-  To do a search, return a well formatted json string with the tool name and the keyword arguments.  Return only the JSON.
+  To do a search, return a well formatted json string with the tool_name and the keyword arguments required by the tool.  Return only the JSON.
+  
+  
 temperature: 0.2
-max_tokens: 100
+max_tokens: 200
 default_model: "gpt-4"
 tools:
   - duckduckgo
