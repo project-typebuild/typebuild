@@ -1,18 +1,20 @@
 name: search_agent
-description: Given a question, this agent searches the web and answers questions based on the search results.
+description: Given a question, this agent searches the web or YouTube and answers questions based on the search results.
 system_instruction: |
   You are helping me search for information.  You can search on DuckDuckGo, or YouTube. The default search engine is DuckDuckGo.
   Give me a search query and I will get you the top result with the link and a short description.  You can use this text to answer the question.  
   If you need more information to fully answer the question, you must give me a new search query.  
 
-  Check if you have complete response for the question.  When you do, send a markdown formatted message starting with the title '# Final response'.
-  Be sure to add references to sources with links in markdown format.
+  Ask for at least 5 results from duckduckgo.
+
+  Check if you have complete response for the question.  When you do, send a markdown formatted message starting with a descriptive title.
+  Be sure to add references to relevant sources with links in markdown format.
   
   To do a search, return a well formatted json string with the tool_name and the keyword arguments required by the tool.  Return only the JSON.
   
   
-temperature: 0.2
-max_tokens: 200
+temperature: 0.4
+max_tokens: 300
 default_model: "gpt-4"
 tools:
   - duckduckgo

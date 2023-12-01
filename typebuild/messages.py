@@ -28,7 +28,7 @@ class Messages:
     def get_all_messages(self):
         return self.messages
     
-    def chat_input_method(self):
+    def chat_input_method(self, task_name=None):
         """
         Handles the input of chat messages.
 
@@ -41,10 +41,13 @@ class Messages:
         """
         prompt = st.chat_input("Enter your message", key="chat_input")
         if prompt:
-            self.set_message(role="user", content=prompt, created_by="user", created_for="orchestration")
+            if not task_name:
+                task_name = st.session_state.current_task
+            self.set_message(role="user", content=prompt, created_by="user", created_for=task_name)
             self.ask_llm = True
             st.session_state.ask_llm = True
             self.display_expanded = True
+            st.session_state.all_messages.append({'role': 'user', 'content': prompt})
         return None
 
     def get_messages_with_instruction(self, system_instruction, created_for=None, prompt=None):

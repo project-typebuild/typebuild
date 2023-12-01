@@ -199,6 +199,23 @@ class TaskGraph:
         st.warning("All tasks are completed or no tasks are available.")
         return None
 
+    def get_next_task_node(self, start_node=None):
+        """
+        Public method to find the next task to complete. 
+        If start_node is given, start from there, else start from the root.
+
+        Args:
+            start_node: The node from which to start the search. If not given, start from the root.
+
+        Returns:
+            next_node: The next node to complete or None
+        """
+        next_task = self.get_next_task(start_node)
+        if next_task:
+            return self.graph.nodes[next_task]
+        else:
+            return None
+    
     def _get_file_path(self):
         """
         Returns the file path of the graph.

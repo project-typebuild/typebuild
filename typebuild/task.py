@@ -14,10 +14,10 @@ class Task:
 
     def __init__(self, task_name, agent_name, task_description, available_agents=[]):
         self.task_name = task_name
-        agent_instructions = self._parse_instructions(agent_name)
-        self.task_description = task_description
-        # Some agents have access to tools.  They are specified in agent definitions.
         self.tools = []
+        self._parse_instructions(agent_name)
+        self.task_description = task_description
+        
         
         # Some agents can delegate tasks to other agents.
         # This dict contains the names and descriptions of the available agents.
@@ -72,6 +72,7 @@ class Task:
             # Parse the variables
             for key in instructions:
                 setattr(self, key, instructions[key])
+            
             return instructions
         else:
             raise FileNotFoundError(f'No system instruction found for {agent_name}.')
@@ -106,7 +107,7 @@ class Task:
             tools = st.session_state.extractor.get_docstring_of_tools(self.tools)
             
             for tool in tools:
-                add_to_instruction += f"===\n\n{tool}: {tools[tool]}\n\n"
+                add_to_instruction += f"\n===\n\n{tool}: {tools[tool]}\n\n"
             
         
         return st.session_state.extractor.remove_indents_in_lines(add_to_instruction)
@@ -172,8 +173,12 @@ class Task:
         - user_message: Your message to the user
         - ask_human: boolean.  If True, the agent will ask for human intervention.        
         """        
-        if self.task_name != 'orchestration':
+        if self.task_name != 'planning':
             instruction += "\n- task_finished: boolean"
+        
+        instruction += "\n\n===\nTASK NAME: " + self.task_name + "\n\n"
+        instruction += "TASK DESCRIPTION: " + self.task_description + "\n\n"
+
         return instruction
 
 
