@@ -128,15 +128,8 @@ def get_openai_output(messages, max_tokens=3000, temperature=0.4, model='gpt-4',
     - temperature (float): The temperature for the model. The higher the temperature, the more random the output
     """
     # Enable adding the key here.
-
-    # Retrieve the API key from the environment variable
-    api_key = os.environ.get("OPENAI_API_KEY")
-
-    # Ensure the API key is set
-    if api_key is None:
-        raise ValueError("OPENAI_API_KEY environment variable is not set.")
-
-    client = OpenAI()
+    api_key = st.session_state.openai_key
+    client = OpenAI(api_key=api_key)
     if '4' in model:
         model = "gpt-4-1106-preview"
     params = {
