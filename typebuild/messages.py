@@ -22,11 +22,14 @@ class Messages:
     def get_messages_for_task(self, task_name):
         return [{'role': m.role, 'content': m.content} for m in self.messages if m.created_for == task_name]
     
+    def get_messages_for_task_family(self, task_family):
+        return [{'role': m.role, 'content': m.content} for m in self.messages if m.created_for in task_family]
+    
     def get_messages_by_task(self, task_name):
         return [m for m in self.messages if m.created_by == task_name]
     
     def get_all_messages(self):
-        return self.messages
+        return [{'role': m.role, 'content': m.content} for m in self.messages]
     
     def chat_input_method(self, task_name=None):
         """

@@ -1,5 +1,5 @@
 name: search_agent
-description: Given a question, this agent searches the web or YouTube and answers questions based on the search results.
+description: This agent can search the web or YouTube transcripts and extract information from the results based on the user request.  This happens in one task.
 system_instruction: |
   You are helping me search for information.  You can search on DuckDuckGo, or YouTube. The default search engine is DuckDuckGo.
   Give me a search query and I will get you the top result with the link and a short description.  You can use this text to answer the question.  
