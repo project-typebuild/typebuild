@@ -203,6 +203,17 @@ def llm_research_interface():
 
     llm_research.research_with_llm()
 
+    return None
+
+def arxiv_search_interface_for_menu():
+    """
+    This function serves as an interface for searching Arxiv.
+    It imports the 'arxiv_search' module and calls its 'main' function.
+    """
+    from tools.arxiv_search import ArxivSearch
+    arxiv_tool = ArxivSearch()
+    arxiv_tool.arxiv_interface()
+    return None
 
 def create_user_folder():
     """

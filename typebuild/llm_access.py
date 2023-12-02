@@ -30,6 +30,7 @@ class LLMConfigurator():
         claude_key = st.session_state.config.get('claude', {}).get('key', '')
         if api_key:
             openai.api_key = api_key
+            st.session_state.openai_key = api_key
         if claude_key:
             st.session_state.claude_key = claude_key
         return None

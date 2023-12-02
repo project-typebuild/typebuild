@@ -121,7 +121,6 @@ class DuckDuckGo:
                 # Perform the Google search
                 self.get_ddg_search_results(search_term, num_results=num_results)
                 # Save results to a Parquet file
-                st.session_state.project_folder = 'tmp'
                 self.store_to_db(search_term, project_folder=st.session_state.project_folder)
 
                 # Retrieve and display the file name where results are saved
@@ -140,6 +139,7 @@ def tool_main(search_term, num_results=1, full_text=False):
     Parameters:
     - search_term (str): The search term or search_term to search with.
     - num_results (int): The number of results to return.  Default is 1.
+    - full_text (bool): Whether to retrieve the full text of the page. Default is False.
     
     Returns (str):
     - The content of the results as one string.
