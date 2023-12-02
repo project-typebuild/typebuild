@@ -304,5 +304,5 @@ def chat():
             st.markdown(extractor.remove_indents_in_lines(what_to_do))
     #    Implement this after serialization to json is done
     #     # Allow the user to load a task graph
-        st.header("Load task graph")
+        
         tg._load_from_file()

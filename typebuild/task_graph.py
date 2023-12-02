@@ -311,24 +311,26 @@ class TaskGraph:
         # Get a list of files in the objectives folder
         path = os.path.join(st.session_state.user_folder, 'objectives')
         files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
-        # Add a blank option to the list
-        files.insert(0, 'SELECT')
-        # Display a selectbox to choose the file
-        file_name = st.selectbox("Choose a file to load", files)
-        if file_name == 'SELECT':
-            st.warning("Please select a file to load.")
-            return None
-        else:
-            file_path = os.path.join(path, file_name)
-            if st.button("Load"):
-                # Load with dill to preserve functions
-                with open(file_path, 'rb') as file:
-                    attributes = dl.load(file)
-                # Assign the attributes to the current graph
-                self.__dict__.update(attributes)
-                st.success(f"Loaded graph from '{file_name}'.")
-                time.sleep(2)
-                st.rerun()
+        if files:
+            st.header("Load task graph")
+            # Add a blank option to the list
+            files.insert(0, 'SELECT')
+            # Display a selectbox to choose the file
+            file_name = st.selectbox("Choose a file to load", files)
+            if file_name == 'SELECT':
+                st.warning("Please select a file to load.")
+                return None
+            else:
+                file_path = os.path.join(path, file_name)
+                if st.button("Load"):
+                    # Load with dill to preserve functions
+                    with open(file_path, 'rb') as file:
+                        attributes = dl.load(file)
+                    # Assign the attributes to the current graph
+                    self.__dict__.update(attributes)
+                    st.success(f"Loaded graph from '{file_name}'.")
+                    time.sleep(2)
+                    st.rerun()
         return None
 
     def generate_markdown(self):
