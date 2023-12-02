@@ -11,7 +11,6 @@
 - Navigation right now is not called as a task.  Either create a task, or call the nav agent directly.
 - Make sure that we do not have too many calls for simple navigation.
 """
-
 import time
 import streamlit as st
 from plugins.llms import get_llm_output
@@ -22,6 +21,7 @@ from task_graph import TaskGraph
 import importlib
 import json
 import inspect
+from extractors import Extractors
 
 def display_messages(expanded=True):
     """
@@ -39,7 +39,9 @@ def display_messages(expanded=True):
         
     for i, msg in enumerate(messages):
         if isinstance(msg, dict):
-            content = msg.get('user_message', msg.get('content', ''))
+            content = msg.get('content')
+            if 'user_message' in content:
+                content = json.loads(content)['user_message']
         elif isinstance(msg.content, str) and msg.content.strip().startswith('{'):
             content = json.loads(msg.content).get('user_message', msg.content)
         else:
@@ -67,7 +69,7 @@ def manage_llm_interaction():
         st.session_state.current_task = next_task_name
         next_task = tg.get_next_task_node()
         # Check if there are tasks, else send to planning
-        if 'task' in next_task:
+        if next_task:
             system_instruction = next_task['task'].get_system_instruction()
             messages = tg.get_messages_for_task_family(st.session_state.current_task)
 
@@ -180,14 +182,14 @@ def finish_tasks(res_dict):
             completed=True
             )
         next_task = st.session_state.task_graph.get_next_task()
-        if next_task == 'root':
-            st.success("All tasks are completed.")
-            st.session_state.ask_llm = False
-            st.session_state.task_graph.send_to_planner = True
-        else:
+        if next_task:
             st.session_state.current_task = next_task
             st.session_state.ask_llm = True
             st.session_state.task_graph.send_to_planner = False
+        else:
+            st.session_state.current_task = 'planning'
+            st.session_state.ask_llm = False
+            st.session_state.task_graph.send_to_planner = True
 
     return None
 
@@ -208,6 +210,8 @@ def manage_tool_interaction(res_dict):
     # select the required arguments from res_dict and pass them to the tool
     kwargs = {k: v for k, v in args_for_tool.items() if k in tool_args}
     tool_result = tool_function(**kwargs)
+    st.write(tool_result)
+    time.sleep(4)
     # TODO: Some tools like search need to consume the tool results.
     # Others like navigator need not.  Create a system to pass to the
     # correct task. 
@@ -219,14 +223,15 @@ def manage_tool_interaction(res_dict):
     content = tool_result.get('content', '')
     # Set ask_llm status
     if content:
-        if tool_result.get('task_finished', False):
+        if tool_result.get('task_finished', False) == True:
             finish_tasks(tool_result)
         else:
             st.session_state.ask_llm = True
-        
+            st.sidebar.success(f"Task is not finished yet for task {st.session_state.current_task}")
+            time.sleep(2)
         # Add this to the agent's messages
         st.session_state.task_graph.messages.set_message(
-            role='system', 
+            role='user', 
             content=content, 
             created_by=st.session_state.current_task, 
             created_for=st.session_state.current_task
@@ -244,6 +249,11 @@ def chat():
         st.session_state.task_graph = TaskGraph()
     add_planning_to_session_state()
     tg = st.session_state.task_graph
+    current_task = st.session_state.current_task
+    st.sidebar.info(f"Current task: {current_task}")
+    # all_messages = tg.get_messages_for_task_family(current_task)
+    # st.sidebar.write(all_messages)
+    
     if st.sidebar.button("Save graph"):
         tg._save_to_file()
         st.success("Saved graph to file.")
@@ -267,21 +277,32 @@ def chat():
         st.rerun()
     # TODO: Create the loop for the task graph.
     # Message 0 should be system instruction & message 1 should be the description.
+    # Check if current node task is incomplete
     
     next_task = tg.get_next_task()
-    if next_task != 'root':
+    if next_task:
         
-        
-        task_object = tg.graph.nodes[next_task]['task']
-        task_messages = tg.messages.get_messages_for_task(next_task)
-        for node in tg.graph.nodes:
-            st.info(tg.graph.nodes[node])
-    if next_task != 'root':
         if st.button(f"Start task {next_task}"):
             st.session_state.ask_llm = True
             tg.send_to_planner = False
+            st.session_state.current_task = next_task
             the_task = tg.graph.nodes[next_task]['task']
             si = the_task.get_system_instruction()
             st.code(si)
             st.markdown(the_task.task_description)
             st.rerun()
+    else:
+        # See if there are no messages
+        if not tg.messages.get_all_messages():
+            st.header("What would you like to do?")
+            what_to_do = """Just chat with me below to get started.
+            
+            - Navigate with chat
+            - Create a new project
+        """
+            extractor = Extractors()
+            st.markdown(extractor.remove_indents_in_lines(what_to_do))
+    #    Implement this after serialization to json is done
+    #     # Allow the user to load a task graph
+        st.header("Load task graph")
+        tg._load_from_file()

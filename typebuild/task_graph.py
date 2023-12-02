@@ -1,4 +1,5 @@
 """
+- TODO: Assign task to Dhru to serialize to JSON.
 - Add decision nodes and logic.
 - Figure out which task will respond to the user.
 - How do we model orchestration (between each transition).
@@ -12,6 +13,7 @@ import os
 import time
 import networkx as nx
 import pickle
+import dill as dl
 import streamlit as st
 from messages import Messages
 from task import Task
@@ -210,9 +212,10 @@ class TaskGraph:
         """
         if not current_node:
             current_node = 'root'
+        
         graph = self.graph
-        # Check if current node task is incomplete
-        if not graph.nodes[current_node]['complete']:
+        # Check if current node task is incomplete and is not root
+        if not graph.nodes[current_node]['completed'] and current_node != 'root':
             return current_node
         
         # Sort children by sequence
@@ -221,7 +224,7 @@ class TaskGraph:
         
         # Check each child recursively
         for child in children:
-            next_task = self.find_next_task(child)
+            next_task = self._find_next_incomplete_child(child)
             if next_task:
                 return next_task
         return None
@@ -237,21 +240,18 @@ class TaskGraph:
         Returns:
             next_node: The next node to complete or None
         """
+        if not start_node:
+            start_node = 'root'
+
         if start_node and start_node in self.graph:
             # next_task = self._find_next_task(start_node)
             next_task = self._find_next_incomplete_child(start_node)
             if next_task:
                 return next_task
             else:
-                st.warning(f"All tasks under '{start_node}' are completed or no tasks are available.")
+                
                 return None
 
-        # Find the root node(s) (nodes with no predecessors)
-        roots = [node for node in self.graph.nodes if self.graph.in_degree(node) == 0]
-        for root in sorted(roots, key=lambda x: self.graph.nodes[x]['sequence']):
-            next_task = self._find_next_task(root)
-            if next_task:
-                return next_task
         st.warning("All tasks are completed or no tasks are available.")
         return None
 
@@ -277,28 +277,58 @@ class TaskGraph:
         """
         Returns the file path of the graph.
         """
+        path = os.path.join(st.session_state.user_folder, 'objectives', f'{self.name}.dl')
+        directory = os.path.dirname(path)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
 
-        return os.path.join(st.session_state.user_folder, 'objectives', f'{self.name}.pk')
+        return path
     
     def _save_to_file(self):
         """
         Saves the graph to a file.
         """
-        file_path = self._get_file_path()
-        with open(file_path, 'wb') as file:
-            pickle.dump(self.graph, file)
+        # Can save only if the graph has a name
+        if not self.name:
+            st.warning("The graph must have a name to save.  Let's try again once we start the task.")
+            time.sleep(2)
+            
+        else:
+            file_path = self._get_file_path()
+            # Save with dill to preserve functions
+            with open(file_path, 'wb') as file:
+                # Get all the attributes as a dict
+                attributes = self.__dict__
+                # Save it as dill
+                dl.dump(attributes, file)
+                
         return None
 
     def _load_from_file(self):
         """
         Loads a graph from a file.
         """
-        file_path = self._get_file_path()
-        directory = os.path.dirname(file_path)
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-        with open(file_path, 'rb') as file:
-            self.graph = pickle.load(file)
+        # Get a list of files in the objectives folder
+        path = os.path.join(st.session_state.user_folder, 'objectives')
+        files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
+        # Add a blank option to the list
+        files.insert(0, 'SELECT')
+        # Display a selectbox to choose the file
+        file_name = st.selectbox("Choose a file to load", files)
+        if file_name == 'SELECT':
+            st.warning("Please select a file to load.")
+            return None
+        else:
+            file_path = os.path.join(path, file_name)
+            if st.button("Load"):
+                # Load with dill to preserve functions
+                with open(file_path, 'rb') as file:
+                    attributes = dl.load(file)
+                # Assign the attributes to the current graph
+                self.__dict__.update(attributes)
+                st.success(f"Loaded graph from '{file_name}'.")
+                time.sleep(2)
+                st.rerun()
         return None
 
     def generate_markdown(self):
