@@ -109,6 +109,31 @@ class TaskGraph:
                     return parent
         return None
 
+    def _get_successors_and_predecessors(self, node_name):
+        """
+        Returns the successors and predecessors of the given node,
+        and that node itself in a list.
+        """
+        successors = list(self.graph.successors(node_name))
+        predecessors = list(self.graph.predecessors(node_name))
+        return [node_name] + successors + predecessors
+
+    def get_messages_for_task(self, task_name):
+        """
+        Returns the messages for the given task.
+        """
+        return self.messages.get_messages_for_task(task_name)
+    
+    def get_messages_for_task_family(self, task_name):
+        """
+        Returns the messages for the given task and its ancestors and descendants.
+        """
+        if task_name in self.graph:
+            task_family = self._get_successors_and_predecessors(task_name)
+            return self.messages.get_messages_for_task_family(task_family)
+        else:
+            return []
+
 
     def add_dependency(self, parent_task, child_task):
         if parent_task in self.graph and child_task in self.graph:
@@ -171,6 +196,36 @@ class TaskGraph:
                 return node
         return None
 
+    def _find_next_incomplete_child(self, current_node=None):
+        """
+        This checks if the current node is complete. If it is, it checks its children.
+        It returns the first incomplete child that it finds, or None if all children are complete.
+        Uses a depth-first search.
+
+        Args:
+            current_node: The node to start the search from. If not given, start from the root.
+
+        Returns:
+            next_node: The next node to complete or None
+        """
+        if not current_node:
+            current_node = 'root'
+        graph = self.graph
+        # Check if current node task is incomplete
+        if not graph.nodes[current_node]['complete']:
+            return current_node
+        
+        # Sort children by sequence
+        children = list(graph.successors(current_node))
+        children.sort(key=lambda x: graph.nodes[x]['sequence'])
+        
+        # Check each child recursively
+        for child in children:
+            next_task = self.find_next_task(child)
+            if next_task:
+                return next_task
+        return None
+
     def get_next_task(self, start_node=None):
         """
         Public method to find the next task to complete. 
@@ -183,7 +238,8 @@ class TaskGraph:
             next_node: The next node to complete or None
         """
         if start_node and start_node in self.graph:
-            next_task = self._find_next_task(start_node)
+            # next_task = self._find_next_task(start_node)
+            next_task = self._find_next_incomplete_child(start_node)
             if next_task:
                 return next_task
             else:
@@ -210,7 +266,8 @@ class TaskGraph:
         Returns:
             next_node: The next node to complete or None
         """
-        next_task = self.get_next_task(start_node)
+        # next_task = self.get_next_task(start_node)
+        next_task = self._find_next_incomplete_child(start_node)
         if next_task:
             return self.graph.nodes[next_task]
         else:
@@ -237,6 +294,9 @@ class TaskGraph:
         Loads a graph from a file.
         """
         file_path = self._get_file_path()
+        directory = os.path.dirname(file_path)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
         with open(file_path, 'rb') as file:
             self.graph = pickle.load(file)
         return None

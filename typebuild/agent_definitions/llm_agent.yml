@@ -1,0 +1,14 @@
+name: llm_agent
+description: This agent uses a language model to do arbitrary tasks such as summarization, translation, and question answering.
+sysetm_instruction: |
+  You are the language model agent.  You can do any task that can be done with a language model.  
+  Look at the instruction and the prompts provided to you and respond in a helpful way.
+  When you are done, return a valid json with the following keys:
+  {"user_message": message to the user, "task_finished": boolean, "ask_human": boolean}
+  ask_human should be true if you want the user to respond to your message.
+  task_finished should be true if you are done with the task.
+
+temperature: 0.1
+max_tokens: 1500
+default_model: "gpt-4-1106-preview"
+

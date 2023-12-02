@@ -1,8 +1,15 @@
 """
 ***Current objective:***
-- LLM interprets parent as a task taht has to happen before.  We start at the leaf.
+- LLM interprets parent as a task that has to happen before.  We start at the leaf.
 - Planner creates tasks that require messages to be passed from one to the other.  Currently, each task gets only its message.
 
+# TODO:
+- Save graph to file and try opening it.
+- Select conversation by graph name.
+
+# TODO: NAVIGATION FIXES
+- Navigation right now is not called as a task.  Either create a task, or call the nav agent directly.
+- Make sure that we do not have too many calls for simple navigation.
 """
 
 import time
@@ -31,15 +38,18 @@ def display_messages(expanded=True):
     
         
     for i, msg in enumerate(messages):
-        if isinstance(msg.content, str) and msg.content.strip().startswith('{'):
+        if isinstance(msg, dict):
+            content = msg.get('user_message', msg.get('content', ''))
+        elif isinstance(msg.content, str) and msg.content.strip().startswith('{'):
             content = json.loads(msg.content).get('user_message', msg.content)
         else:
             content = msg.content
-        if msg.role in ['user', 'assistant']:
-            with st.chat_message(msg.role):
+
+        if msg['role'] in ['user', 'assistant']:
+            with st.chat_message(msg['role']):
                 st.markdown(content.replace('\n', '\n\n'))
         # TODO: REMOVE SYSTEM MESSAGES AFTER FIXING BUGS
-        if msg.role == 'system':
+        if msg['role'] == 'system':
             st.info(content)        
     return None
 
@@ -48,17 +58,27 @@ def manage_llm_interaction():
     planning = st.session_state.planning
     tg = st.session_state.task_graph
     m = tg.messages
-    if tg.send_to_planner:
+    model = planning.default_model
+    if st.session_state.current_task == 'planning':
         system_instruction = planning.get_system_instruction()
+        messages = tg.messages.get_all_messages()
     else:
         next_task_name = tg.get_next_task()
         st.session_state.current_task = next_task_name
-        next_task = tg.get_next_task_node()['task']
-        system_instruction = next_task.get_system_instruction()
+        next_task = tg.get_next_task_node()
+        # Check if there are tasks, else send to planning
+        if 'task' in next_task:
+            system_instruction = next_task['task'].get_system_instruction()
+            messages = tg.get_messages_for_task_family(st.session_state.current_task)
+
+            if 'default_model' in next_task['task'].__dict__:
+                model = next_task['task'].default_model
+        else:
+            system_instruction = planning.get_system_instruction()
+            messages = tg.messages.get_all_messages()
     
-    messages = tg.messages.get_messages_for_task(st.session_state.current_task)
     messages.insert(0, {"role": "system", "content": system_instruction})
-    res = get_llm_output(messages, model=planning.default_model)
+    res = get_llm_output(messages, model=model)
     m.set_message(role="assistant", content=res, created_by=st.session_state.current_task, created_for=st.session_state.current_task)
     return res
 
@@ -197,7 +217,6 @@ def manage_tool_interaction(res_dict):
     # Check if the the task is done and can be transferred to orchestration.
 
     content = tool_result.get('content', '')
-    role = 'assistant'
     # Set ask_llm status
     if content:
         if tool_result.get('task_finished', False):
@@ -207,7 +226,7 @@ def manage_tool_interaction(res_dict):
         
         # Add this to the agent's messages
         st.session_state.task_graph.messages.set_message(
-            role=role, 
+            role='system', 
             content=content, 
             created_by=st.session_state.current_task, 
             created_for=st.session_state.current_task
@@ -225,6 +244,10 @@ def chat():
         st.session_state.task_graph = TaskGraph()
     add_planning_to_session_state()
     tg = st.session_state.task_graph
+    if st.sidebar.button("Save graph"):
+        tg._save_to_file()
+        st.success("Saved graph to file.")
+        st.stop()
     all_tasks = tg.graph.nodes
     st.sidebar.header("All tasks")
     st.sidebar.code(all_tasks)
@@ -247,6 +270,8 @@ def chat():
     
     next_task = tg.get_next_task()
     if next_task != 'root':
+        
+        
         task_object = tg.graph.nodes[next_task]['task']
         task_messages = tg.messages.get_messages_for_task(next_task)
         for node in tg.graph.nodes:
