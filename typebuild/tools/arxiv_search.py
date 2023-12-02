@@ -5,6 +5,7 @@ import os
 import streamlit as st
 from PyPDF2 import PdfReader
 from glob import glob
+from datetime import datetime
 
 
 class ArxivSearch:
@@ -51,6 +52,8 @@ class ArxivSearch:
         for page in reader.pages:
             full_text +=  page.extract_text()
 
+        # remove the file
+        os.remove(file_name)
         return full_text
 
     def _convert_url_to_pdf_url(self, url):
@@ -61,12 +64,12 @@ class ArxivSearch:
         pdf_url += '.pdf'
         return pdf_url
 
-    def get_results(self, query, max_results=10, start=0, sort_by='relevance', sort_order='descending'):
+    def get_results(self, search_term, max_results=10, start=0, sort_by='relevance', sort_order='descending'):
         """
         Get the results from the Arxiv search
 
         Parameters:
-            query (str): The search query.
+            search_term (str): The search query.
             max_results (int): Maximum number of results to return. Default is 10.
             start (int): The index of the first result to return. Default is 0.
             sort_by (str): The field to sort by. Default is 'relevance'. Options are 'relevance', 'lastUpdatedDate', 'submittedDate'.
@@ -76,7 +79,7 @@ class ArxivSearch:
             pandas.DataFrame: A DataFrame containing the search results.
         """
         # API endpoint
-        api_url = f"http://export.arxiv.org/api/query?search_query={query}&start=0&max_results={max_results}&sortBy={sort_by}&sortOrder={sort_order}"
+        api_url = f"http://export.arxiv.org/api/query?search_query={search_term}&start=0&max_results={max_results}&sortBy={sort_by}&sortOrder={sort_order}"
         # Get the response
         response = requests.get(api_url)
         # Get the content
@@ -106,16 +109,19 @@ class ArxivSearch:
             results.append(result)
 
         df = pd.DataFrame(results)
+        # Get the results and add the search term and date
+        df['search_term'] = search_term
+        df['search_date'] = pd.to_datetime(datetime.now())
 
 
         return df
 
-    def _get_results_as_string(self, query, max_results=10):
+    def _get_results_as_string(self, search_term, max_results=10):
 
         """
         Get the results from the Arxiv search as a string
         """
-        df = self.get_results(query, max_results=max_results)
+        df = self.get_results(search_term, max_results=max_results)
         
         result_text = ""
         for i, row in df.iterrows():
@@ -146,17 +152,13 @@ class ArxivSearch:
             replace('?', '_').replace('"', '_').replace('<', '_'). \
             replace('>', '_').replace('|', '_')
 
-    def store_to_db(self, df):
+    def store_to_db(self, df, search_term):
         """
         Save the results to a Parquet file
         """
         project_folder = st.session_state.project_folder
 
-        # Get the results and add the search term and date
-        df['search_term'] = query
-        df['search_date'] = pd.to_datetime(datetime.now())
-
-        cleaned_search_term_for_filename = self._clean_search_term_for_filename(query)
+        cleaned_search_term_for_filename = self._clean_search_term_for_filename(search_term)
         self.file_name = os.path.join(project_folder, 'data', f'arxiv_{cleaned_search_term_for_filename}.parquet')
         df.to_parquet(self.file_name, index=False)
 
@@ -245,15 +247,40 @@ class ArxivSearch:
             # Display the results
             if st.button('Save results'):
                 with st.spinner('Saving results...'):
+                    file_name = self._clean_search_term_for_filename(search_term)
                     # Save results to a Parquet file
-                    self.store_to_db(df_results, project_folder=st.session_state.project_folder)
+                    self.store_to_db(df_results, project_folder=st.session_state.project_folder, file_name=file_name)
 
 
-def tool_main(search_term, num_results=1):
+def tool_main(search_term, num_results=5):
     """
-    Main function for the Arxiv search tool
+    Given the search term, this function will search and fetch results from Arxiv. 
+    the results will be saved to disk as a parquet file with the following columns:
+    title, author, summary, link, date_of_publication, full_text, search_term, search_date
+    
+    Parameters:
+        search_term (str): The search query.
+        num_results (int): Maximum number of results to return. Default is 5.
+
+    Returns:
+        res_dict (dict): A dictionary containing the following keys:
+            content (str): A message to display to the user.
+            file_name (str): The name of the file where the results are saved.
+            ask_llm (bool): Whether to ask the user to use the LLM model.
+            task_finished (bool): Whether the task is finished.
     """
     arxiv_search = ArxivSearch()
     df = arxiv_search.get_results(search_term, max_results=num_results)
     arxiv_search.display_results(df)
-    return None
+    arxiv_search.store_to_db(df, search_term= search_term)
+    file_name = arxiv_search._get_file_name()
+    st.success(f"Data saved to {file_name}")
+
+    res_dict = {
+        'content': f"The arxiv search results downloaded  to in the {file_name} file",
+        'file_name': file_name,
+        'ask_llm': True,
+        'task_finished': False
+    }
+
+    return res_dict

@@ -1,5 +1,5 @@
 name: arxiv_agent
-description: Given a query, this will search the arxiv repository of academic papers and return the top results with links and short descriptions. Use this to help me with literature review.
+description: Given a query and number of articles to fetch (default is 5), this will search the arxiv repository of academic papers and return the top results with links and short descriptions. Use this to help me with literature review.
 system_instruction: |
 
   You are helping me with literature review.  You can search on arxiv database. You need to give me a search query and I will get you the top result with the link and a short description.  You can use this text to answer the question.
@@ -15,4 +15,3 @@ max_tokens: 100
 default_model: "gpt-4-1106-preview"
 tools:
   - arxiv_search
-  - get_requests
