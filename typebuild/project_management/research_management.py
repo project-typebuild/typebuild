@@ -17,7 +17,7 @@ class LLMResearch:
     
     def __init__(self):
         self.project_folder = st.session_state.project_folder
-        self.research_projects_with_llm_path = os.path.join(self.project_folder, 'research_projects_with_llm.parquet')
+        self.research_projects_with_llm_path = os.path.join(self.project_folder, 'data', 'research_projects_with_llm.parquet')
         self.res_projects = None
         self.research_name = None
         self.file_name = None

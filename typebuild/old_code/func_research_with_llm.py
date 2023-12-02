@@ -76,7 +76,7 @@ def select_output_col(df, default_output_col_name):
 def research_with_llm():
 
     # Create a parquet file to store the research projects and the last session state
-    st.session_state.research_projects_with_llm_path = os.path.join(st.session_state.project_folder, 'research_projects_with_llm.parquet')
+    st.session_state.research_projects_with_llm_path = os.path.join(st.session_state.project_folder,'data' ,'research_projects_with_llm.parquet')
     if not os.path.exists(st.session_state.research_projects_with_llm_path):
         res_projects = pd.DataFrame(columns=['research_name', 'project_name', 'file_name', 'input_col', 'output_col', 'word_limit', 'row_by_row', 'system_instruction'])
         res_projects.to_parquet(st.session_state.research_projects_with_llm_path, index=False)
