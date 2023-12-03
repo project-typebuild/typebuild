@@ -38,12 +38,18 @@ def display_messages(expanded=True):
     
         
     for i, msg in enumerate(messages):
+        if msg.get('content', '').strip().startswith('{'):
+            res_dict = json.loads(msg['content'])
+        else:
+            res_dict = {}
+            
         if isinstance(msg, dict):
             content = msg.get('content')
             if 'user_message' in content:
                 content = json.loads(content)['user_message']
         elif isinstance(msg.content, str) and msg.content.strip().startswith('{'):
-            content = json.loads(msg.content).get('user_message', msg.content)
+            res_dict = json.loads(msg.content)
+            content = res_dict.get('user_message', msg.content)
         else:
             content = msg.content
 
@@ -53,6 +59,10 @@ def display_messages(expanded=True):
         # TODO: REMOVE SYSTEM MESSAGES AFTER FIXING BUGS
         if msg['role'] == 'system':
             st.info(content)        
+        
+        if "tool_name" in res_dict:
+            st.success(f"Tool name: {res_dict['tool_name']}")
+            manage_tool_interaction(res_dict, from_llm=False)
     return None
 
 def manage_llm_interaction():
@@ -193,7 +203,21 @@ def finish_tasks(res_dict):
 
     return None
 
-def manage_tool_interaction(res_dict):
+def check_for_auto_rerun(func):
+    # Get the signature of the function
+    sig = inspect.signature(func)
+
+    # Get the parameters from the signature
+    params = sig.parameters
+
+    # Get the arguments and their default values
+    args_and_defaults = {name: param.default if param.default is not param.empty else None for name, param in params.items()}
+
+    # Check if the function has an auto_rerun argument
+    return args_and_defaults.get('auto_rerun', False)
+
+
+def manage_tool_interaction(res_dict, from_llm=False, run_tool=False):
     """
     
     """
@@ -209,33 +233,37 @@ def manage_tool_interaction(res_dict):
 
     # select the required arguments from res_dict and pass them to the tool
     kwargs = {k: v for k, v in args_for_tool.items() if k in tool_args}
-    tool_result = tool_function(**kwargs)
-    st.write(tool_result)
-    time.sleep(4)
-    # TODO: Some tools like search need to consume the tool results.
-    # Others like navigator need not.  Create a system to pass to the
-    # correct task. 
-    if isinstance(tool_result, str):
-        tool_result = {'content': tool_result}
+    
+    if not run_tool:
+        # Check if the tool should be run automatically
+        run_tool = check_for_auto_rerun(tool_function)
+    if run_tool:
+        tool_result = tool_function(**kwargs)
+        # TODO: Some tools like search need to consume the tool results.
+        # Others like navigator need not.  Create a system to pass to the
+        # correct task. 
+        if isinstance(tool_result, str):
+            tool_result = {'content': tool_result}
 
-    # Check if the the task is done and can be transferred to orchestration.
+        # Check if the the task is done and can be transferred to orchestration.
 
-    content = tool_result.get('content', '')
-    # Set ask_llm status
-    if content:
-        if tool_result.get('task_finished', False) == True:
-            finish_tasks(tool_result)
-        else:
-            st.session_state.ask_llm = True
-            st.sidebar.success(f"Task is not finished yet for task {st.session_state.current_task}")
-            time.sleep(2)
-        # Add this to the agent's messages
-        st.session_state.task_graph.messages.set_message(
-            role='user', 
-            content=content, 
-            created_by=st.session_state.current_task, 
-            created_for=st.session_state.current_task
-            )
+        content = tool_result.get('content', '')
+        # Set ask_llm status
+        if content:
+            if from_llm:
+                if tool_result.get('task_finished', False) == True:
+                    finish_tasks(tool_result)
+                else:
+                    st.session_state.ask_llm = True
+                    st.sidebar.success(f"Task is not finished yet for task {st.session_state.current_task}")
+                    time.sleep(2)
+                # Add this to the agent's messages
+                st.session_state.task_graph.messages.set_message(
+                    role='user', 
+                    content=content, 
+                    created_by=st.session_state.current_task, 
+                    created_for=st.session_state.current_task
+                    )
 
     return None
 
@@ -273,7 +301,7 @@ def chat():
         # and next action if task is finished
         set_next_actions(res_dict)
         if 'tool_name' in res_dict:
-            manage_tool_interaction(res_dict)
+            manage_tool_interaction(res_dict, from_llm=True)
         st.rerun()
     # TODO: Create the loop for the task graph.
     # Message 0 should be system instruction & message 1 should be the description.
