@@ -17,7 +17,7 @@ class Display():
 
 
 
-def tool_main(file_name):
+def tool_main(file_name, auto_rerun=True):
     """
     Given a file name, this tool will display the dataframe.
 
@@ -34,6 +34,6 @@ def tool_main(file_name):
     res_dict = {
         'content': "The dataframe has been displayed.",
         'task_finished': True,
-        'ask_llm': False,
+        'ask_llm': False
     }
     return res_dict
