@@ -38,30 +38,42 @@ def display_messages(expanded=True):
     
         
     for i, msg in enumerate(messages):
-        if msg.get('content', '').strip().startswith('{'):
+        # st.code(msg)
+        content = ""
+        # Some tools return a key called res_dict.  Parse it here.
+        if 'res_dict' in msg:
+            res_dict = msg['res_dict']
+            content = res_dict.get('content', res_dict.get('user_message', ''))
+        # LLMs return a dict, but the content is typically json
+        # Parse the content key, which is the json.
+        elif msg.get('content', '').strip().startswith('{'):
             res_dict = json.loads(msg['content'])
+            content = res_dict.get('content', res_dict.get('user_message', ''))
         else:
             res_dict = {}
+            content = msg.get('content', '')
             
-        if isinstance(msg, dict):
-            content = msg.get('content')
-            if 'user_message' in content:
-                content = json.loads(content)['user_message']
-        elif isinstance(msg.content, str) and msg.content.strip().startswith('{'):
-            res_dict = json.loads(msg.content)
-            content = res_dict.get('user_message', msg.content)
-        else:
-            content = msg.content
+        # if isinstance(msg, dict):
+        #     content = msg.get('content')
+        #     if 'user_message' in content:
+        #         content = json.loads(content)['user_message']
+        # elif isinstance(msg.content, str) and msg.content.strip().startswith('{'):
+        #     res_dict = json.loads(msg.content)
+        #     content = res_dict.get('user_message', msg.content)
+        # else:
+        #     content = msg.content
 
-        if msg['role'] in ['user', 'assistant']:
-            with st.chat_message(msg['role']):
-                st.markdown(content.replace('\n', '\n\n'))
-        # TODO: REMOVE SYSTEM MESSAGES AFTER FIXING BUGS
-        if msg['role'] == 'system':
-            st.info(content)        
+        if content:
+            if msg['role'] in ['user', 'assistant']:
+
+                with st.chat_message(msg['role']):
+                    st.markdown(content.replace('\n', '\n\n'))
+            # TODO: REMOVE SYSTEM MESSAGES AFTER FIXING BUGS
+            if msg['role'] == 'system':
+                st.info(content)        
         
         if "tool_name" in res_dict:
-            st.success(f"Tool name: {res_dict['tool_name']}")
+            # st.success(f"Tool name: {res_dict['tool_name']}")
             manage_tool_interaction(res_dict, from_llm=False)
     return None
 
@@ -278,17 +290,17 @@ def chat():
     add_planning_to_session_state()
     tg = st.session_state.task_graph
     current_task = st.session_state.current_task
-    st.sidebar.info(f"Current task: {current_task}")
     # all_messages = tg.get_messages_for_task_family(current_task)
     # st.sidebar.write(all_messages)
     
-    if st.sidebar.button("Save graph"):
-        tg._save_to_file()
-        st.success("Saved graph to file.")
-        st.stop()
-    all_tasks = tg.graph.nodes
-    st.sidebar.header("All tasks")
-    st.sidebar.code(all_tasks)
+    
+    # if st.sidebar.button("Save graph"):
+    #     tg._save_to_file()
+    #     st.success("Saved graph to file.")
+    #     st.stop()
+    # all_tasks = tg.graph.nodes
+    # st.sidebar.header("All tasks")
+    # st.sidebar.code(all_tasks)
 
     # Display chat input method
     tg.messages.chat_input_method(task_name=st.session_state.current_task)
@@ -302,6 +314,11 @@ def chat():
         set_next_actions(res_dict)
         if 'tool_name' in res_dict:
             manage_tool_interaction(res_dict, from_llm=True)
+        # Save the graph to file, if it has a name
+        # TODO: Make sure that we don't create a name that overwrites an existing one.
+        if tg.name:
+            # Save the graph to file
+            tg._save_to_file()
         st.rerun()
     # TODO: Create the loop for the task graph.
     # Message 0 should be system instruction & message 1 should be the description.

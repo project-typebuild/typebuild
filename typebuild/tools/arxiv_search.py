@@ -280,7 +280,7 @@ def tool_main(search_term, num_results=5):
         'content': f"The arxiv search results downloaded  to in the {file_name} file",
         'file_name': file_name,
         'ask_llm': True,
-        'task_finished': False
+        'task_finished': False,
     }
 
     return res_dict
