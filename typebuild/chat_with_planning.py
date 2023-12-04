@@ -20,6 +20,7 @@ import importlib
 import json
 import inspect
 from extractors import Extractors
+import yaml
 
 def display_messages(expanded=True):
     """
@@ -50,17 +51,6 @@ def display_messages(expanded=True):
         else:
             res_dict = {}
             content = msg.get('content', '')
-            
-        # if isinstance(msg, dict):
-        #     content = msg.get('content')
-        #     if 'user_message' in content:
-        #         content = json.loads(content)['user_message']
-        # elif isinstance(msg.content, str) and msg.content.strip().startswith('{'):
-        #     res_dict = json.loads(msg.content)
-        #     content = res_dict.get('user_message', msg.content)
-        # else:
-        #     content = msg.content
-
         if content:
             if msg['role'] in ['user', 'assistant']:
 
@@ -69,6 +59,8 @@ def display_messages(expanded=True):
             # TODO: REMOVE SYSTEM MESSAGES AFTER FIXING BUGS
             if msg['role'] == 'system':
                 st.info(content)        
+        else:
+            st.code(res_dict)
         
         if "tool_name" in res_dict:
             # st.success(f"Tool name: {res_dict['tool_name']}")
@@ -84,6 +76,15 @@ def manage_llm_interaction():
     model = planning.default_model
     if st.session_state.current_task == 'planning':
         system_instruction = planning.get_system_instruction()
+        # If there are templates, use it.
+        if tg.templates:
+            template_info = "The user has selected a canned template that can help with planning.  See the details below."
+            for template_name, template in tg.templates.items():
+                template_info += f"\n\nTemplate name: {template_name}"
+                template_info += f"\nTemplate description: {template}\n\n"
+            template_info += "Please use the information above to help with planning."
+            system_instruction += f"\n\n{template_info}"
+                
         messages = tg.messages.get_all_messages()
     else:
         next_task_name = tg.get_next_task()
@@ -338,15 +339,34 @@ def chat():
     else:
         # See if there are no messages
         if not tg.messages.get_all_messages():
-            st.header("What would you like to do?")
-            what_to_do = """Just chat with me below to get started.
+
+        #    Implement this after serialization to json is done
+        #     # Allow the user to load a task graph
             
-            - Navigate with chat
-            - Create a new project
-        """
-            extractor = Extractors()
-            st.markdown(extractor.remove_indents_in_lines(what_to_do))
-    #    Implement this after serialization to json is done
-    #     # Allow the user to load a task graph
-        
-        tg._load_from_file()
+            tg._load_from_file()
+            load_templates()
+            if tg.templates:
+                st.sidebar.info(f"{len(tg.templates)} templates loaded.")
+
+def load_templates():
+
+    # Open templates.yml file
+    with open('templates.yml', 'r') as f:
+        templates = yaml.safe_load(f)
+
+    # Let the user select a template, with "SELECT" as the default
+    template_names = st.multiselect('Select a template', list(templates.keys()))
+    
+    # If the user selects a template, show the description.
+    for template_name in template_names:
+        st.info(templates[template_name]['description'])
+    
+
+    # If the user clicks on the button, load the template
+    if st.button("Load templates"):
+        tg = st.session_state.task_graph
+        for template_name in template_names:
+            template = templates[template_name]
+            tg.templates[template_name] = template
+    
+    return None

@@ -1,0 +1,10 @@
+# This is an attempt at building templates for various tasks
+
+youtube_research: 
+  description: Conduct research using YouTube transcripts
+  template: |
+    To do research with YouTube transcripts, we have to do the following tasks:
+    1. Find out what resarch the user wants to do
+    2. Ask the search agent to search and download relevant transcripts
+    3. Ask the prompt agent to generate the instruction on what to extract from the transcripts
+    4. Run the llm agent to extract the relevant information from the transcripts
