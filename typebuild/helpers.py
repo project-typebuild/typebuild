@@ -196,7 +196,9 @@ def data_management_interface():
     data_selector = st.session_state.DataSelector
     
     if st.session_state.selected_node == 'Select Data~helpers':
-        data_selector.get_data_and_docs()
+        file_name, input_column = data_selector.interface()
+        st.error(f"Selected file: {file_name}")
+        st.error(f"Selected column: {input_column}")
     return None
 
 def llm_research_interface():

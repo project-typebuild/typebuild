@@ -32,8 +32,11 @@ class DataSelector:
         """
         data_model_path = os.path.join(self.project_folder, 'data_model.parquet')
         data_model_df = self._read_parquet_file(data_model_path)
+
+        # remove null values if any
+        data_model_df = data_model_df[data_model_df['file_name'].notnull()]
         if data_model_df is not None:
-            return data_model_df['file_name'].tolist()
+            return list(data_model_df['file_name'].unique())
         else:
             return []
 
@@ -44,7 +47,7 @@ class DataSelector:
         documents_path = os.path.join(self.data_folder, 'documents.parquet')
         documents_df = self._read_parquet_file(documents_path)
         if documents_df is not None:
-            return documents_df['file_name'].tolist()
+            return list(documents_df['file_name'].unique())
         else:
             return []
 
@@ -104,6 +107,7 @@ class DataSelector:
         available_data_info = f"Available data:\n\n"
 
         available_data_info += f"\nTabular data files:\n"
+
         available_data_info += "\n".join(tabular_data)
 
         available_data_info += f"\n\nData model with file_name as key and available columns and its info:\n"
@@ -123,26 +127,61 @@ class DataSelector:
         - Selects the file
         - Selects the input column
         """
-        st.sidebar.markdown('## Data Selection')
-        st.sidebar.markdown('### Select data type')
-        data_type = st.sidebar.radio('Select data type', ['Tabular', 'Document'], horizontal=True)
+        st.markdown('## Data Selection')
+        st.markdown('### Select data type')
+        data_type = st.radio('Select data type', ['Tabular', 'Document'], horizontal=True)
         if data_type == 'Tabular':
-            file_name = st.sidebar.selectbox('Select file', self._get_all_available_tabular_data())
-            st.sidebar.markdown('### Select input column')
+            tabular_file_paths = self._get_all_available_tabular_data()
+            # Create a mappping dict of file_name to full path to avoid displaying the full path
+            tabular_files = [os.path.splitext(os.path.basename(file_name))[0] for file_name in tabular_file_paths]
+            mappping_dict = dict(zip(tabular_files, tabular_file_paths))
+            # Add a select file option to the list if it is not already there
+            if 'Select file' not in tabular_files:
+                tabular_files.insert(0, 'Select file')
+            file_path = st.selectbox('Select file',tabular_files)
+            if file_path == 'Select file':
+                st.stop()
+            file_name = mappping_dict[file_path]
+
+            st.markdown('### Select input column')
             df_data_model = self._get_data_model()
             df_data_model_file = df_data_model[df_data_model['file_name'] == file_name].drop(columns=['file_name'])
-            input_column = st.sidebar.selectbox('Select input column', df_data_model_file.columns)
+
+            # Get the columns
+            columns = df_data_model_file.column_name.unique().tolist()
+            if 'Select Column' not in columns:
+                columns.insert(0, 'Select Column')
+            input_column = st.selectbox('Select input column', columns)
+
+            if input_column == 'Select Column':
+                st.stop()
             return file_name, input_column
         else:
             # Read the file and get the columns
             df_document = self._read_parquet_file(os.path.join(self.data_folder, 'documents.parquet'))
             columns = df_document.columns.tolist()
-            # This contains txt from various files.  Select the file of interst.
-            file_name = st.sidebar.selectbox('Select file', df_document['file_name'].unique())
-            
-            # Get input column
-            st.sidebar.markdown('### Select input column')
-            columns.remove('file_name')
-            input_column = st.sidebar.selectbox('Select input column', columns)
 
+            if 'Select Column' not in columns:
+                columns.insert(0, 'Select Column')
+
+            document_files = list(df_document['file_name'].unique())
+            # Create a mappping dict of file_name to full path to avoid displaying the full path
+            document_files = [os.path.splitext(os.path.basename(file_name))[0] for file_name in document_files]
+            mappping_dict = dict(zip(document_files, document_files))
+            # Add a select file option to the list if it is not already there
+            if 'Select file' not in document_files:
+                document_files.insert(0, 'Select file')
+            # This contains txt from various files.  Select the file of interst.
+            file_path = st.selectbox('Select file', document_files)
+            
+            if file_path == 'Select file':
+                st.stop()
+
+            file_name = mappping_dict[file_path]
+            # Get input column
+            st.markdown('### Select input column')
+            columns.remove('file_name')
+            input_column = st.selectbox('Select input column', columns)
+            if input_column == 'Select Column':
+                st.stop()
             return file_name, input_column
