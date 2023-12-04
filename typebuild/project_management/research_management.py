@@ -24,6 +24,12 @@ class LLMResearch:
         self.default_row_by_row = None
         self.system_instruction_path = None
 
+    def research_with_llm(self):
+        self.load_research_projects()
+        self.select_research_project()
+        self.create_llm_output()
+
+
     def select_output_col(self, df, default_output_col_name):
         """
         Allow the user to select the output column.
@@ -72,10 +78,6 @@ class LLMResearch:
 
         return output_col_name
 
-    def research_with_llm(self):
-        self.load_research_projects()
-        self.select_research_project()
-        self.create_llm_output()
 
     def load_research_projects(self):
         if not os.path.exists(self.research_projects_with_llm_path):

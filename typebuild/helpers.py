@@ -167,7 +167,7 @@ def data_management_interface():
     """
     from data_management.uploader import DataUploader
     from data_management.deleter import DataDeleter
-
+    from data_management.selector import DataSelector
 
     if 'DataUploader' not in st.session_state:
         data_uploader = DataUploader()
@@ -189,6 +189,14 @@ def data_management_interface():
     if st.session_state.selected_node == 'Delete Data~helpers':
         data_deleter.delete_files()
 
+    if 'DataSelector' not in st.session_state:
+        data_selector = DataSelector()
+        st.session_state.DataSelector = data_selector
+    
+    data_selector = st.session_state.DataSelector
+    
+    if st.session_state.selected_node == 'Select Data~helpers':
+        data_selector.get_data_and_docs()
     return None
 
 def llm_research_interface():

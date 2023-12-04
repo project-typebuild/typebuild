@@ -1,13 +1,11 @@
 """
 ***Current objective:***
-- LLM interprets parent as a task that has to happen before.  We start at the leaf.
-- Planner creates tasks that require messages to be passed from one to the other.  Currently, each task gets only its message.
+- LLM loop
+- Data selection (we need file name, field name)
 
 # TODO:
-- Save graph to file and try opening it.
-- Select conversation by graph name.
 
-# TODO: NAVIGATION FIXES
+# FOR ANOTHER DAY: NAVIGATION FIXES
 - Navigation right now is not called as a task.  Either create a task, or call the nav agent directly.
 - Make sure that we do not have too many calls for simple navigation.
 """
@@ -74,7 +72,8 @@ def display_messages(expanded=True):
         
         if "tool_name" in res_dict:
             # st.success(f"Tool name: {res_dict['tool_name']}")
-            manage_tool_interaction(res_dict, from_llm=False)
+            with st.spinner("Running tool..."):
+                manage_tool_interaction(res_dict, from_llm=False)
     return None
 
 def manage_llm_interaction():
@@ -233,6 +232,7 @@ def manage_tool_interaction(res_dict, from_llm=False, run_tool=False):
     """
     
     """
+
     tool_name = res_dict['tool_name']
     tool_module = importlib.import_module(f'tools.{tool_name}')
     tool_function = getattr(tool_module, 'tool_main')
@@ -262,13 +262,12 @@ def manage_tool_interaction(res_dict, from_llm=False, run_tool=False):
         content = tool_result.get('content', '')
         # Set ask_llm status
         if content:
+            # 
             if from_llm:
                 if tool_result.get('task_finished', False) == True:
                     finish_tasks(tool_result)
                 else:
                     st.session_state.ask_llm = True
-                    st.sidebar.success(f"Task is not finished yet for task {st.session_state.current_task}")
-                    time.sleep(2)
                 # Add this to the agent's messages
                 st.session_state.task_graph.messages.set_message(
                     role='user', 

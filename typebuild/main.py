@@ -70,21 +70,25 @@ menu_bar_options = [
     ['HOME','Data','search_placeholder','helpers'],
     ['Data','Upload Data','data_management_interface','helpers'],
     ['Data','Upload Documents','data_management_interface','helpers'],
+    ['Data', 'Select Data', 'data_management_interface', 'helpers'],
     ['Data','Delete Data','data_management_interface','helpers'],
     ['HOME', 'Nodes', 'show_node_properties', 'graphical_menu'],
     ['HOME','LLM Research','llm_research_interface','helpers'],
     ]
 
+
 menu.add_edges(menu_bar_options) # add the edges to the menu in the GraphicalMenu class
 menu.create_menu() # create the meu bar
 run_current_functions() # run the current functions in the session state
-
+st.sidebar.warning(st.session_state.selected_node)
 
 chat() # chat interface
 
 # Naviagate through the menu using the chat interface
-
-# from tools.navigator import get_available_destinations
-# nodes = get_available_destinations()
+# TODO: Ranu, even though we are not adding anything to sesssion state
+# or doing anything with the return value, we still need to call this
+# for some reason.  Without it, chat is not opening menus. 
+from tools.navigator import get_available_destinations
+nodes = get_available_destinations()
 # st.json(f'{nodes}')
 

@@ -55,7 +55,7 @@ class DataSelector:
         data_model_path = os.path.join(self.project_folder, 'data_model.parquet')
         return self._read_parquet_file(data_model_path)
 
-    def _get_tabular_data_as_nested_dict(self, file_name=None):
+    def _get_tabular_data_and_col_names(self, file_name=None):
         """
         Returns the tabular data as a nested dictionary.
         If file_name is provided, returns the data for that specific file.
@@ -86,12 +86,13 @@ class DataSelector:
         else:
             return {}
 
-    def get_available_data_info_of_project(self):
+    
+    def get_data_and_docs(self):
         """
         Returns a string containing information about the available data.
         """
         # Get nested dict of all available data
-        data_dict = self._get_tabular_data_as_nested_dict()
+        data_dict = self._get_tabular_data_and_col_names()
 
         # Get all available document data
         document_data = self._get_all_document_data()
@@ -113,3 +114,35 @@ class DataSelector:
             available_data_info += "\n".join(document_data)
 
         return available_data_info
+    
+    def interface(self):
+        """
+        # TODO: IF there is a filter condiditon, we need to pass that to LLM operation on the table. 
+        The UI for data selection.  
+        - Asks if the data is tabular or document.
+        - Selects the file
+        - Selects the input column
+        """
+        st.sidebar.markdown('## Data Selection')
+        st.sidebar.markdown('### Select data type')
+        data_type = st.sidebar.radio('Select data type', ['Tabular', 'Document'], horizontal=True)
+        if data_type == 'Tabular':
+            file_name = st.sidebar.selectbox('Select file', self._get_all_available_tabular_data())
+            st.sidebar.markdown('### Select input column')
+            df_data_model = self._get_data_model()
+            df_data_model_file = df_data_model[df_data_model['file_name'] == file_name].drop(columns=['file_name'])
+            input_column = st.sidebar.selectbox('Select input column', df_data_model_file.columns)
+            return file_name, input_column
+        else:
+            # Read the file and get the columns
+            df_document = self._read_parquet_file(os.path.join(self.data_folder, 'documents.parquet'))
+            columns = df_document.columns.tolist()
+            # This contains txt from various files.  Select the file of interst.
+            file_name = st.sidebar.selectbox('Select file', df_document['file_name'].unique())
+            
+            # Get input column
+            st.sidebar.markdown('### Select input column')
+            columns.remove('file_name')
+            input_column = st.sidebar.selectbox('Select input column', columns)
+
+            return file_name, input_column
