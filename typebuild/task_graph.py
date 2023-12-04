@@ -22,7 +22,13 @@ class TaskGraph:
         self.graph = nx.DiGraph()
         self.graph.add_node('root', sequence=0, completed=False)
         self.name = name
+        # Description of the objective
         self.objective = objective
+
+        # Templates with name and instruction
+        self.templates = {}
+        # An instance of the message class to hold all the 
+        # messages for this task graph
         self.messages = Messages(name)
         # If true, this conversation is sent to the planner.
         self.send_to_planner = True
