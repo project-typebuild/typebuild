@@ -37,7 +37,7 @@ def display_messages(expanded=True):
     
         
     for i, msg in enumerate(messages):
-        st.code(msg)
+        # st.code(msg)
         content = ""
         # Some tools return a key called res_dict.  Parse it here.
         if 'res_dict' in msg:
