@@ -106,8 +106,8 @@ def get_llm_output(messages, max_tokens=2500, temperature=0.4, model='gpt-4', fu
     import time
     st.success(f"Response from LLM: {content}")
     st.session_state.all_messages.append({'role': 'assistant', 'content': content})
-    st.balloons()
-    time.sleep(2)
+    # st.balloons()
+    # time.sleep(2)
     return content
 
 

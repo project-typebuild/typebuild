@@ -36,8 +36,11 @@ class DataSelectorTool:
         return file_name, input_column
         
         
-def tool_main():
+def tool_main(auto_rerun=True):
 
+    """
+    This tool will help the user select the data file and column name that they want to use for the task.
+    """
     # Given a user query, the Planner will call this tool to get the file name and column name
 
     data_selector_tool = DataSelectorTool()
@@ -52,6 +55,7 @@ def tool_main():
         'task_finished': False,       
     }
     st.sidebar.write(res_dict)
+    import time
     time.sleep(5)
 
     return res_dict
