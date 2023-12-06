@@ -36,7 +36,7 @@ class DataSelectorTool:
         return file_name, input_column
         
         
-def tool_main(auto_rerun=True):
+def tool_main(auto_rerun=False):
 
     """
     This tool will help the user select the data file and column name that they want to use for the task.
@@ -51,12 +51,9 @@ def tool_main(auto_rerun=True):
         'content': 'File name:\n' + file_name + '\n\n, Column name:\n' + input_column,
         'file_name': file_name,
         'input_column': input_column,
-        'ask_llm': True,
+        'ask_llm': False,
         'task_finished': False,       
     }
-    st.sidebar.write(res_dict)
-    import time
-    time.sleep(5)
 
     return res_dict
 
