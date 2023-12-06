@@ -159,10 +159,10 @@ class ArxivSearch:
         project_folder = st.session_state.project_folder
 
         cleaned_search_term_for_filename = self._clean_search_term_for_filename(search_term)
-        self.file_name = os.path.join(project_folder, 'data', f'arxiv_{cleaned_search_term_for_filename}.parquet')
-        df.to_parquet(self.file_name, index=False)
+        file_name = os.path.join(project_folder, 'data', f'arxiv_{cleaned_search_term_for_filename}.parquet')
+        df.to_parquet(file_name, index=False)
 
-        return None
+        return file_name
 
     
     def _get_file_name(self):
@@ -239,12 +239,13 @@ class ArxivSearch:
                 with st.spinner('Getting results...'):
                     # Perform the Arxiv search
                     df_results = self.get_results(arxiv_query, max_results=max_results, sort_by=sort_by, sort_order=sort_order)
+                    st.dataframe(df_results)
                     st.session_state.arxiv_results = df_results
 
-        if st.session_state.arxiv_results is not None:
-            self.display_results(df_results)
+
         if st.session_state.arxiv_results is not None:
             # Display the results
+            self.display_results(st.session_state.arxiv_results)
             if st.button('Save results'):
                 with st.spinner('Saving results...'):
                     file_name = self._clean_search_term_for_filename(search_term)
@@ -252,7 +253,7 @@ class ArxivSearch:
                     self.store_to_db(df_results, project_folder=st.session_state.project_folder, file_name=file_name)
 
 
-def tool_main(search_term, num_results=5):
+def tool_main(search_term, num_results=5, auto_rerun=True):
     """
     Given the search term, this function will search and fetch results from Arxiv. 
     the results will be saved to disk as a parquet file with the following columns:
@@ -272,8 +273,7 @@ def tool_main(search_term, num_results=5):
     arxiv_search = ArxivSearch()
     df = arxiv_search.get_results(search_term, max_results=num_results)
     arxiv_search.display_results(df)
-    arxiv_search.store_to_db(df, search_term= search_term)
-    file_name = arxiv_search._get_file_name()
+    file_name = arxiv_search.store_to_db(df, search_term= search_term)
     st.success(f"Data saved to {file_name}")
 
     res_dict = {

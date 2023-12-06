@@ -7,7 +7,7 @@ system_instruction: |
 
   To do a search, you need to return a valid json string with the tool_name and the keyword arguments required by the tool.  Return only the JSON.
 
-  Once the task is complete, then you know where the data is stored.  You have to use the display_dataframe tool to display the data by passing the file path to the data.
+  To do the search, you need to call the arxiv_search tool.  The tool will return a dataframe with the results and saves it to a file.  Then You have to use the display_dataframe tool to display the data by passing the full file path to the data.
   
 temperature: 0.2
 max_tokens: 100

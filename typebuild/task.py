@@ -40,6 +40,7 @@ class Task:
         else:
             data_for_system_instruction = None
 
+        st.sidebar.info(f"Agent name is {self.get_instance_vars()}")
         # Take the data_for_system_instruction and replace the variables in the system_instruction
         instruction = self.system_instruction
         if data_for_system_instruction:

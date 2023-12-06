@@ -264,7 +264,9 @@ def manage_tool_interaction(res_dict, from_llm=False, run_tool=False):
         # Set ask_llm status
         if content:
             # 
+            st.sidebar.error("looking at tool result")
             if from_llm:
+                st.sidebar.warning("from llm")
                 if tool_result.get('task_finished', False) == True:
                     finish_tasks(tool_result)
                 else:
@@ -342,11 +344,11 @@ def chat():
 
         #    Implement this after serialization to json is done
         #     # Allow the user to load a task graph
-            
-            tg._load_from_file()
-            load_templates()
-            if tg.templates:
-                st.sidebar.info(f"{len(tg.templates)} templates loaded.")
+            if st.session_state.selected_node == 'HOME':
+                tg._load_from_file()
+                load_templates()
+                if tg.templates:
+                    st.sidebar.info(f"{len(tg.templates)} templates loaded.")
 
 def load_templates():
 
