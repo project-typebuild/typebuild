@@ -37,7 +37,7 @@ def display_messages(expanded=True):
     
         
     for i, msg in enumerate(messages):
-        # st.code(msg)
+        st.code(msg)
         content = ""
         # Some tools return a key called res_dict.  Parse it here.
         if 'res_dict' in msg:
@@ -315,7 +315,8 @@ def chat():
         # and next action if task is finished
         set_next_actions(res_dict)
         if 'tool_name' in res_dict:
-            manage_tool_interaction(res_dict, from_llm=True)
+            with st.spinner("Running tool..."):
+                manage_tool_interaction(res_dict, from_llm=True, run_tool=True)
         # Save the graph to file, if it has a name
         # TODO: Make sure that we don't create a name that overwrites an existing one.
         if tg.name:
