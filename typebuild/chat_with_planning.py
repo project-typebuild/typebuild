@@ -252,6 +252,7 @@ def manage_tool_interaction(res_dict, from_llm=False, run_tool=False):
         run_tool = check_for_auto_rerun(tool_function)
     if run_tool:
         tool_result = tool_function(**kwargs)
+        st.sidebar.code(f'Tool result: {tool_result}')
         # TODO: Some tools like search need to consume the tool results.
         # Others like navigator need not.  Create a system to pass to the
         # correct task. 
