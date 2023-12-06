@@ -46,4 +46,6 @@ def tool_main(activeStep, auto_rerun=True):
         'ask_llm': True,
         'task_finished': True,
         }
+    
+    time.sleep(2)
     return res
