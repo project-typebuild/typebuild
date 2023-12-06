@@ -260,17 +260,16 @@ def manage_tool_interaction(res_dict, from_llm=False, run_tool=False):
 
         # Check if the the task is done and can be transferred to orchestration.
 
-        content = tool_result.get('content', '')
-        # Set ask_llm status
-        if content:
-            # 
-            st.sidebar.error("looking at tool result")
-            if from_llm:
-                st.sidebar.warning("from llm")
-                if tool_result.get('task_finished', False) == True:
-                    finish_tasks(tool_result)
-                else:
-                    st.session_state.ask_llm = True
+        st.sidebar.error("looking at tool result")
+        if from_llm:
+            st.sidebar.warning("from llm")
+            if tool_result.get('task_finished', False) == True:
+                finish_tasks(tool_result)
+            else:
+                st.session_state.ask_llm = True
+    
+            content = tool_result.get('content', '')
+            if content:
                 # Add this to the agent's messages
                 st.session_state.task_graph.messages.set_message(
                     role='user', 
