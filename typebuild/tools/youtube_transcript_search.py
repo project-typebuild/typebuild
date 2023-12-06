@@ -302,4 +302,9 @@ def tool_main(search_term, num_results=5):
     fetcher.search_youtube(search_term=search_term, num_videos=num_results)
     # Save the results to a parquet file
     fetcher.save_search_results()
-    return fetcher.file_name
+    return {
+        "file_name": fetcher.file_name,
+        "task_finished": True,
+        "ask_llm": False,
+        "content": f"I downloaded the transcripts for you and have placed it in a file {fetcher.file_name}"
+        }
