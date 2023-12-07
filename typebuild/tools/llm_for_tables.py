@@ -3,7 +3,9 @@
 """
 
 import pandas as pd
-from plugins.llm import get_llm_output
+
+# from test_llm import get_openai_output as get_llm_output
+from ..plugins.llms import get_llm_output
 
 def chunk_text(text, max_chars):
     """
@@ -50,8 +52,20 @@ class LLMForTables:
         self.output_column = output_column
         self.max_tokens = max_tokens
         self.row_by_row = row_by_row
-        self.data = pd.read_parquet(file_name)
+        self._load_data()
         self.check_restart()
+
+    def _save_data(self, data):
+        """
+        Save the data to the file.
+        """
+        self.data.to_parquet(self.file_name, index=False)
+
+    def _load_data(self):
+        """
+        Load the data from the file.
+        """
+        self.data = pd.read_parquet(self.file_name)
 
     def check_restart(self):
         """
@@ -74,6 +88,7 @@ class LLMForTables:
         When done, saves the data to the file and returns a success message.
         """
         if self.row_by_row:
+            
             self.process_row_by_row()
         else:
             self.process_chunks()
@@ -95,25 +110,35 @@ class LLMForTables:
             if i < self.restart_row:
                 continue
             input_text = getattr(row, self.input_column)
-            output = get_llm_output(self.system_instruction, input_text, self.max_tokens)
+            messages = [
+                {"role": "system", "content": self.system_instruction},
+                {"role": "user", "content": input_text},
+            ]
+            # output = get_llm_output(messages, self.max_tokens)
+            output = get_llm_output(messages, self.max_tokens)
             self.data.at[row.Index, self.output_column] = output
-            self.data.to_csv(self.file_name, index=False)  # Save after each row
+            self._save_data(self.data)  # Save after each row
 
     def process_chunks(self):
         """
         Processes the data in chunks.
         """
-        all_input_text = self.data[self.input_column].tolist()[self.restart_row:]
-        chunks = chunk_text(all_input_text, self.max_tokens)
+        # Get the full input text
+        full_text = "\n\n".join(self.data[self.input_column].tolist())
+        
+        # Chunk the text but skip the rows that have already been processed
+        chunks = chunk_text(full_text, self.max_tokens)[self.restart_row:]
+        print(f"Number of chunks: {len(chunks)}")
 
         for i, chunk in enumerate(chunks, start=self.restart_row):
-            output = get_llm_output(self.system_instruction, chunk, self.max_tokens)
-            output_rows = output.split('\n')  # Assuming each line corresponds to a row
-            for j, output_row in enumerate(output_rows):
-                if i + j >= len(self.data):
-                    break
-                self.data.at[i + j, self.output_column] = output_row
-            self.data.to_parquet(self.file_name, index=False)  # Save after each chunk
+            messages = [
+                {"role": "system", "content": self.system_instruction},
+                {"role": "user", "content": chunk},
+            ]
+            output = get_llm_output(messages, self.max_tokens)
+            # Add the output to the correct row
+            self.data.at[i, self.output_column] = output
+            self._save_data(self.data)
 
 # Usage example
 # llm_table = LLMForTables("Translate the following text to French:", "data.csv", "English_Text", "French_Text")

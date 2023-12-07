@@ -354,3 +354,16 @@ class TaskGraph:
         for node in [n for n, d in self.graph.in_degree() if d == 0]:  # Root nodes
             md_text += format_task(node)
         return md_text
+
+    def get_attributes_of_ancestors(self, current_task):
+        """
+        Returns the attributes of the ancestors of the current task
+        as a flattened dictionary.
+        """
+        ancestors = self._get_successors_and_predecessors(current_task)
+        if current_task not in ancestors:
+            ancestors.append(current_task)
+        attributes = {}
+        for ancestor in ancestors:
+            attributes.update(self.graph.nodes[ancestor])
+        return attributes

@@ -48,7 +48,7 @@ def tool_main(auto_rerun=False):
     file_name, input_column = data_selector_tool.interface()
     if file_name is None or input_column is None:
         st.stop()
-    content = f"I selected {file_name} and {input_column} for you.  You can use this for the next steps."
+    content = f"I selected\nFile: {file_name}\nColumn: {input_column}\n You can use this for the next steps."
     res_dict = {
         'content': content,
         'file_name': file_name,
