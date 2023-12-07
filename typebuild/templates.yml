@@ -3,8 +3,6 @@
 youtube_research: 
   description: Conduct research using YouTube transcripts
   template: |
-    To do research with YouTube transcripts, we have to do the following tasks:
-    1. Find out what resarch the user wants to do
-    2. Ask the search agent to search and download relevant transcripts
-    3. Ask the prompt agent to generate the instruction on what to extract from the transcripts
-    4. Run the llm agent to extract the relevant information from the transcripts
+    The planner should find out what research the user wants to do.  Once you do that, create the following tasks
+    - Ask the search agent to search and download youtube transcripts.  It will return a file name with the downloads and the transcripts can be found in the 'transcripts' column
+    - Create a task for the llm agent, which can analyze the transcripts and store the output in the same file as a new column.

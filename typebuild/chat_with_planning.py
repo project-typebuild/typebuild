@@ -246,7 +246,8 @@ def manage_tool_interaction(res_dict, from_llm=False, run_tool=False):
 
     # select the required arguments from res_dict and pass them to the tool
     kwargs = {k: v for k, v in args_for_tool.items() if k in tool_args}
-    
+    st.error(args_for_tool)
+    st.success(tool_args)
     if not run_tool:
         # Check if the tool should be run automatically
         run_tool = check_for_auto_rerun(tool_function)
@@ -266,6 +267,7 @@ def manage_tool_interaction(res_dict, from_llm=False, run_tool=False):
         st.sidebar.error("looking at tool result")
         if from_llm:
             # Add the tool result to the task graph
+            # TODO: SHOLD WE UPDATE THE TASK GRAPH HERE DURING A RERUN? 
             tg = st.session_state.task_graph
             tg.update_task(
                 task_name=st.session_state.current_task,
@@ -285,7 +287,10 @@ def manage_tool_interaction(res_dict, from_llm=False, run_tool=False):
                     created_by=st.session_state.current_task, 
                     created_for=st.session_state.current_task
                     )
-
+    # # Print the tool arguments
+    # for node in st.session_state.task_graph.graph.nodes:
+    #     st.header(f"Node: {node}")
+    #     st.success(st.session_state.task_graph.get_attributes_of_ancestors(node))
     return None
 
 def init_chat():
@@ -302,36 +307,6 @@ def init_chat():
     st.sidebar.info(f"Ask llm: {st.session_state.ask_llm}\n\nCurrent task: {st.session_state.current_task}")
     display_messages()
 
-def chat():
-
-    init_chat()
-    tg = st.session_state.task_graph
-
-    # Check if any task has been allocated for a tool.
-    # If yes, run it before we get to the ask llm loop.
-    if 'task_for_tool' in st.session_state:
-        res_dict = st.session_state.task_for_tool
-        with st.spinner("Running tool..."):
-            manage_tool_interaction(res_dict, from_llm=True, run_tool=True)
-
-
-    if st.session_state.ask_llm:
-        res = manage_llm_interaction()
-        res_dict = json.loads(res)
-        # Find if LLM should be invoked automatically
-        # and next action if task is finished
-        set_next_actions(res_dict)
-        if 'tool_name' in res_dict:
-            st.session_state.task_for_tool = res_dict
-
-        # Save the graph to file, if it has a name
-        # TODO: Make sure that we don't create a name that overwrites an existing one.
-        if tg.name:
-            # Save the graph to file
-            tg._save_to_file()
-        st.rerun()
-    post_llm_processes()
-    return None
 
 def post_llm_processes():
     tg = st.session_state.task_graph
@@ -390,4 +365,35 @@ def load_templates():
             template = templates[template_name]
             tg.templates[template_name] = template
     
+    return None
+
+def chat():
+
+    init_chat()
+    tg = st.session_state.task_graph
+
+    # Check if any task has been allocated for a tool.
+    # If yes, run it before we get to the ask llm loop.
+    if 'task_for_tool' in st.session_state:
+        res_dict = st.session_state.task_for_tool
+        with st.spinner("Running tool..."):
+            manage_tool_interaction(res_dict, from_llm=True, run_tool=True)
+
+
+    if st.session_state.ask_llm:
+        res = manage_llm_interaction()
+        res_dict = json.loads(res)
+        # Find if LLM should be invoked automatically
+        # and next action if task is finished
+        set_next_actions(res_dict)
+        if 'tool_name' in res_dict:
+            st.session_state.task_for_tool = res_dict
+
+        # Save the graph to file, if it has a name
+        # TODO: Make sure that we don't create a name that overwrites an existing one.
+        if tg.name:
+            # Save the graph to file
+            tg._save_to_file()
+        st.rerun()
+    post_llm_processes()
     return None

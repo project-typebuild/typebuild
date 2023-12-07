@@ -360,7 +360,7 @@ class TaskGraph:
         Returns the attributes of the ancestors of the current task
         as a flattened dictionary.
         """
-        ancestors = self._get_successors_and_predecessors(current_task)
+        ancestors = list(nx.ancestors(self.graph, current_task))
         if current_task not in ancestors:
             ancestors.append(current_task)
         attributes = {}

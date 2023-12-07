@@ -5,7 +5,7 @@
 import pandas as pd
 
 # from test_llm import get_openai_output as get_llm_output
-from ..plugins.llms import get_llm_output
+from plugins.llms import get_llm_output
 
 def chunk_text(text, max_chars):
     """
@@ -36,13 +36,12 @@ class LLMForTables:
     this runs the LLM through every row of the table and returns the output column.
 
     Parameters:
-    - system_instruction (str): The system instruction.
+    - system_instruction (str): Detailed instruction on what the language model should do with the text of the input column.
     - file_name (str): file name.
     - input_column (str): The input column.
     - output_column (str): The output column.
     - max_tokens (int): Maximum number of tokens to generate.
     - row_by_row (bool): Whether to generate one row at a time or consolidate all rows into one output.
-    - system_instruction (str): The system instruction.
     """
     
     def __init__(self, system_instruction, file_name, input_column, output_column, max_tokens=1000, row_by_row=True):
@@ -92,14 +91,11 @@ class LLMForTables:
             self.process_row_by_row()
         else:
             self.process_chunks()
+        content = f"LLM run successfully on {self.file_name} and created the output column {self.output_column}."
         return {
-            "content": f"LLM run successfully on {self.file_name}.",
+            "content": content,
             "file_name": self.file_name,
-            "output_column": self.output_column,
-            "ask_llm": False,
-            "task_finished": True,
-            # Add a res dict on what to do next with the output
-
+            "output_column": self.output_column
         }
 
     def process_row_by_row(self):
@@ -118,7 +114,8 @@ class LLMForTables:
             output = get_llm_output(messages, self.max_tokens)
             self.data.at[row.Index, self.output_column] = output
             self._save_data(self.data)  # Save after each row
-
+        return None
+    
     def process_chunks(self):
         """
         Processes the data in chunks.
@@ -139,7 +136,21 @@ class LLMForTables:
             # Add the output to the correct row
             self.data.at[i, self.output_column] = output
             self._save_data(self.data)
+        return None
 
-# Usage example
-# llm_table = LLMForTables("Translate the following text to French:", "data.csv", "English_Text", "French_Text")
-# llm_table.run()
+def tool_main(system_instruction, file_name, input_column, output_column, auto_rerun=False):
+    """
+    This tool will run the LLM on the given data and populate the output column.
+    """
+    
+    llm_for_tables = LLMForTables(
+        system_instruction=system_instruction,
+        file_name=file_name,
+        input_column='transcript',
+        output_column=output_column,
+    )
+    res_dict = llm_for_tables.run()
+    res_dict['ask_llm'] = False
+    res_dict['task_finished'] = True
+
+    return res_dict
