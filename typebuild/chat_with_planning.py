@@ -4,21 +4,23 @@
 - If a graph exists, allow the user to add tasks to it. Right now, planner is creating new graphs.
 - [ ] Vivek: How to use metadata in files while executing tasks.  We need this to get system instruction from 
     prompt agent to the llm for tables agent.
-- [ ] Ranu: Create youtube search
-- [ ] Ranu: Create bing search function
-- [ ] Ranu: Create "subscription" based access to the apis. 
-- [ ] Ranu: How to store credentials securely.
 
-# TODO: Vivek: LLM Research
-- Sampling
-- Showing research
-- Adding system instruction
+# Ranu: Create APIs    
+- [ ] Create youtube search
+- [ ] Create bing search function
+- [ ] Create "subscription" based access to the apis. 
+- [ ] How to store credentials securely.
 
 # TODO: Ranu: Task graph management
 - If the graph exists, do not overwrite.  Ask the user if the old one should be used.
 - Make sure that the names are descriptive.
 - When a new task starts it should have a new name and new conversations to be attached to it.
 - Work on the palnner to add new tasks anytime.
+
+# TODO: Vivek: LLM Research
+- Sampling
+- Showing research
+- Adding system instruction
 
 # TODO: Categorization template:
 - Create a template for categorization and make sure it works well.
@@ -38,6 +40,7 @@
 - Navigation right now is not called as a task.  Either create a task, or call the nav agent directly.
 - Make sure that we do not have too many calls for simple navigation.
 """
+
 import time
 import streamlit as st
 from plugins.llms import get_llm_output
