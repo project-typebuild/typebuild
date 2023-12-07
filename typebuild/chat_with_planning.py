@@ -252,6 +252,8 @@ def manage_tool_interaction(res_dict, from_llm=False, run_tool=False):
         run_tool = check_for_auto_rerun(tool_function)
     if run_tool:
         tool_result = tool_function(**kwargs)
+        # When we get the tool result, set the delete task for tool
+        del st.session_state['task_for_tool']
         st.sidebar.code(f'Tool result: {tool_result}')
         # TODO: Some tools like search need to consume the tool results.
         # Others like navigator need not.  Create a system to pass to the
@@ -281,9 +283,9 @@ def manage_tool_interaction(res_dict, from_llm=False, run_tool=False):
 
     return None
 
-def chat():
+def init_chat():
     """
-    Chat with the planning agent
+    Initiate some key variables for the chat
     """
     if st.sidebar.button("Stop LLM"):
         st.session_state.ask_llm = False
@@ -291,23 +293,23 @@ def chat():
         st.session_state.task_graph = TaskGraph()
     add_planning_to_session_state()
     tg = st.session_state.task_graph
-    current_task = st.session_state.current_task
-    # all_messages = tg.get_messages_for_task_family(current_task)
-    # st.sidebar.write(all_messages)
-    
-    
-    # if st.sidebar.button("Save graph"):
-    #     tg._save_to_file()
-    #     st.success("Saved graph to file.")
-    #     st.stop()
-    # all_tasks = tg.graph.nodes
-    # st.sidebar.header("All tasks")
-    # st.sidebar.code(all_tasks)
-
-    # Display chat input method
     tg.messages.chat_input_method(task_name=st.session_state.current_task)
     st.sidebar.info(f"Ask llm: {st.session_state.ask_llm}\n\nCurrent task: {st.session_state.current_task}")
     display_messages()
+
+def chat():
+
+    init_chat()
+    tg = st.session_state.task_graph
+
+    # Check if any task has been allocated for a tool.
+    # If yes, run it before we get to the ask llm loop.
+    if 'task_for_tool' in st.session_state:
+        res_dict = st.session_state.task_for_tool
+        with st.spinner("Running tool..."):
+            manage_tool_interaction(res_dict, from_llm=True, run_tool=True)
+
+
     if st.session_state.ask_llm:
         res = manage_llm_interaction()
         res_dict = json.loads(res)
@@ -315,41 +317,52 @@ def chat():
         # and next action if task is finished
         set_next_actions(res_dict)
         if 'tool_name' in res_dict:
-            with st.spinner("Running tool..."):
-                manage_tool_interaction(res_dict, from_llm=True, run_tool=True)
+            st.session_state.task_for_tool = res_dict
+
         # Save the graph to file, if it has a name
         # TODO: Make sure that we don't create a name that overwrites an existing one.
         if tg.name:
             # Save the graph to file
             tg._save_to_file()
         st.rerun()
-    # TODO: Create the loop for the task graph.
-    # Message 0 should be system instruction & message 1 should be the description.
-    # Check if current node task is incomplete
-    
+    post_llm_processes()
+    return None
+
+def post_llm_processes():
+    tg = st.session_state.task_graph
     next_task = tg.get_next_task()
     if next_task:
-        
-        if st.button(f"Start task {next_task}"):
-            st.session_state.ask_llm = True
-            tg.send_to_planner = False
-            st.session_state.current_task = next_task
-            the_task = tg.graph.nodes[next_task]['task']
-            si = the_task.get_system_instruction()
-            st.code(si)
-            st.markdown(the_task.task_description)
-            st.rerun()
+        run_next_task(tg, next_task)
     else:
-        # See if there are no messages
-        if not tg.messages.get_all_messages():
+        show_templates(tg)
+    return None
 
-        #    Implement this after serialization to json is done
-        #     # Allow the user to load a task graph
-            if st.session_state.selected_node == 'HOME':
-                tg._load_from_file()
-                load_templates()
-                if tg.templates:
-                    st.sidebar.info(f"{len(tg.templates)} templates loaded.")
+def run_next_task(tg, next_task):
+    """
+    Get the next task and display it
+    """    
+    if st.button(f"Start task {next_task}"):
+        st.session_state.ask_llm = True
+        tg.send_to_planner = False
+        st.session_state.current_task = next_task
+        the_task = tg.graph.nodes[next_task]['task']
+        si = the_task.get_system_instruction()
+        st.code(si)
+        st.markdown(the_task.task_description)
+        st.rerun()
+
+def show_templates(tg):
+    """
+    Show task templates if there are no
+    messages in the conversation
+    """
+    # See if there are no messages
+    if not tg.messages.get_all_messages() and st.session_state.selected_node == 'HOME':
+        tg._load_from_file()
+        load_templates()
+        if tg.templates:
+            st.sidebar.info(f"{len(tg.templates)} templates loaded.")
+    return None
 
 def load_templates():
 

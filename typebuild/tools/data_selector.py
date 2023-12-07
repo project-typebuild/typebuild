@@ -42,13 +42,15 @@ def tool_main(auto_rerun=False):
     This tool will help the user select the data file and column name that they want to use for the task.
     """
     # Given a user query, the Planner will call this tool to get the file name and column name
-
+    # When this starts, set ask llm to False
+    st.session_state.ask_llm = False
     data_selector_tool = DataSelectorTool()
     file_name, input_column = data_selector_tool.interface()
     if file_name is None or input_column is None:
         st.stop()
+    content = f"I selected {file_name} and {input_column} for you.  You can use this for the next steps."
     res_dict = {
-        'content': 'File name:\n' + file_name + '\n\n, Column name:\n' + input_column,
+        'content': content,
         'file_name': file_name,
         'input_column': input_column,
         'ask_llm': False,
