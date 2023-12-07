@@ -265,7 +265,12 @@ def manage_tool_interaction(res_dict, from_llm=False, run_tool=False):
 
         st.sidebar.error("looking at tool result")
         if from_llm:
-            st.sidebar.warning("from llm")
+            # Add the tool result to the task graph
+            tg = st.session_state.task_graph
+            tg.update_task(
+                task_name=st.session_state.current_task,
+                other_attributes=tool_result
+                )
             if tool_result.get('task_finished', False) == True:
                 finish_tasks(tool_result)
             else:
