@@ -1,7 +1,35 @@
 """
 ***Current objective:***
+
 - If a graph exists, allow the user to add tasks to it. Right now, planner is creating new graphs.
-- Pass the metadata about files, columns, etc. to the planner when it adds new tasks.
+- [ ] Vivek: How to use metadata in files while executing tasks.  We need this to get system instruction from 
+    prompt agent to the llm for tables agent.
+- [ ] Ranu: Create youtube search
+- [ ] Ranu: Create bing search function
+- [ ] Ranu: Create "subscription" based access to the apis. 
+- [ ] Ranu: How to store credentials securely.
+
+# TODO: Vivek: LLM Research
+- Sampling
+- Showing research
+- Adding system instruction
+
+# TODO: Ranu: Task graph management
+- If the graph exists, do not overwrite.  Ask the user if the old one should be used.
+- Make sure that the names are descriptive.
+- When a new task starts it should have a new name and new conversations to be attached to it.
+- Work on the palnner to add new tasks anytime.
+
+# TODO: Categorization template:
+- Create a template for categorization and make sure it works well.
+
+# TODO: Better layout for templates
+- When a conversation starts, provide templates as cards with images and information for users to select.
+
+# TODO: Menu
+- Hamburger when the menu collapses.
+- Add Parent to the menu bar.
+- Change color of the menu bar when we go to different levels.
 
 # TODO:
 - Send errors back to LLM fix.
