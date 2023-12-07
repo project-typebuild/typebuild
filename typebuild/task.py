@@ -76,7 +76,7 @@ class Task:
             
             return instructions
         else:
-            raise FileNotFoundError(f'No system instruction found for {agent_name}.')
+            raise FileNotFoundError(f'There is no agent by name: {agent_name}.  Please check the agent name.')
 
 
     def get_instance_vars(self):

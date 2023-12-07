@@ -2,7 +2,9 @@
 ***Current objective:***
 - If a graph exists, allow the user to add tasks to it. Right now, planner is creating new graphs.
 - Pass the metadata about files, columns, etc. to the planner when it adds new tasks.
+
 # TODO:
+- Send errors back to LLM fix.
 
 # FOR ANOTHER DAY: NAVIGATION FIXES
 - Navigation right now is not called as a task.  Either create a task, or call the nav agent directly.
@@ -36,7 +38,7 @@ def display_messages(expanded=True):
     
         
     for i, msg in enumerate(messages):
-        # st.code(msg)
+        st.code(msg)
         content = ""
         # Some tools return a key called res_dict.  Parse it here.
         if 'res_dict' in msg:
@@ -50,6 +52,7 @@ def display_messages(expanded=True):
         else:
             res_dict = {}
             content = msg.get('content', '')
+        
         if content:
             if msg['role'] in ['user', 'assistant']:
 
@@ -158,6 +161,12 @@ def add_planning_to_session_state():
         st.session_state.planning = planning
         
         st.session_state.current_task = 'planning'
+    # If planning is in session state, update the task description
+    else:
+        planning = st.session_state.planning
+        planning.task_description = get_task_graph_details()
+
+
     return None
 
 def set_next_actions(res_dict):
@@ -245,8 +254,7 @@ def manage_tool_interaction(res_dict, from_llm=False, run_tool=False):
 
     # select the required arguments from res_dict and pass them to the tool
     kwargs = {k: v for k, v in args_for_tool.items() if k in tool_args}
-    st.error(args_for_tool)
-    st.success(tool_args)
+    st.error(f"Args for tools: {args_for_tool}")
     if not run_tool:
         # Check if the tool should be run automatically
         run_tool = check_for_auto_rerun(tool_function)
@@ -286,10 +294,7 @@ def manage_tool_interaction(res_dict, from_llm=False, run_tool=False):
                     created_by=st.session_state.current_task, 
                     created_for=st.session_state.current_task
                     )
-    # # Print the tool arguments
-    # for node in st.session_state.task_graph.graph.nodes:
-    #     st.header(f"Node: {node}")
-    #     st.success(st.session_state.task_graph.get_attributes_of_ancestors(node))
+
     return None
 
 def init_chat():
@@ -336,11 +341,12 @@ def show_templates(tg):
     messages in the conversation
     """
     # See if there are no messages
-    if not tg.messages.get_all_messages() and st.session_state.selected_node == 'HOME':
-        tg._load_from_file()
-        load_templates()
-        if tg.templates:
-            st.sidebar.info(f"{len(tg.templates)} templates loaded.")
+    with st.sidebar.expander("Load templates & past work", expanded=True):
+        if not tg.messages.get_all_messages() and st.session_state.selected_node == 'HOME':
+            tg._load_from_file()
+            load_templates()
+            if tg.templates:
+                st.sidebar.info(f"{len(tg.templates)} templates loaded.")
     return None
 
 def load_templates():
@@ -384,7 +390,18 @@ def chat():
         res_dict = json.loads(res)
         # Find if LLM should be invoked automatically
         # and next action if task is finished
-        set_next_actions(res_dict)
+        try:
+            set_next_actions(res_dict)
+        except Exception as e:
+            # Add the errror to the messages and ask LLM to fix it.
+            st.session_state.task_graph.messages.set_message(
+                role='user', 
+                content=f"I got this error: {e}.\nPlease fix it.", 
+                created_by=st.session_state.current_task, 
+                created_for=st.session_state.current_task
+                )
+            st.session_state.ask_llm = True
+
         if 'tool_name' in res_dict:
             st.session_state.task_for_tool = res_dict
 

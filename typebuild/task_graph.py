@@ -339,6 +339,22 @@ class TaskGraph:
                     st.rerun()
         return None
 
+    def rename(self, new_name):
+        """
+        Renames the graph and the file, if it exists.
+        """
+        if new_name:
+            # Rename the file and graph
+            old_file_path = self._get_file_path()
+            self.name = new_name
+            new_file_path = self._get_file_path()
+            if os.path.exists(old_file_path):
+                os.rename(old_file_path, new_file_path)
+            st.success(f"Renamed graph to '{new_name}'.")
+            time.sleep(2)
+
+        return None
+
     def generate_markdown(self):
         """
         Generates a markdown text from the task graph with hierarchical tasks.

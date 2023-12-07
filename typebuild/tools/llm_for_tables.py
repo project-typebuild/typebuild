@@ -28,7 +28,7 @@ def chunk_text(text, max_chars):
             chunks.append(chunk)
             chunk = f"{s}."
     chunks.append(chunk)
-    return chunks
+    return [c for c in chunks if c.strip()]
 
 class LLMForTables:
     """
@@ -107,9 +107,13 @@ class LLMForTables:
             if i < self.restart_row:
                 continue
             input_text = getattr(row, self.input_column)
-            # Set chunk size to be twice the max tokens
+            # Set chunk size to be twice the max tokens.  
             # since chunks are inputs while max tokens is the output
-            chunks = chunk_text(input_text, self.max_tokens * 2)
+            # Each token is approximately 3 characters long.
+            chunks = chunk_text(
+                input_text, 
+                max_chars=self.max_tokens * 2 * 3
+                )
             fin_output = ""
             for c in chunks:
                 messages = [
@@ -156,6 +160,7 @@ def tool_main(system_instruction, file_name, input_column, output_column, auto_r
         file_name=file_name,
         input_column='transcript',
         output_column=output_column,
+        max_tokens=800,
     )
     res_dict = llm_for_tables.run()
     res_dict['ask_llm'] = False

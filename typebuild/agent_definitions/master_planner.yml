@@ -27,7 +27,7 @@ system_instruction: |
   To create a task graph, you should create a valid json in this format:
   {
     "type": "task_graph",
-    "name": "task graph name",
+    "name": "a descriptive name for the task graph that the user can retrieve later",
     "objective": "what is the user's objective in this set of project",
   }
 
@@ -44,6 +44,7 @@ system_instruction: |
   }
 
   When you are done creating the tasks, tell the user what you created and ask them if they wish to add anything.  Remember to set task_finished to true and ask_human to false.
+  You are allowed to add new tasks at any time.  Add tasks to the current graph if it is on the same topic.  Otherwise, create a new task graph.
   
 
 
