@@ -53,6 +53,7 @@ class LLMForTables:
         self.row_by_row = row_by_row
         self._load_data()
         self.check_restart()
+        self.model = "gpt-3.5-turbo"
 
     def _save_data(self, data):
         """
@@ -106,13 +107,17 @@ class LLMForTables:
             if i < self.restart_row:
                 continue
             input_text = getattr(row, self.input_column)
-            messages = [
-                {"role": "system", "content": self.system_instruction},
-                {"role": "user", "content": input_text},
-            ]
-            # output = get_llm_output(messages, self.max_tokens)
-            output = get_llm_output(messages, self.max_tokens)
-            self.data.at[row.Index, self.output_column] = output
+            chunks = chunk_text(input_text, self.max_tokens)
+            fin_output = ""
+            for c in chunks:
+                messages = [
+                    {"role": "system", "content": self.system_instruction},
+                    {"role": "user", "content": c},
+                ]
+                # output = get_llm_output(messages, self.max_tokens)
+                output = get_llm_output(messages, self.max_tokens, model=self.model)
+                fin_output += output + "\n"
+            self.data.at[row.Index, self.output_column] = fin_output
             self._save_data(self.data)  # Save after each row
         return None
     
@@ -132,7 +137,7 @@ class LLMForTables:
                 {"role": "system", "content": self.system_instruction},
                 {"role": "user", "content": chunk},
             ]
-            output = get_llm_output(messages, self.max_tokens)
+            output = get_llm_output(messages, self.max_tokens, model=self.model)
             # Add the output to the correct row
             self.data.at[i, self.output_column] = output
             self._save_data(self.data)
@@ -141,6 +146,7 @@ class LLMForTables:
 def tool_main(system_instruction, file_name, input_column, output_column, auto_rerun=False):
     """
     This tool will run the LLM on the given data and populate the output column.
+    Uses GPT-3.5-turbo model.
     """
     
     llm_for_tables = LLMForTables(

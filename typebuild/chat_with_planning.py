@@ -1,8 +1,7 @@
 """
 ***Current objective:***
-- LLM loop
-- Data selection (we need file name, field name)
-
+- If a graph exists, allow the user to add tasks to it. Right now, planner is creating new graphs.
+- Pass the metadata about files, columns, etc. to the planner when it adds new tasks.
 # TODO:
 
 # FOR ANOTHER DAY: NAVIGATION FIXES
