@@ -118,12 +118,15 @@ def get_task_graph_details():
     task_objective = tg.objective
     task_md = tg.generate_markdown()
     task_info = f"""
-    TASK NAME: {task_name}
+    
+    HERE IS THE INFORMATION ABOUT THE TASK GRAPH:
+    TASK GRAPH NAME: {task_name}
     OBJECTIVE: {task_objective}
     LIST OF SUBTASKS:
     {task_md}
     """
-    return task_info
+    extractors = Extractors()
+    return extractors.remove_indents_in_lines(task_info)
 
 def add_planning_to_session_state():
     """
@@ -384,6 +387,10 @@ def chat():
         with st.spinner("Running tool..."):
             manage_tool_interaction(res_dict, from_llm=True, run_tool=True)
 
+    # Show the system instruction for the current task if it exists
+    if st.session_state.current_task == 'planning':
+        si = st.session_state.planning.get_system_instruction()
+        st.sidebar.warning(si)
 
     if st.session_state.ask_llm:
         res = manage_llm_interaction()
