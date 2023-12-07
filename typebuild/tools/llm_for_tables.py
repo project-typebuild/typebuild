@@ -107,7 +107,9 @@ class LLMForTables:
             if i < self.restart_row:
                 continue
             input_text = getattr(row, self.input_column)
-            chunks = chunk_text(input_text, self.max_tokens)
+            # Set chunk size to be twice the max tokens
+            # since chunks are inputs while max tokens is the output
+            chunks = chunk_text(input_text, self.max_tokens * 2)
             fin_output = ""
             for c in chunks:
                 messages = [
@@ -129,7 +131,7 @@ class LLMForTables:
         full_text = "\n\n".join(self.data[self.input_column].tolist())
         
         # Chunk the text but skip the rows that have already been processed
-        chunks = chunk_text(full_text, self.max_tokens)[self.restart_row:]
+        chunks = chunk_text(full_text, self.max_tokens * 2)[self.restart_row:]
         print(f"Number of chunks: {len(chunks)}")
 
         for i, chunk in enumerate(chunks, start=self.restart_row):
