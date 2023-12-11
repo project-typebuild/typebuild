@@ -40,7 +40,7 @@ class Task:
         else:
             data_for_system_instruction = None
 
-        st.sidebar.info(f"Agent name is {self.get_instance_vars()}")
+        # st.sidebar.info(f"Agent name is {self.get_instance_vars()}")
         # Take the data_for_system_instruction and replace the variables in the system_instruction
         instruction = self.system_instruction
         if data_for_system_instruction:
@@ -165,7 +165,7 @@ class Task:
         # If this agent could delegate, add that information
         # to the instruction.
         if self.agent_descriptions:
-            instruction += "THE FOLLOWING IS A LIST OF AGENTS AVAILABLE.  DO NOT MAKE UP OTHER AGENTS.  CALL THEM BY THEIR NAME VERBATIM:\n"
+            instruction += "\n\nTHE FOLLOWING IS A LIST OF AGENTS AVAILABLE.  DO NOT MAKE UP OTHER AGENTS.  CALL THEM BY THEIR NAME VERBATIM:\n"
             for agent_name, description in self.agent_descriptions.items():
                 instruction += f"- {agent_name}: {description}\n"
 

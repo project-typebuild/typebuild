@@ -1,7 +1,37 @@
 """
 ***Current objective:***
+
 - If a graph exists, allow the user to add tasks to it. Right now, planner is creating new graphs.
-- Pass the metadata about files, columns, etc. to the planner when it adds new tasks.
+- [ ] Vivek: How to use metadata in files while executing tasks.  We need this to get system instruction from 
+    prompt agent to the llm for tables agent.
+
+# Ranu: Create APIs    
+- [ ] Create youtube search
+- [ ] Create bing search function
+- [ ] Create "subscription" based access to the apis. 
+- [ ] How to store credentials securely.
+
+# TODO: Ranu: Task graph management
+- If the graph exists, do not overwrite.  Ask the user if the old one should be used.
+- Make sure that the names are descriptive.
+- When a new task starts it should have a new name and new conversations to be attached to it.
+- Work on the palnner to add new tasks anytime.
+
+# TODO: Vivek: LLM Research
+- Sampling
+- Showing research
+- Adding system instruction
+
+# TODO: Categorization template:
+- Create a template for categorization and make sure it works well.
+
+# TODO: Better layout for templates
+- When a conversation starts, provide templates as cards with images and information for users to select.
+
+# TODO: Menu
+- Hamburger when the menu collapses.
+- Add Parent to the menu bar.
+- Change color of the menu bar when we go to different levels.
 
 # TODO:
 - Send errors back to LLM fix.
@@ -10,6 +40,7 @@
 - Navigation right now is not called as a task.  Either create a task, or call the nav agent directly.
 - Make sure that we do not have too many calls for simple navigation.
 """
+
 import time
 import streamlit as st
 from plugins.llms import get_llm_output
@@ -118,12 +149,15 @@ def get_task_graph_details():
     task_objective = tg.objective
     task_md = tg.generate_markdown()
     task_info = f"""
-    TASK NAME: {task_name}
+    
+    HERE IS THE INFORMATION ABOUT THE TASK GRAPH:
+    TASK GRAPH NAME: {task_name}
     OBJECTIVE: {task_objective}
     LIST OF SUBTASKS:
     {task_md}
     """
-    return task_info
+    extractors = Extractors()
+    return extractors.remove_indents_in_lines(task_info)
 
 def add_planning_to_session_state():
     """
@@ -385,6 +419,10 @@ def chat():
         with st.spinner("Running tool..."):
             manage_tool_interaction(res_dict, from_llm=True, run_tool=True)
 
+    # Show the system instruction for the current task if it exists
+    if st.session_state.current_task == 'planning':
+        si = st.session_state.planning.get_system_instruction()
+        st.sidebar.warning(si)
 
     if st.session_state.ask_llm:
         res = manage_llm_interaction()
