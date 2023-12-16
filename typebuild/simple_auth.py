@@ -124,7 +124,7 @@ def simple_auth():
             st.warning("You just logged out.  Please close the browser tab. Or refresh the page to login again.")
     if token is None:
         st.stop()        
-    if token == 'admin': 
+    if token in ['admin', 'vivek']: 
         with st.sidebar.expander("Admin"):
             add_user_if_admin(token)
             use_as_user = st.text_input("View as user")
