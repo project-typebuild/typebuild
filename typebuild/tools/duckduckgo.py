@@ -131,7 +131,7 @@ class DuckDuckGo:
         return None
 
 
-def tool_main(search_term, num_results=1, full_text=False):
+def tool_main(search_term, num_results=1, full_text=False, auto_rerun=False):
     """
     This tool performs a DuckDukGo search and returns the
     content of the results.  All results are concatenated and returned as one string.
@@ -153,5 +153,7 @@ def tool_main(search_term, num_results=1, full_text=False):
             'ask_llm': True,
             'task_finished': False,
         }
+        st.sidebar.warning(res)
+        time.sleep(5)
         return res
 

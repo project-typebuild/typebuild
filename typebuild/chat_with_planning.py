@@ -288,7 +288,7 @@ def manage_tool_interaction(res_dict, from_llm=False, run_tool=False):
 
     # select the required arguments from res_dict and pass them to the tool
     kwargs = {k: v for k, v in args_for_tool.items() if k in tool_args}
-    st.error(f"Args for tools: {args_for_tool}")
+    
     if not run_tool:
         # Check if the tool should be run automatically
         run_tool = check_for_auto_rerun(tool_function)
@@ -296,6 +296,7 @@ def manage_tool_interaction(res_dict, from_llm=False, run_tool=False):
         tool_result = tool_function(**kwargs)
         # When we get the tool result, set the delete task for tool
         del st.session_state['task_for_tool']
+        st.error(f"Args for tools: {args_for_tool}")
         st.sidebar.code(f'Tool result: {tool_result}')
         # TODO: Some tools like search need to consume the tool results.
         # Others like navigator need not.  Create a system to pass to the
