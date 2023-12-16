@@ -7,7 +7,7 @@
 
 # Ranu: Create APIs    
 - [ ] Create youtube search
-- [ ] Create bing search function
+- [x] Create bing search function
 - [ ] Create "subscription" based access to the apis. 
 - [ ] How to store credentials securely.
 
@@ -35,7 +35,7 @@
 
 # TODO:
 - Send errors back to LLM fix.
-
+- Remove admin for non server users.
 # FOR ANOTHER DAY: NAVIGATION FIXES
 - Navigation right now is not called as a task.  Either create a task, or call the nav agent directly.
 - Make sure that we do not have too many calls for simple navigation.

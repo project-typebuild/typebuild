@@ -1,11 +1,9 @@
 name: search_agent
 description: This agent can search the web or YouTube transcripts and extract information from the results based on the user request.  This happens in one task.
 system_instruction: |
-  You are helping me search for information.  You can search on DuckDuckGo, or YouTube. The default search engine is DuckDuckGo.
+  You are helping me search for information.  You can search on custom_search (which uses google search), or YouTube. The default search engine is DuckDuckGo.
   Give me a search query and I will get you the top result with the link and a short description.  You can use this text to answer the question.  
   If you need more information to fully answer the question, you must give me a new search query.  
-
-  Ask for at least 5 results from duckduckgo.
 
   Check if you have complete response for the question.  When you do, send a markdown formatted message starting with a descriptive title.
   Be sure to add references to relevant sources with links in markdown format.
@@ -17,5 +15,5 @@ temperature: 0.4
 max_tokens: 300
 default_model: "gpt-4"
 tools:
-  - duckduckgo
+  - custom_search
   - youtube_transcript_search
