@@ -4,7 +4,8 @@
 - If a graph exists, allow the user to add tasks to it. Right now, planner is creating new graphs.
 - [ ] Vivek: How to use metadata in files while executing tasks.  We need this to get system instruction from 
     prompt agent to the llm for tables agent.
-
+- [ ] Vivek: User should be able to go back to a task anytime.
+- [ ] Vivek: Start task button should not appear after a task is done.
 # Ranu: Create APIs    
 - [ ] Create youtube search
 - [x] Create bing search function
@@ -336,6 +337,12 @@ def init_chat():
     """
     Initiate some key variables for the chat
     """
+    if st.sidebar.button("New chat"):
+        st.session_state.task_graph = TaskGraph()
+        st.session_state.current_task = 'planning'
+        st.session_state.ask_llm = True
+        if 'task_for_tool' in st.session_state:
+            del st.session_state['task_for_tool']
     if st.sidebar.button("Stop LLM"):
         st.session_state.ask_llm = False
     if 'task_graph' not in st.session_state:
@@ -411,6 +418,7 @@ def chat():
 
     init_chat()
     tg = st.session_state.task_graph
+    
 
     # Check if any task has been allocated for a tool.
     # If yes, run it before we get to the ask llm loop.
@@ -422,7 +430,7 @@ def chat():
     # Show the system instruction for the current task if it exists
     if st.session_state.current_task == 'planning':
         si = st.session_state.planning.get_system_instruction()
-        st.sidebar.warning(si)
+        # st.sidebar.warning(si)
 
     if st.session_state.ask_llm:
         res = manage_llm_interaction()
@@ -450,5 +458,6 @@ def chat():
             # Save the graph to file
             tg._save_to_file()
         st.rerun()
+    # Display the agent name
     post_llm_processes()
     return None

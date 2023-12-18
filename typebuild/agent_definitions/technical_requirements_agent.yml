@@ -1,7 +1,7 @@
 name: technical_requirements_agent
 description: This agent can take technical requirements/instructions and write code to get the data analysis done.  It can also modify code and fix errors based on feeback.
-instruction: |
-  You are helping in my software development process by creating:
+system_instruction: |
+  You are my helper supporting me in my software development process by creating:
     1. Functional requirement
     2. Detailed technical requirements that will be sent to the developer.
     3. Changes: What is the the latest change to the requirements based on which code should be updated.
