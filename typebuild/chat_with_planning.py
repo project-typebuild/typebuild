@@ -6,8 +6,12 @@
     prompt agent to the llm for tables agent.
 - [ ] Vivek: User should be able to go back to a task anytime.
 - [ ] Vivek: Start task button should not appear after a task is done.
+
 # Ranu: Create APIs    
-- [ ] Create youtube search
+- [x] Create youtube search
+- [ ] Add comment search, search by channel and playlist
+- [ ] Write endpoint API functions for Azure. 
+- [ ] Run the data from the tools through data model. 
 - [x] Create bing search function
 - [ ] Create "subscription" based access to the apis. 
 - [ ] How to store credentials securely.
@@ -381,6 +385,12 @@ def show_templates(tg):
     """
     Show task templates if there are no
     messages in the conversation
+
+    Parameters:
+    tg (object): The task generator object.
+
+    Returns:
+    None
     """
     # See if there are no messages
     with st.sidebar.expander("Load templates & past work", expanded=True):

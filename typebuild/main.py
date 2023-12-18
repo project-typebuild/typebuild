@@ -19,7 +19,7 @@ starter_code()
 # from chat import chat
 from chat_with_planning import chat
 from graphical_menu import GraphicalMenu
-from tb_settings import settings_main
+from tb_settings import settings_main, llm_access_settings
 from function_management import run_current_functions
 
 if 'menu' not in st.session_state:
@@ -77,6 +77,8 @@ menu_bar_options = [
     ['HOME','LLM Research','llm_research_interface','helpers'],
     ]
 
+if not 'openai_key' in st.session_state:
+    llm_access_settings() # LLM access settings
 
 menu.add_edges(menu_bar_options) # add the edges to the menu in the GraphicalMenu class
 menu.create_menu() # create the meu bar

@@ -12,6 +12,7 @@ from tqdm import tqdm
 from glob import glob
 from helpers import text_areas
 from plugins.llms import get_llm_output
+from stqdm import stqdm
 
 class LLMResearch:
     
@@ -82,6 +83,10 @@ class LLMResearch:
     def load_research_projects(self):
         if not os.path.exists(self.research_projects_with_llm_path):
             res_projects = pd.DataFrame(columns=['research_name', 'project_name', 'file_name', 'input_col', 'output_col', 'word_limit', 'row_by_row', 'system_instruction'])
+            
+            if not os.path.exists(os.path.join(self.project_folder, 'data')):
+                os.makedirs(os.path.join(self.project_folder, 'data'))
+            
             res_projects.to_parquet(self.research_projects_with_llm_path, index=False)
             st.rerun()
 
@@ -127,10 +132,15 @@ class LLMResearch:
             help="Name your research so that you can find it later."
         )
 
+        if not self.res_projects:
+            existing_researches = []
+        else:
+            existing_researches = self.res_projects['research_name'].tolist()
+
         if not research_name:
             st.error("Please give your project a name and click Enter.")
             st.stop()
-        elif research_name in self.res_projects['research_name'].tolist():
+        elif research_name in existing_researches:
             st.error("This project name already exists.  Give it a different name.")
             st.stop()
         else:
@@ -160,7 +170,9 @@ class LLMResearch:
         tables = [os.path.splitext(os.path.basename(table))[0] for table in tables]
         tables.insert(0, 'SELECT')
         default_index = 0
-        project_table = selected_res_project['file_name']
+        if not selected_res_project: # Because an error is thrown when the LLM finishes the research and displays the output
+            st.stop()
+        project_table = selected_res_project.get('file_name', None)
         if project_table:
             project_table = os.path.splitext(os.path.basename(project_table))[0]
             if project_table in tables:
@@ -255,9 +267,9 @@ class LLMResearch:
         if len(system_instruction) < 20:
             st.error(f"Please enter at leat 20 characters. {20-len(system_instruction)} more characters needed.")
             st.stop()
-        return system_instruction, word_limit
+        return system_instruction, word_limit, consolidated
 
-    def run_analysis(self, df, selected_table, selected_column, output_col_name, system_instruction, word_limit):
+    def run_analysis(self, df, selected_table, selected_column, output_col_name, system_instruction, word_limit, consolidated):
         col_info = f"""This column contains the output from the LLM based on the column {selected_column}.  
         The LLM was asked to do the following:
         {system_instruction}
@@ -362,8 +374,8 @@ class LLMResearch:
         selected_table = self.select_table(selected_res_project)
         df = pd.read_parquet(selected_table)
         selected_column, output_col_name = self.select_columns(df, selected_res_project)
-        system_instruction, word_limit = self.get_system_instruction(df, selected_table, output_col_name)
-        self.run_analysis(df, selected_table, selected_column, output_col_name, system_instruction, word_limit)
+        system_instruction, word_limit, consolidated = self.get_system_instruction(df, selected_table, output_col_name)
+        self.run_analysis(df, selected_table, selected_column, output_col_name, system_instruction, word_limit, consolidated)
 
     def show_output(self, df, output_col_name):
         """

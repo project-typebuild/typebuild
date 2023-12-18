@@ -12,8 +12,7 @@ class DataSelector:
         """
         Initializes the DataSelector object.
         """
-        if 'project_folder' not in st.session_state:
-            st.session_state.project_folder = '/Users/ranu/.typebuild/users/admin/test_lewys/'
+
         self.project_folder = st.session_state.project_folder
         self.data_folder = os.path.join(self.project_folder, 'data')
 

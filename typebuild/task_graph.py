@@ -316,6 +316,9 @@ class TaskGraph:
         """
         # Get a list of files in the objectives folder
         path = os.path.join(st.session_state.user_folder, 'objectives')
+        # check if the folder exists and create it if it doesn't
+        if not os.path.exists(path):
+            os.makedirs(path)
         files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
         if files:
             st.header("Load task graph")
