@@ -73,6 +73,17 @@ class DataSelector:
                     'file_name': file_name,
                     'records': df_data_model_records
                 }
+            # if file_name is a list, return the data for all files
+            elif isinstance(file_name, list):
+                data_dict = {}
+                for file_name in file_name:
+                    df_data_model_file = df_data_model[df_data_model['file_name'] == file_name].drop(columns=['file_name'])
+                    df_data_model_records = df_data_model_file.to_dict(orient='records')
+
+                    data_dict[file_name] = {
+                        'file_name': file_name,
+                        'records': df_data_model_records
+                    }
             else:
                 data_dict = {}
                 for file_name in df_data_model['file_name'].unique():
