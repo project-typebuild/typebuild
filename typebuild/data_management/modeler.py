@@ -232,7 +232,7 @@ class DataModeler:
         df.to_parquet(file_path, index=False)
         return None
 
-    def get_data_model(self, df, file_path):
+    def get_data_model(self, df=None, file_path=None):
         """
         Creates a data model for the given dataframe and saves it. Also updates the dataframe with the appropriate data types and saves it.
 
@@ -250,11 +250,30 @@ class DataModeler:
             df_data_model = df_data_model[df_data_model.file_name == file_path]
             if len(df_data_model) > 0:
                 return df_data_model
+        
+        if df is None and file_path is None:
+            st.error("You need to provide either a dataframe or a file path")
+            return None
+
         df_data_model = self.get_column_info_for_df(df)
         df = self.convert_to_appropriate_dtypes(df, df_data_model)
-        self.save_data_model(df_data_model, file_path)
+        self.save_data_model(df_data_model, data_model_file_name)
         self.save_dataframe(df, file_path)
 
         return df_data_model
 
-    
+    def interface(self):
+        
+        #Let the user select the file from the list of files in the data folder
+        # Get the data model and get the files available 
+
+        data_model_file = os.path.join(st.session_state.project_folder, 'data_model.parquet')
+        if not os.path.exists(data_model_file):
+            st.error("No data model found.  Please upload some data first.")
+            return None
+        data_model = pd.read_parquet(data_model_file)
+        available_files = data_model.file_name.unique().tolist()
+        file_path = st.selectbox("Select your data", available_files)
+        df_data_model = data_model[data_model.file_name == file_path]
+        st.write(df_data_model)
+        return None

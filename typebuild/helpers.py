@@ -168,6 +168,7 @@ def data_management_interface():
     from data_management.uploader import DataUploader
     from data_management.deleter import DataDeleter
     from data_management.selector import DataSelector
+    from data_management.modeler import DataModeler
 
     if 'DataUploader' not in st.session_state:
         data_uploader = DataUploader()
@@ -199,6 +200,15 @@ def data_management_interface():
         file_name, input_column = data_selector.interface()
         st.error(f"Selected file: {file_name}")
         st.error(f"Selected column: {input_column}")
+
+    if 'DataModeler' not in st.session_state:
+        data_modeler = DataModeler()
+        st.session_state.DataModeler = data_modeler
+
+    data_modeler = st.session_state.DataModeler
+
+    if st.session_state.selected_node == 'Data Model~helpers':
+        data_modeler.interface()
     return None
 
 def llm_research_interface():
