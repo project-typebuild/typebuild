@@ -43,8 +43,13 @@
 - Remove admin for non server users.
 # FOR ANOTHER DAY: NAVIGATION FIXES
 - Navigation right now is not called as a task.  Either create a task, or call the nav agent directly.
+- Access to gpt 4 turbo is available only after someone pays $1.
 - Make sure that we do not have too many calls for simple navigation.
+
+# BUGS TO FIX
+- [ ] Vivek: When we click on new chat, it creates a message.  As a result, load graph option disappears.
 """
+
 
 import time
 import streamlit as st
