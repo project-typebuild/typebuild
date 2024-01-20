@@ -392,6 +392,7 @@ def show_templates(tg):
     Returns:
     None
     """
+    
     # See if there are no messages
     with st.sidebar.expander("Load templates & past work", expanded=True):
         if not tg.messages.get_all_messages() and st.session_state.selected_node == 'HOME':
