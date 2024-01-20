@@ -21,9 +21,12 @@ class Display():
             view_text = st.checkbox('View as text')
         if view_text:
             text = df.to_string(index=False)
+            # For every line break, add a divider
+            text = text.replace('\n', '\n---\n')
             # line breaks could be escaped.  Remove the escape characters.
             text = text.replace('\\n', '\n')
-            st.markdown(text)
+            with st.expander("Expand to view the text"):
+                st.markdown(text)
         else:
             st.dataframe(df)
 
