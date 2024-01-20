@@ -3,7 +3,7 @@
 """
 
 import pandas as pd
-
+import streamlit as st
 # from test_llm import get_openai_output as get_llm_output
 from plugins.llms import get_llm_output
 
@@ -44,7 +44,7 @@ class LLMForTables:
     - row_by_row (bool): Whether to generate one row at a time or consolidate all rows into one output.
     """
     
-    def __init__(self, system_instruction, file_name, input_column, output_column, max_tokens=1000, row_by_row=True):
+    def __init__(self, system_instruction, file_name, input_column, output_column, max_tokens=750, row_by_row=True):
         self.system_instruction = system_instruction
         self.file_name = file_name
         self.input_column = input_column
@@ -107,6 +107,9 @@ class LLMForTables:
             if i < self.restart_row:
                 continue
             input_text = getattr(row, self.input_column)
+            # If input text is none or null, go to the next row
+            if not input_text:
+                continue
             # Set chunk size to be twice the max tokens.  
             # since chunks are inputs while max tokens is the output
             # Each token is approximately 3 characters long.
@@ -160,7 +163,7 @@ def tool_main(system_instruction, file_name, input_column, output_column, auto_r
         file_name=file_name,
         input_column='transcript',
         output_column=output_column,
-        max_tokens=800,
+        max_tokens=700,
     )
     res_dict = llm_for_tables.run()
     res_dict['ask_llm'] = False

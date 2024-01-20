@@ -49,7 +49,11 @@ with st.sidebar.expander("Admin"):
             please_stop = True
             res = st.session_state.last_response
             st.warning(st.session_state.last_response)
-
+    if 'planner_instructions' in st.session_state:
+        show_planner_instructions = st.checkbox('Show planner instructions')
+        if show_planner_instructions:
+            please_stop = True
+            st.write(st.session_state.planner_instructions)
     # If there is a message from the agent, show it (temporary)
     if 'agent_messages' in st.session_state:
         if st.checkbox('Show agent messages'):

@@ -5,7 +5,8 @@ youtube_research:
   template: |
     The planner should find out what research the user wants to do.  Once you do that, create the following tasks
     - Ask the search agent to search and download youtube transcripts.  It will return a file name with the downloads and the transcripts can be found in the 'transcripts' column
-    - Create a task for the llm agent, which can analyze the transcripts and store the output in the same file as a new column.
+    - Create a task for the llm agent, which can analyze the transcripts and store the output in the same file as a new column. It will return the column name.
+    - Create a child task for the display_dataframe agent, which can display the dataframe with the new column
 
 analyze_data_with_llm:
   description: Select a column in a file and analyze it with the LLM
