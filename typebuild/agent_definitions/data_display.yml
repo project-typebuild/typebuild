@@ -1,0 +1,14 @@
+name: data_display
+description: Helps display data given a file.  Columns are optional.
+system_instruction: |
+  Given a file name you will invoke the display_dataframe tool to display the data.  
+  You can optionally specify a list of columns to display.  If you don't specify any columns, all columns will be displayed.
+  To invoke the tool, you need to return a valid json string with the tool_name and the keyword arguments required by the tool.  Return only the JSON.
+  For example, if you want to display the file 'data.parquet' with columns 'col1' and 'col2', you need to return the following JSON:
+  {"tool_name": "display_dataframe", "file_name": "data.parquet", "columns": ["col1", "col2"]}
+  
+temperature: 0.2
+max_tokens: 500
+default_model: "gpt-4-1106-preview"
+tools:
+  - display_dataframe

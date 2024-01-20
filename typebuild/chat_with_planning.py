@@ -127,7 +127,10 @@ def manage_llm_interaction():
                 template_info += f"\nTemplate description: {template}\n\n"
             template_info += "Please use the information above to help with planning."
             system_instruction += f"\n\n{template_info}"
-                
+        # Store the system instruction in the session state for us to understand what 
+        # information the planner was given
+        st.session_state.planner_instructions = system_instruction
+
         messages = tg.messages.get_all_messages()
     else:
         next_task_name = tg.get_next_task()
@@ -158,6 +161,7 @@ def get_task_graph_details():
     task_name = tg.name
     task_objective = tg.objective
     task_md = tg.generate_markdown()
+    
     task_info = f"""
     
     HERE IS THE INFORMATION ABOUT THE TASK GRAPH:
@@ -208,8 +212,14 @@ def add_planning_to_session_state():
     # If planning is in session state, update the task description
     else:
         planning = st.session_state.planning
-        planning.task_description = get_task_graph_details()
+        desc = get_task_graph_details()
+        # Update the template information
+        template_info = "The user has selected a canned template that can help with planning.  See the details below."  
+        for template_name, template in st.session_state.task_graph.templates.items():
+            template_info += f"\n\nTemplate name: {template_name}"
+            template_info += f"\nTemplate description: {template}\n\n"
 
+        planning.task_description = desc + template_info
 
     return None
 
@@ -303,16 +313,23 @@ def manage_tool_interaction(res_dict, from_llm=False, run_tool=False):
         # Check if the tool should be run automatically
         run_tool = check_for_auto_rerun(tool_function)
     if run_tool:
-        tool_result = tool_function(**kwargs)
-        # When we get the tool result, set the delete task for tool
-        del st.session_state['task_for_tool']
-        st.error(f"Args for tools: {args_for_tool}")
-        st.sidebar.code(f'Tool result: {tool_result}')
-        # TODO: Some tools like search need to consume the tool results.
-        # Others like navigator need not.  Create a system to pass to the
-        # correct task. 
-        if isinstance(tool_result, str):
-            tool_result = {'content': tool_result}
+        # Allow for errors in the tool
+        try:
+            tool_result = tool_function(**kwargs)
+            # When we get the tool result, set the delete task for tool
+            if 'task_for_tool' in st.session_state:
+                del st.session_state['task_for_tool']
+            st.error(f"Args for tools: {args_for_tool}")
+            st.sidebar.code(f'Tool result: {tool_result}')
+            # TODO: Some tools like search need to consume the tool results.
+            # Others like navigator need not.  Create a system to pass to the
+            # correct task. 
+            if isinstance(tool_result, str):
+                tool_result = {'content': tool_result}
+        except Exception as e:
+            # Add the error to the content to see if the LLM fixes it.
+            tool_result = {'content': f"Error: {e}"}
+            st.sidebar.error(f"Error: {e}")
 
         # Check if the the task is done and can be transferred to orchestration.
 
