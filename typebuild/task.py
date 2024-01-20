@@ -26,6 +26,13 @@ class Task:
 
         return None
    
+    def to_dict(self):
+        return {
+            'task_name': self.task_name,
+            'tools': self.tools,
+            'task_description': self.task_description,
+            'agent_descriptions': self.agent_descriptions,
+        }
 
     def _replace_placeholder_with_actual_values(self):
         # TODO: DOCUMENT WHAT THIS DOES.  

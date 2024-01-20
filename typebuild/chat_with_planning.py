@@ -395,7 +395,10 @@ def show_templates(tg):
     # See if there are no messages
     with st.sidebar.expander("Load templates & past work", expanded=True):
         if not tg.messages.get_all_messages() and st.session_state.selected_node == 'HOME':
-            tg._load_from_file()
+            # DL version
+            # tg._load_from_file()
+            # json version
+            tg._load_from_json()
             load_templates()
             if tg.templates:
                 st.sidebar.info(f"{len(tg.templates)} templates loaded.")
@@ -466,7 +469,10 @@ def chat():
         # TODO: Make sure that we don't create a name that overwrites an existing one.
         if tg.name:
             # Save the graph to file
-            tg._save_to_file()
+            # as .DL
+            # tg._save_to_file()
+            # as .json
+            tg._save_to_json()
         st.rerun()
     # Display the agent name
     post_llm_processes()

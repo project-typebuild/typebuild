@@ -1,5 +1,5 @@
 """
-- TODO: Assign task to Dhru to serialize to JSON.
+- TODO: Assign task to Dhruv to serialize to JSON.
 - Add decision nodes and logic.
 - Figure out which task will respond to the user.
 - How do we model orchestration (between each transition).
@@ -14,9 +14,12 @@ import time
 import networkx as nx
 import pickle
 import dill as dl
+import json
 import streamlit as st
 from messages import Messages
 from task import Task
+
+
 class TaskGraph:
     def __init__(self, name=None, objective=None):
         self.graph = nx.DiGraph()
@@ -278,7 +281,52 @@ class TaskGraph:
             return self.graph.nodes[next_task]
         else:
             return None
-    
+        
+
+    def convert_dicts_to_tasks(self, graph_dict):
+        """
+        Converts the dictionaries in a graph to Task instances.
+        """
+        # Create a new DiGraph
+        new_graph = nx.DiGraph()
+
+        # Iterate over the nodes in the graph_dict
+        for node, data in graph_dict.items():
+            # Check if the 'task' key is a dictionary
+            if isinstance(data.get('task'), dict):
+                # Check if the dictionary contains the required keys
+                if all(key in data['task'] for key in ['task_name', 'task_description', 'agent_name', 'available_agents']):
+                    # Convert the dictionary to a Task instance
+                    data['task'] = Task(**data['task'])
+
+            # Add the node to new_graph
+            new_graph.add_node(node, **data)
+
+        # Return the new DiGraph
+        return new_graph
+
+    def convert_tasks_to_dict(self):
+        """
+        Converts all the Task instances in a graph to dictionaries.
+        """
+        # Create a new dictionary
+        new_graph_dict = {}
+
+        # Iterate over the nodes in the graph
+        for node, data in self.graph.nodes(data=True):
+            data_copy = data.copy()
+            # Check if the 'task' key is a Task instance
+            if isinstance(data_copy.get('task'), Task):
+                # Convert the Task instance to a dictionary
+                data_copy['task'] = data_copy['task'].__dict__
+
+            # Add the node to new_graph_dict
+            new_graph_dict[node] = data_copy
+
+        # Return the new dictionary
+        return new_graph_dict
+
+
     def _get_file_path(self):
         """
         Returns the file path of the graph.
@@ -289,6 +337,46 @@ class TaskGraph:
             os.makedirs(directory)
 
         return path
+    
+    def _get_file_path_json(self):
+        """
+        Returns the file path of the graph.
+        """
+        path = os.path.join(st.session_state.user_folder, 'objectives', f'{self.name}.json')
+        directory = os.path.dirname(path)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+        return path
+    
+    def _save_to_json(self):
+        """
+        Saves the graph to a json file.
+        """
+        # Can save only if the graph has a name
+        if not self.name:
+            st.warning("The graph must have a name to save.  Let's try again once we start the task.")
+            time.sleep(2)
+            
+        else:
+            file_path = self._get_file_path_json()
+            graph_dict = self.convert_tasks_to_dict()
+
+            messages_dict = self.messages.export_all_messages()
+            attributes = {
+                'name': self.name,
+                'objective': self.objective,
+                'graph': graph_dict,
+                'messages': messages_dict,
+                'templates': self.templates,
+                'send_to_planner': self.send_to_planner
+            }
+
+            with open(file_path, 'w') as file:
+                # Dump the data to the file
+                json.dump(attributes, file)
+                
+        return None
     
     def _save_to_file(self):
         """
@@ -308,6 +396,59 @@ class TaskGraph:
                 # Save it as dill
                 dl.dump(attributes, file)
                 
+        return None
+
+    # TODO: add a version that saves to json
+
+    def _load_from_json(self):
+        """
+        Loads a graph from a json file.
+        """
+        # Get a list of files in the objectives folder
+        path = os.path.join(st.session_state.user_folder, 'objectives')
+        # check if the folder exists and create it if it doesn't
+        if not os.path.exists(path):
+            os.makedirs(path)
+        files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
+        if files:
+            st.header("Load task graph")
+            # Add a blank option to the list
+            files.insert(0, 'SELECT')
+            # Display a selectbox to choose the file
+            file_name = st.selectbox("Choose a file to load", files)
+            if file_name == 'SELECT':
+                st.warning("Please select a file to load.")
+                return None
+            else:
+                file_path = os.path.join(path, file_name)
+                if st.button("Load"):
+                    # Load with json
+                    with open(file_path, 'r') as file:
+                        attributes = json.load(file)
+                    # Assign the attributes to the current graph
+                    for key, value in attributes.items():
+                        if key == 'graph':
+                            # Convert the dictionaries in the graph to Task instances
+                            value = self.convert_dicts_to_tasks(value)
+                        elif key == 'messages':
+                            # Create a new Messages instance without specifying a task name
+                            messages = Messages(self.name)
+
+                            # Iterate over the list of dictionaries
+                            dicts = value
+                            for dict_obj in dicts:
+                                # Create a message_tuple instance
+                                message = messages.message_tuple(**dict_obj)
+                                # Append the message_tuple instance to the messages attribute
+                                messages.messages.append(message)
+                            
+                            # Assign the messages attribute to the current graph
+                            value = messages
+                        setattr(self, key, value)
+
+                    st.success(f"Loaded graph from '{file_name}'.")
+                    time.sleep(2)
+                    st.rerun()
         return None
 
     def _load_from_file(self):

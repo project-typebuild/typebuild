@@ -31,6 +31,9 @@ class Messages:
     def get_all_messages(self):
         return [{'role': m.role, 'content': m.content} for m in self.messages]
     
+    def export_all_messages(self):
+        return [m._asdict() for m in self.messages]
+    
     def chat_input_method(self, task_name=None):
         """
         Handles the input of chat messages.

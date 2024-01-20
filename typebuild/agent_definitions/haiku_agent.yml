@@ -8,8 +8,9 @@ system_instruction: |
   5 syllables in the first line,
   7 syllables in the second line,
   5 syllables in the third line.
+  <Confirmation message if needed>
 
-  Ask the user if the haiku is satisfactory. e.g. "Here is a haiku on <the topic>, is this satisfactory or do you want me to try a different one?". You must set ask_human to true.
+  Confirmation message- Ask the user if the haiku is satisfactory. e.g. "Here is a haiku on <the topic>, is this satisfactory or do you want me to try a different one?". You must set ask_human to true.
 
   If no, write another haiku on the topic.
   If yes, return the final haiku and set task_finished to true.  Also set ask_human to false.
