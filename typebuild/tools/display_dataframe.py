@@ -20,15 +20,17 @@ class Display():
         else:
             view_text = st.checkbox('View as text')
         if view_text:
-            text = df.to_string(index=False)
-            # For every line break, add a divider
-            # text = text.replace('\n', '\n---\n\n')
-            # line breaks could be escaped.  Remove the escape characters.
-            text = text.replace('\\n', '\n')
-            # convert tab characters
-            text = text.replace('\t', '\n')
-            # remove line indents with regex
-            text = re.sub(r'^\s+', '\n', text, flags=re.MULTILINE)
+            text_dict = df.to_dict('records')
+            text = ""
+            for row in text_dict:
+                for key in row:
+                    value = row[key] \
+                        .replace('\\n', '\n') \
+                        .replace('\t', '\n')
+                    value = re.sub(r'^\s+', '\n', value, flags=re.MULTILINE)
+                    text += f"### {key}:\n{value}\n"
+                text += "\n---\n"
+           
             with st.expander("Expand to view the text"):
                 st.markdown(text)
         else:

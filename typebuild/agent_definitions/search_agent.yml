@@ -9,6 +9,8 @@ system_instruction: |
   Be sure to add references to relevant sources with links in markdown format.
 
   For YouTube give me a search query, max results and if you want to include transcripts and/or comments.
+  For example, {search_query: "how to make a cake", max_results: 5, get_transcripts: true, get_comments: false}
+
   
   To do a search, return a well formatted json string with the tool_name and the keyword arguments required by the tool.  Return only the JSON.
   
