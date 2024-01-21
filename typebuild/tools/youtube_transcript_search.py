@@ -283,28 +283,88 @@ class YoutubeSearcher:
             self.save_search_results()
         return None
 
-def tool_main(search_term, num_results=5):
+def youtube_search_from_api(query, max_results=5, get_comments=False, get_transcript=True):
+
+    with st.spinner("Searching YouTube..."):
+        time.sleep(2)
+        url = f"https://typebuildapi.azurewebsites.net/api/youtube/?query={query}&max_results={max_results}&get_comments={get_comments}&get_transcript={get_transcript}"
+        # Remove double quotes from query, if any
+        query = query.replace('"', '')
+
+        # data = {
+        #     "query": query,
+        #     "max_results": max_results,
+        #     "get_comments": get_comments,
+        #     "get_transcript": get_transcript,
+        # }
+        st.warning("Starting the search.  This may take a few minutes.  Please wait...")    
+        response = requests.post(url)
+        st.success("Search completed!")
+        # IN case of error, return the status code
+        if response.status_code != 200:
+            return response.status_code
+        else:
+            st.warning("Creating the df...")
+            with open('response.txt', 'w') as f:
+                f.write(response.text)
+            df = pd.DataFrame(response.json())
+            st.success("DF created!")
+            st.warning("Creating the file name...")
+            cleaned_search_term = YoutubeSearcher._clean_filename(query)
+            file_name = os.path.join(st.session_state.project_folder, 'data', f'yt_{cleaned_search_term}.parquet')
+            st.success("File name created!")
+            st.warning(f"Data saved to {file_name}.  Query was {query}.")
+            time.sleep(3)
+            df.to_parquet(file_name, index=False)
+            return file_name
+
+
+def tool_main(search_term, max_results=5, get_comments=False, get_transcript=True, auto_run=False):
     """
     Given a search term, this fetches the youtube transcripts.
     The transcripts are saved to a parquet file and the file path is returned.
     
     Parameters:
     - search_term (str): The search term.
-    - num_results (int): The number of results to return. Default is 5.
+    - max_results (int): The maximum number of results to return. Default is 5.
+    - get_comments (bool): Whether to fetch the comments. Default is False.
+    - get_transcript (bool): Whether to fetch the transcript. Default is True.
 
     Returns (str):
     - Path to the parquet file where the results are saved.
     """
 
-    fetcher = YoutubeSearcher()
+    # fetcher = YoutubeSearcher()
 
-    # Use the class method to perform the search and save results
-    fetcher.search_youtube(search_term=search_term, num_videos=num_results)
-    # Save the results to a parquet file
-    fetcher.save_search_results()
-    return {
-        "file_name": fetcher.file_name,
-        "task_finished": True,
-        "ask_llm": False,
-        "content": f"I downloaded the transcripts for you and have placed it in a file {fetcher.file_name} in a column called 'transcript'"
+    # # Use the class method to perform the search and save results
+    # fetcher.search_youtube(search_term=search_term, num_videos=num_results)
+    # # Save the results to a parquet file
+    # fetcher.save_search_results()
+    # Rerun if we got an error in the api
+
+
+    file_name = youtube_search_from_api(
+        query=search_term, 
+        max_results=max_results, 
+        get_comments=get_comments, 
+        get_transcript=get_transcript
+        )
+    if str(file_name) == 500:
+        return {
+            "content": "There was an error in getting the data.  Please try again after sometime.",
+            "task_finished": False,
+            "ask_llm": False,
         }
+    else:
+        
+        content = f"I got the video info.  File is saved to {file_name}."
+        if get_transcript:
+            content += ". Transcripts are in 'transcript' column."
+        if get_comments:
+            content += ".  Comments are in 'comments' column."
+        return {
+            "file_name": file_name,
+            "task_finished": True,
+            "ask_llm": False,
+            "content": content,
+            }
