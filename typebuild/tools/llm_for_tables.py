@@ -115,7 +115,7 @@ class LLMForTables:
             # Each token is approximately 3 characters long.
             chunks = chunk_text(
                 input_text, 
-                max_chars=self.max_tokens * 2 * 3
+                max_chars=int(self.max_tokens * 2 * 2.7)
                 )
             fin_output = ""
             for c in chunks:
