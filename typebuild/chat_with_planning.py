@@ -399,7 +399,8 @@ def run_next_task(tg, next_task):
         st.session_state.current_task = next_task
         the_task = tg.graph.nodes[next_task]['task']
         si = the_task.get_system_instruction()
-        st.code(si)
+        if st.session_state.show_developer_options:
+            st.code(si)
         st.markdown(the_task.task_description)
         st.rerun()
 

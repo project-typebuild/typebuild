@@ -286,7 +286,6 @@ class YoutubeSearcher:
 def youtube_search_from_api(query, max_results=5, get_comments=False, get_transcript=True):
 
     with st.spinner("Searching YouTube..."):
-        time.sleep(2)
         url = f"https://typebuildapi.azurewebsites.net/api/youtube/?query={query}&max_results={max_results}&get_comments={get_comments}&get_transcript={get_transcript}"
         # Remove double quotes from query, if any
         query = query.replace('"', '')
@@ -314,7 +313,6 @@ def youtube_search_from_api(query, max_results=5, get_comments=False, get_transc
             file_name = os.path.join(st.session_state.project_folder, 'data', f'yt_{cleaned_search_term}.parquet')
             st.success("File name created!")
             st.warning(f"Data saved to {file_name}.  Query was {query}.")
-            time.sleep(3)
             df.to_parquet(file_name, index=False)
             return file_name
 
