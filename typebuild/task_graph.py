@@ -395,9 +395,7 @@ class TaskGraph:
                 
         return None
 
-    # TODO: add a version that saves to json
-
-    def _load_from_json(self):
+    def _load_from_json(self, file=None):
         """
         Loads a graph from a json file.
         """
@@ -419,34 +417,38 @@ class TaskGraph:
                 st.warning("Please select a file to load.")
                 return None
             else:
-                file_path = os.path.join(path, file_name)
+                file_name = os.path.join(path, file_name)
                 if st.button("Load"):
                     # Load with json
-                    with open(file_path, 'r') as file:
-                        attributes = json.load(file)
-                    # Assign the attributes to the current graph
-                    for key, value in attributes.items():
-                        if key == 'graph':
-                            # Convert the dictionaries in the graph to Task instances
-                            value = self.convert_dicts_to_tasks(value)
-                        elif key == 'messages':
-                            # Create a new Messages instance without specifying a task name
-                            messages = Messages(self.name)
-
-                            # Iterate over the list of dictionaries
-                            dicts = value
-                            for dict_obj in dicts:
-                                # Create a message_tuple instance
-                                message = messages.message_tuple(**dict_obj)
-                                # Append the message_tuple instance to the messages attribute
-                                messages.messages.append(message)
-                            
-                            # Assign the messages attribute to the current graph
-                            value = messages
-                        setattr(self, key, value)
-
+                    self.json_to_graph(file_name)
                     st.success(f"Loaded graph from '{file_name}'.")
                     st.rerun()
+        return None
+    
+    def json_to_graph(self, file_name):
+        with open(file_name, 'r') as file:
+            attributes = json.load(file)
+        # Assign the attributes to the current graph
+        for key, value in attributes.items():
+            if key == 'graph':
+                # Convert the dictionaries in the graph to Task instances
+                value = self.convert_dicts_to_tasks(value)
+            elif key == 'messages':
+                # Create a new Messages instance without specifying a task name
+                messages = Messages(self.name)
+
+                # Iterate over the list of dictionaries
+                dicts = value
+                for dict_obj in dicts:
+                    # Create a message_tuple instance
+                    message = messages.message_tuple(**dict_obj)
+                    # Append the message_tuple instance to the messages attribute
+                    messages.messages.append(message)
+                
+                # Assign the messages attribute to the current graph
+                value = messages
+            setattr(self, key, value)
+        
         return None
 
     # Deprecated
