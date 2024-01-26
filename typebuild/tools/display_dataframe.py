@@ -21,18 +21,28 @@ class Display():
             view_text = st.checkbox('View as text')
         if view_text:
             text_dict = df.to_dict('records')
-            text = ""
+            all_text = []
+            
             for row in text_dict:
+                text = ""
                 for key in row:
-                    value = row[key] \
+                    value = str(row[key]) \
                         .replace('\\n', '\n') \
                         .replace('\t', '\n')
                     value = re.sub(r'^\s+', '\n', value, flags=re.MULTILINE)
                     text += f"### {key}:\n{value}\n"
                 text += "\n---\n"
-           
+                all_text.append(text)
             with st.expander("Expand to view the text"):
-                st.markdown(text)
+                num_words = sum([len(t.split()) for t in all_text])
+                # If the total words is less than 5000, show all text
+                if num_words < 5000:
+                    for text in all_text:
+                        st.markdown(text)
+                # Paginate the text otherwise
+                else:
+                    show_row = st.number_input('Show row', min_value=0, max_value=len(all_text)-1, value=0)
+                    st.markdown(all_text[show_row])
         else:
             st.dataframe(df)
 

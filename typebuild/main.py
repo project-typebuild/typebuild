@@ -34,7 +34,7 @@ else:
 # If latest request or response are there, show checkbox to show them
 please_stop = False
 with st.sidebar.expander("Admin"):
-    st.checkbox("Show developer options", key='show_developer_options')
+    st.checkbox("Show developer options", key='developer_options')
     
     if 'last_request' in st.session_state:
         show_request = st.checkbox('Show latest request')

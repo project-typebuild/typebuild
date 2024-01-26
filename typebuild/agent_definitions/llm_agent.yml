@@ -27,6 +27,6 @@ system_instruction: |
 
 temperature: 0.1
 max_tokens: 1500
-default_model: "gpt-4-1106-preview"
+default_model: "gpt-4-turbo-preview"
 tools:
   - llm_for_tables

@@ -23,6 +23,7 @@ def add_default_session_states():
         'should_rerun': False,
         'selected_node': 'HOME',
         'all_messages': [],
+        "developer_options": False,
         }
 
     for key in ss_vars:

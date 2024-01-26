@@ -15,9 +15,10 @@ analyze_data_with_llm:
     - Ask the data_selector_agent to help the user select a file and a column in that file
     - Create a task for the llm agent, which can analyze the transcripts and store the output in the same file as a new column.
   
-arxive_search:
+arxiv_search:
   description: Search arxiv for papers
   template: |
-    The planner should find out what research the user wants to do.  Once you do that, create the following tasks
-    - Ask the arxiv_agent to search for papers and download the results.  It will return a file name with the downloads and the results can be found in the 'results' column
-    - Create a child task for the display_dataframe agent, which can display the dataframe with the new column
+    The planner should find out what user wants to learn from arxiv papers.  Create the following tasks based on the need:
+    - Ask the arxiv_agent to search for papers and download the results to file.  The agent will return the file name.
+    - Create a child task for the llm_agent to extract those insights from full_text column of that file.
+    - Create a child task for the display_dataframe agent, and ask it to display the full dataframe.

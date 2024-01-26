@@ -7,6 +7,13 @@
 - [ ] Vivek: User should be able to go back to a task anytime.
 - [ ] Vivek: Start task button should not appear after a task is done.
 
+# Usability
+- [ ] Vivek: Change the layout of load templates.  Offer generic template and specialized ones as a grid.
+- [ ] Create a generic typebuild page for installation (Ollama style)
+- [ ] Email verification & Tokens to access our api
+- [ ] Self fixing errors
+- [ ] Check with GPT 4.
+
 # Ranu: Create APIs    
 - [x] Create youtube search
 - [ ] Add comment search, search by channel and playlist
@@ -235,7 +242,6 @@ def set_next_actions(res_dict):
         tg.name = res_dict.get('name', None)
         tg.objective = res_dict.get('objective', None)
         st.success("I set the task graph name and objective.")
-        time.sleep(2)
 
     # If ask human is in the response, set ask_llm to the opposite
     if "ask_human" in res_dict:
@@ -290,50 +296,77 @@ def check_for_auto_rerun(func):
     # Check if the function has an auto_rerun argument
     return args_and_defaults.get('auto_rerun', False)
 
+ 
 
 def manage_tool_interaction(res_dict, from_llm=False, run_tool=False):
     """
-    
-    """
+    Some tools run each time messages are loaded
+    while others are run once (e.g. to fetch data).
+    This function determines if the tool should be run,
+    runs it if needed, and returns the result.
 
+    Args:
+        res_dict (dict): Dict with key variables in messages.
+        from_llm (bool, optional): Whether the response was just created by the LLM. Defaults to False.
+        run_tool (bool, optional): Whether the tool should be run. Defaults to False.
+    """
+    # Part 1: Get the information needed for this function
+
+    # Find the function that needs to be run
     tool_name = res_dict['tool_name']
+
+    # Get the keyword arguments for the function by the LLM
+    args_for_tool = res_dict.get('kwargs', res_dict)
+
     tool_module = importlib.import_module(f'tools.{tool_name}')
     tool_function = getattr(tool_module, 'tool_main')
 
-    # Get the tool arguments needed by the tool
+    # Get the arguments needed by the function
     tool_args = inspect.getfullargspec(tool_function).args
 
-    # Arguments for tool will be in res_dict under the key kwargs
-    args_for_tool = res_dict.get('kwargs', res_dict)
-
-    # select the required arguments from res_dict and pass them to the tool
+    # Make sure the keyword args are only the ones needed by the tool
     kwargs = {k: v for k, v in args_for_tool.items() if k in tool_args}
     
     if not run_tool:
-        # Check if the tool should be run automatically
+        # When the LLM creates a tool, it will create a 'task_for_tool' key in the session state.
+        # If this key exists, it means that the tool has not been run yet.
+        if 'task_for_tool' in st.session_state:
+            run_tool = True
+            # Set from llm to True
+            from_llm = True
+        # Some tools should be run each time the message is loaded (e.g. visuzlizations, showing tables)
+        # Such tools have an auto_rerun argument in the tool_main function.
         run_tool = check_for_auto_rerun(tool_function)
+
+
     if run_tool:
         # Allow for errors in the tool
         try:
+            # Show the args being sent to the tool
+            if st.session_state.developer_options:
+                st.error(f"Args for tools: {args_for_tool}")
+
             tool_result = tool_function(**kwargs)
-            # When we get the tool result, set the delete task for tool
+            
+            # When we get the tool result, delete task for tool in session state
             if 'task_for_tool' in st.session_state:
                 del st.session_state['task_for_tool']
-            st.error(f"Args for tools: {args_for_tool}")
-            st.sidebar.code(f'Tool result: {tool_result}')
-            # TODO: Some tools like search need to consume the tool results.
-            # Others like navigator need not.  Create a system to pass to the
-            # correct task. 
+
+            if st.session_state.developer_options:
+                st.code(f'Tool result: {tool_result}')
+            
+            
             if isinstance(tool_result, str):
                 tool_result = {'content': tool_result}
         except Exception as e:
             # Add the error to the content to see if the LLM fixes it.
-            tool_result = {'content': f"Error: {e}"}
+            # TODO Setting task finished to True since LLM will not be able to fix it for now.
+            # Change this when we have a way to fix errors.
+            tool_result = {'content': f"Error: {e}", 'task_finished': True}
             st.sidebar.error(f"Error: {e}")
 
         # Check if the the task is done and can be transferred to orchestration.
 
-        st.sidebar.error("looking at tool result")
         if from_llm:
             # Add the tool result to the task graph
             # TODO: SHOLD WE UPDATE THE TASK GRAPH HERE DURING A RERUN? 
@@ -417,13 +450,17 @@ def show_templates(tg):
     """
     
     # See if there are no messages
-    with st.sidebar.expander("Load templates & past work", expanded=True):
+    with st.expander("Load templates & past work", expanded=True):
         if not tg.messages.get_all_messages() and st.session_state.selected_node == 'HOME':
             # DL version
             # tg._load_from_file()
             # json version
-            tg._load_from_json()
-            load_templates()
+            new_old = st.radio("Create new task or view old task", ['Create new task', 'View old task'], horizontal=True)
+            if new_old == 'Create new task':
+                load_templates()
+            else:
+                st.info("The templates below will make it easier to create certain types of tasks.  For a generic task, just start typing below.")
+                tg._load_from_json()
             if tg.templates:
                 st.sidebar.info(f"{len(tg.templates)} templates loaded.")
     return None
@@ -448,6 +485,7 @@ def load_templates():
         for template_name in template_names:
             template = templates[template_name]
             tg.templates[template_name] = template
+        st.success("Loaded the template.  You can start typing below now.")
     
     return None
 

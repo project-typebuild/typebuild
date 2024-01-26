@@ -22,7 +22,7 @@ def get_openai_output(messages, max_tokens=3000, temperature=0.4, model='gpt-4',
     # Enable adding the key here.
     client = OpenAI()
     if '4' in model:
-        model = "gpt-4-1106-preview"
+        model = "gpt-4-turbo-preview"
     params = {
         "model": model,
         "max_tokens": max_tokens,

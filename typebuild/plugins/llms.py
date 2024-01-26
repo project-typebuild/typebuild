@@ -107,7 +107,6 @@ def get_llm_output(messages, max_tokens=2500, temperature=0.4, model='gpt-4', fu
     st.success(f"Response from LLM: {content}")
     st.session_state.all_messages.append({'role': 'assistant', 'content': content})
     # st.balloons()
-    # time.sleep(2)
     return content
 
 
@@ -131,7 +130,7 @@ def get_openai_output(messages, max_tokens=3000, temperature=0.4, model='gpt-4',
     api_key = st.session_state.openai_key
     client = OpenAI(api_key=api_key)
     if '4' in model:
-        model = "gpt-4-1106-preview"
+        model = "gpt-4-turbo-preview"
     params = {
         "model": model,
         "max_tokens": max_tokens,

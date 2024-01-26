@@ -88,11 +88,13 @@ class LLMForTables:
         When done, saves the data to the file and returns a success message.
         """
         if self.row_by_row:
-            
             self.process_row_by_row()
         else:
+            if st.developer_options:
+                st.warning("Processing chunks")
             self.process_chunks()
         content = f"LLM run successfully on {self.file_name} and created the output column {self.output_column}."
+        st.success(content)
         return {
             "content": content,
             "file_name": self.file_name,
@@ -104,6 +106,7 @@ class LLMForTables:
         Processes the data row by row.
         """
         for i, row in enumerate(self.data.itertuples(), start=1):
+            st.progress(i+1 / len(self.data), f"Processing row {i+1} of {len(self.data)}")
             if i < self.restart_row:
                 continue
             input_text = getattr(row, self.input_column)
@@ -142,6 +145,7 @@ class LLMForTables:
         print(f"Number of chunks: {len(chunks)}")
 
         for i, chunk in enumerate(chunks, start=self.restart_row):
+            # Create progress bar
             messages = [
                 {"role": "system", "content": self.system_instruction},
                 {"role": "user", "content": chunk},

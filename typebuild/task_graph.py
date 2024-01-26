@@ -82,7 +82,6 @@ class TaskGraph:
         self.add_parent(task_name, parent_task)
         # Provide confirmation
         st.success(f"Added task '{task_name}' to the graph.")
-        time.sleep(2)
         return None
 
     def calculate_sequence_number(self, parent_task, before_node=None, after_node=None):
@@ -356,7 +355,6 @@ class TaskGraph:
         # Can save only if the graph has a name
         if not self.name:
             st.warning("The graph must have a name to save.  Let's try again once we start the task.")
-            time.sleep(2)
             
         else:
             file_path = self._get_file_path_json()
@@ -385,7 +383,6 @@ class TaskGraph:
         # Can save only if the graph has a name
         if not self.name:
             st.warning("The graph must have a name to save.  Let's try again once we start the task.")
-            time.sleep(2)
             
         else:
             file_path = self._get_file_path()
@@ -410,12 +407,14 @@ class TaskGraph:
         if not os.path.exists(path):
             os.makedirs(path)
         files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
+        # Filter out files that don't end with .json
+        files = [f for f in files if f.endswith('.json')]
         if files:
             st.header("Load task graph")
             # Add a blank option to the list
             files.insert(0, 'SELECT')
             # Display a selectbox to choose the file
-            file_name = st.selectbox("Choose a file to load", files)
+            file_name = st.selectbox("Select to load", files)
             if file_name == 'SELECT':
                 st.warning("Please select a file to load.")
                 return None
@@ -447,10 +446,10 @@ class TaskGraph:
                         setattr(self, key, value)
 
                     st.success(f"Loaded graph from '{file_name}'.")
-                    time.sleep(2)
                     st.rerun()
         return None
 
+    # Deprecated
     def _load_from_file(self):
         """
         Loads a graph from a file.
@@ -466,7 +465,7 @@ class TaskGraph:
             # Add a blank option to the list
             files.insert(0, 'SELECT')
             # Display a selectbox to choose the file
-            file_name = st.selectbox("Choose a file to load", files)
+            file_name = st.selectbox("Please select file to load", files)
             if file_name == 'SELECT':
                 st.warning("Please select a file to load.")
                 return None
@@ -479,7 +478,6 @@ class TaskGraph:
                     # Assign the attributes to the current graph
                     self.__dict__.update(attributes)
                     st.success(f"Loaded graph from '{file_name}'.")
-                    time.sleep(2)
                     st.rerun()
         return None
 

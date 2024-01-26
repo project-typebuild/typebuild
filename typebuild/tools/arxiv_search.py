@@ -253,7 +253,7 @@ class ArxivSearch:
                     self.store_to_db(df_results, project_folder=st.session_state.project_folder, file_name=file_name)
 
 
-def tool_main(search_term, num_results=5, auto_rerun=True):
+def tool_main(search_term, num_results=5, auto_rerun=False):
     """
     Given the search term, this function will search and fetch results from Arxiv. 
     the results will be saved to disk as a parquet file with the following columns:
@@ -274,13 +274,13 @@ def tool_main(search_term, num_results=5, auto_rerun=True):
     df = arxiv_search.get_results(search_term, max_results=num_results)
     arxiv_search.display_results(df)
     file_name = arxiv_search.store_to_db(df, search_term= search_term)
-    st.success(f"Data saved to {file_name}")
 
     res_dict = {
-        'content': f"The arxiv search results downloaded  to in the {file_name} file",
+        'content': f"The arxiv search results can be found in {file_name} file.  It includes title, summary, author, and full_text columns.",
         'file_name': file_name,
         'ask_llm': True,
-        'task_finished': False,
+        'task_finished': True,
     }
+    st.success(f"Data saved to {file_name}")
 
     return res_dict
