@@ -12,9 +12,9 @@ class Task:
     they know a list of available agents.
     """
 
-    def __init__(self, task_name, agent_name, task_description, available_agents=[]):
+    def __init__(self, task_name, agent_name, task_description, available_agents=[], tools=[]):
         self.task_name = task_name
-        self.tools = []
+        self.tools = tools
         self._parse_instructions(agent_name)
         self.task_description = task_description
         

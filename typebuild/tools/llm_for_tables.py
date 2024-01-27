@@ -106,7 +106,7 @@ class LLMForTables:
         Processes the data row by row.
         """
         for i, row in enumerate(self.data.itertuples(), start=1):
-            st.progress(i+1 / len(self.data), f"Processing row {i+1} of {len(self.data)}")
+            st.progress(i / len(self.data), f"Processing row {i+1} of {len(self.data)}")
             if i < self.restart_row:
                 continue
             input_text = getattr(row, self.input_column)
@@ -165,7 +165,7 @@ def tool_main(system_instruction, file_name, input_column, output_column, auto_r
     llm_for_tables = LLMForTables(
         system_instruction=system_instruction,
         file_name=file_name,
-        input_column='transcript',
+        input_column=input_column,
         output_column=output_column,
         max_tokens=700,
     )

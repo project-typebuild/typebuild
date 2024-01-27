@@ -1,10 +1,10 @@
 """
 ***Current objective:***
 
-- If a graph exists, allow the user to add tasks to it. Right now, planner is creating new graphs.
+- [ ] If a graph exists, allow the user to add tasks to it. Right now, planner is creating new graphs.  Current task should be the planner, when needed as well.
 - [ ] Vivek: How to use metadata in files while executing tasks.  We need this to get system instruction from 
     prompt agent to the llm for tables agent.
-- [ ] Vivek: User should be able to go back to a task anytime.
+- [x] Vivek: User should be able to go back to a task anytime.
 - [ ] Vivek: Start task button should not appear after a task is done.
 
 # Usability
@@ -323,6 +323,12 @@ def manage_tool_interaction(res_dict, from_llm=False, run_tool=False):
 
     # Get the arguments needed by the function
     tool_args = inspect.getfullargspec(tool_function).args
+
+    # Sometimes the required arguments are not within the kwargs key
+    for a in tool_args:
+        if a not in args_for_tool:
+            if a in res_dict:
+                args_for_tool[a] = res_dict[a]
 
     # Make sure the keyword args are only the ones needed by the tool
     kwargs = {k: v for k, v in args_for_tool.items() if k in tool_args}

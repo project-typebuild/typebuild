@@ -18,7 +18,9 @@ import json
 import streamlit as st
 from messages import Messages
 from task import Task
-
+import json
+import textwrap
+from matplotlib import pyplot as plt
 
 class TaskGraph:
     def __init__(self, name=None, objective=None):
@@ -282,49 +284,49 @@ class TaskGraph:
             return None
         
 
-    def convert_dicts_to_tasks(self, graph_dict):
+    def convert_dicts_to_graph(self, graph):
         """
-        Converts the dictionaries in a graph to Task instances.
+        Converts the task dictionaries in the graph to Task instances.
+        Then converts the graph to a DiGraph.
         """
-        # Create a new DiGraph
-        new_graph = nx.DiGraph()
+        for i,g in enumerate(graph['nodes']):
+            if 'task' in g:
+                task_dict = g['task']
+                if 'description' in task_dict:
+                    task_dict['task_description'] = task_dict['description']
+                if 'name' in task_dict:
+                    task_dict['agent_name'] = task_dict['name']
+                agent_name = task_dict.pop('agent_name')
+                task_description = task_dict.pop('task_description')
+                init_keys = "task_name, available_agents, tools".split(",")
+                non_init_keys = [k for k in task_dict if k not in init_keys]
+                init_dict = {k:task_dict[k] for k in init_keys if k in task_dict}
+                non_init_dict = {k:task_dict[k] for k in non_init_keys}
+                task = Task(task_description=task_description, agent_name=agent_name, **init_dict)
+                for key in non_init_dict:
+                    value = non_init_dict[key]
+                    setattr(task, key, value)
+                graph['nodes'][i]['task'] = task
 
-        # Iterate over the nodes in the graph_dict
-        for node, data in graph_dict.items():
-            # Check if the 'task' key is a dictionary
-            if isinstance(data.get('task'), dict):
-                # Check if the dictionary contains the required keys
-                if all(key in data['task'] for key in ['task_name', 'task_description', 'agent_name', 'available_agents']):
-                    # Convert the dictionary to a Task instance
-                    data['task'] = Task(**data['task'])
-
-            # Add the node to new_graph
-            new_graph.add_node(node, **data)
+        # Convert the graph to a DiGraph
+        new_graph = nx.node_link_graph(graph)        
 
         # Return the new DiGraph
         return new_graph
 
-    def convert_tasks_to_dict(self):
+    def convert_graph_to_dict(self):
         """
-        Converts all the Task instances in a graph to dictionaries.
+        Converts the graph to a dictionary, making sure that the Task instances
+        are converted to dictionaries, so that the graph can be serialized to JSON.
         """
-        # Create a new dictionary
-        new_graph_dict = {}
+        G = self.graph
+        graph = nx.node_link_data(G)
+        
+        for i,g in enumerate(graph['nodes']):
+            if 'task' in g:
+                graph['nodes'][i]['task'] = g['task'].__dict__
 
-        # Iterate over the nodes in the graph
-        for node, data in self.graph.nodes(data=True):
-            data_copy = data.copy()
-            # Check if the 'task' key is a Task instance
-            if isinstance(data_copy.get('task'), Task):
-                # Convert the Task instance to a dictionary
-                data_copy['task'] = data_copy['task'].__dict__
-
-            # Add the node to new_graph_dict
-            new_graph_dict[node] = data_copy
-
-        # Return the new dictionary
-        return new_graph_dict
-
+        return graph
 
     def _get_file_path(self):
         """
@@ -358,7 +360,7 @@ class TaskGraph:
             
         else:
             file_path = self._get_file_path_json()
-            graph_dict = self.convert_tasks_to_dict()
+            graph_dict = self.convert_graph_to_dict()
 
             messages_dict = self.messages.export_all_messages()
             attributes = {
@@ -432,7 +434,7 @@ class TaskGraph:
         for key, value in attributes.items():
             if key == 'graph':
                 # Convert the dictionaries in the graph to Task instances
-                value = self.convert_dicts_to_tasks(value)
+                value = self.convert_dicts_to_graph(value)
             elif key == 'messages':
                 # Create a new Messages instance without specifying a task name
                 messages = Messages(self.name)
@@ -527,3 +529,33 @@ class TaskGraph:
         for ancestor in ancestors:
             attributes.update(self.graph.nodes[ancestor])
         return attributes
+    
+    @staticmethod
+    def draw_graph(self, G, wrap_width=10):
+        """
+        Draws a family tree from a NetworkX graph with wrapped labels.
+
+        Parameters:
+        G (networkx.Graph): A NetworkX graph object representing a family tree.
+        wrap_width (int): The maximum line width for wrapped labels.
+        """
+        # Increase figure size
+        plt.figure(figsize=(8, 4))
+
+        # Position nodes using a hierarchical layout
+        pos = nx.spring_layout(G, iterations=100)
+
+        # Draw the graph
+        nx.draw(G, pos, with_labels=False, node_color='lightblue', node_size=3000, edge_color='gray', linewidths=1)
+
+        # Draw labels with wrapped text
+        for node, (x, y) in pos.items():
+            label = node.replace('_', ' ')  # Escape underscores
+            wrapped_label = textwrap.fill(label, width=wrap_width)
+            plt.text(x, y, wrapped_label, fontsize=10, ha='center', va='center', multialignment='center')
+
+        # Adjust layout to avoid clipping of labels
+        plt.tight_layout()
+
+        # Show the plot
+        plt.show()
