@@ -55,6 +55,7 @@ system_instruction: |
     "add_after": "name of the task that this task should be added after.  If this is the last task, set this to null",
   } 
 
+  Some tasks need data.  If a file and column are already selected, pass that information. Else work with the data_agent to select the data.
 
 temperature: 0.1
 max_tokens: 1500

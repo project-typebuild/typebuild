@@ -57,18 +57,19 @@ def tool_main(auto_rerun=False):
     st.session_state.ask_llm = False
     data_selector_tool = DataSelectorTool()
     file_name, input_column = data_selector_tool.interface()
-    if file_name is None or input_column is None:
-        st.stop()
-    content = f"I selected\nFile: {file_name}\nColumn: {input_column}\n You can use this for the next steps."
-    res_dict = {
-        'content': content,
-        'file_name': file_name,
-        'input_column': input_column,
-        'ask_llm': False,
-        'task_finished': False,       
-    }
+    if file_name == None or input_column == None:
+        return {}
+    else:
+        content = f"Selected File: {file_name}\nSelected Column: {input_column}\n You can use this for the next steps."
+        res_dict = {
+            'content': content,
+            'file_name': file_name,
+            'input_column': input_column,
+            'ask_llm': True,
+            'task_finished': True,
+        }
 
-    return res_dict
+        return res_dict
 
 
 

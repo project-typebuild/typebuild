@@ -32,7 +32,7 @@ st.session_state.user_type = user_type
 
 # If new menu is toggle_developer_options, toggle the developer options
 if st.session_state.new_menu == 'toggle_developer_options':
-    st.session_state.show_developer_options = not st.session_state.show_developer_options
+    st.session_state.developer_options = not st.session_state.developer_options
     reset_menu()
 
 # If new menu is toggle_function_calling_mode, toggle the function calling mode
@@ -41,12 +41,12 @@ if st.session_state.new_menu == 'toggle_function_calling_mode':
     reset_menu()
 
 # If developer options are enabled, show the developer options
-if st.session_state.show_developer_options:
+if st.session_state.developer_options:
     # Display function call type
     st.sidebar.info(f"Function call is allowed: {st.session_state.function_call}")
-    st.session_state.show_developer_options = True
+    st.session_state.developer_options = True
 
-if st.session_state.show_developer_options:
+if st.session_state.developer_options:
     if st.sidebar.checkbox('Show session state'):
         st.write(st.session_state)
     if st.sidebar.checkbox('Function call maker'):

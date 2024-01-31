@@ -7,7 +7,7 @@ def add_default_session_states():
         'messages': [],
         'ss_num': 0,
         'menu_id': 0,
-        'show_developer_options': False,
+        'developer_options': False,
         'ask_llm': False,
         'current_task': 'orchestration',
         'current_chat': None,

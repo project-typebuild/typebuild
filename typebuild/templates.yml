@@ -5,16 +5,19 @@ youtube_research:
   template: |
     The planner should find out what research the user wants to do.  Once you do that, create the following tasks
     - Ask the search agent to search and download youtube transcripts.  It will return a file name with the downloads and the transcripts can be found in the 'transcripts' column
-    - Create a task for the llm agent, which can analyze the transcripts and store the output in the same file as a new column. It will return the column name.
+    - Create a child task for the prompt_generator_agent to generate system instructions for the llm agent.
+    - Create a child for the llm agent, which can use the system instruction to analyze the transcripts and store the output in the same file as a new column. It will return the column name.
     - Create a child task for the display_dataframe agent, which can display the dataframe with the new column
 
 analyze_data_with_llm:
   description: Select a column in a file and analyze it with the LLM
   template: |
-    The planner should find out what research the user wants to do.  Once you do that, create the following tasks
-    - Ask the data_selector_agent to help the user select a file and a column in that file
-    - Create a task for the llm agent, which can analyze the transcripts and store the output in the same file as a new column.
-  
+    - The planner should first find out what data they wish to use.  Users can select data in the left sidebar, let them know that if needed. Do not go to the next step before data selection.
+    - After that, planner should find out what the user wants to do.
+    - Once you have the data and the objective, you can create the task graph.
+    - Create a task for the llm agent, which can use the selected column as the input and store the output in the same file as a new column.
+    - Create a child task for the display_dataframe agent, and ask it to display the relevant information.
+
 arxiv_search:
   description: Search arxiv for papers
   template: |
@@ -22,3 +25,9 @@ arxiv_search:
     - Ask the arxiv_agent to search for papers and download the results to file.  The agent will return the file name.
     - Create a child task for the llm_agent to extract those insights from full_text column of that file.
     - Create a child task for the display_dataframe agent, and ask it to display the full dataframe.
+  
+text_to_speech:
+  description: Convert text to speech
+  template: |
+    The planner should find out what text the user wants to convert to speech.  Create the following tasks based on the need:
+    - Create a child task with text_to_speech_agent and provide it with a file and column name as input.

@@ -1,26 +1,36 @@
 import pandas as pd
 import streamlit as st
 import re
-
+import os
 class Display():
 
     def __init__(self):
         pass
 
-    def dataframe(self, file_name, columns=None):
+    def dataframe(self, file_name, columns=[]):
         # TODO: How do we display the data as nicely formatted text
         # given that column names can be different in different files?
         # Use an LLM to create the streamlit output?        
         df = pd.read_parquet(file_name)
-        if columns:
-            df = df[columns]
+        
         # Give the user the option to view as text or as a dataframe
-        if len(df.columns) == 1:
+        if columns is None:
+            columns = []
+        if len(columns) == 1:
             view_text = True
         else:
             view_text = st.checkbox('View as text')
+        
+            
         if view_text:
-            text_dict = df.to_dict('records')
+            # Select columns in the order you want to display them
+            selected_cols = st.multiselect(
+                'Select columns to display', 
+                df.columns.tolist(),
+                default=columns
+                )
+
+            text_dict = df[selected_cols].dropna(how='all').to_dict('records')
             all_text = []
             
             for row in text_dict:
@@ -60,6 +70,9 @@ def tool_main(file_name, columns=None, auto_rerun=True):
     Returns:
         None
     """
+    if "/data/" not in file_name:
+        file_name = os.path.join(st.session_state.data_folder, file_name)
+
     display = Display()
 
     display.dataframe(file_name, columns=columns)

@@ -8,6 +8,7 @@
 - [ ] Vivek: Start task button should not appear after a task is done.
 
 # Usability
+- [ ] Vivek: Previous conversations in the order generated (sort by created date).
 - [ ] Vivek: Change the layout of load templates.  Offer generic template and specialized ones as a grid.
 - [ ] Create a generic typebuild page for installation (Ollama style)
 - [ ] Email verification & Tokens to access our api
@@ -22,6 +23,10 @@
 - [x] Create bing search function
 - [ ] Create "subscription" based access to the apis. 
 - [ ] How to store credentials securely.
+
+# TODO: Vivek: Self-fixing errors
+- [] Record if tool was run, if not run it when the error is fixed
+- [] In case of an error, send back to the previous node or the relevant node to get the input fixed.
 
 # TODO: Ranu: Task graph management
 - If the graph exists, do not overwrite.  Ask the user if the old one should be used.
@@ -82,8 +87,11 @@ def display_messages(expanded=True):
     Returns:
         None
     """
-    messages = st.session_state.task_graph.messages.get_all_messages()
-    
+    # Display the name of the task graph as header
+    tg = st.session_state.task_graph
+    if tg.name:
+        st.header(tg.name)
+    messages = tg.messages.get_all_messages()
         
     for i, msg in enumerate(messages):
         st.code(msg)
@@ -221,10 +229,9 @@ def add_planning_to_session_state():
         planning = st.session_state.planning
         desc = get_task_graph_details()
         # Update the template information
-        template_info = "The user has selected a canned template that can help with planning.  See the details below."  
+        template_info = "The user has selected a canned template that can help with planning.  Follow these instructions very carefully:\n"  
         for template_name, template in st.session_state.task_graph.templates.items():
-            template_info += f"\n\nTemplate name: {template_name}"
-            template_info += f"\nTemplate description: {template}\n\n"
+            template_info += f"\nINSTRUCTIONS FOR PLANNING: {template}\n\n"
 
         planning.task_description = desc + template_info
 
@@ -405,7 +412,7 @@ def init_chat():
     if st.sidebar.button("New chat"):
         st.session_state.task_graph = TaskGraph()
         st.session_state.current_task = 'planning'
-        st.session_state.ask_llm = True
+        st.session_state.ask_llm = False
         if 'task_for_tool' in st.session_state:
             del st.session_state['task_for_tool']
     if st.sidebar.button("Stop LLM"):
@@ -415,8 +422,27 @@ def init_chat():
     add_planning_to_session_state()
     tg = st.session_state.task_graph
     tg.messages.chat_input_method(task_name=st.session_state.current_task)
-    st.sidebar.info(f"Ask llm: {st.session_state.ask_llm}\n\nCurrent task: {st.session_state.current_task}")
+    try:
+        current_agent = tg.graph.nodes[st.session_state.current_task]['task'].agent_name
+    except:
+        current_agent = 'unknown'
+    st.sidebar.info(f"Ask llm: {st.session_state.ask_llm}\n\nCurrent task: {st.session_state.current_task}\n\nCurrent agent: {current_agent}")
+    with st.sidebar.expander("Select data"):
+        select_data()
     display_messages()
+
+def select_data():
+    from data_management.data_selection_ui import interface
+    res = interface()
+    # Add the content to the messages for planning
+    if res and st.session_state.current_task == 'planning':
+        if st.button("Set data source"):
+            st.session_state.task_graph.messages.set_message(
+                role='user', 
+                content=res, 
+                created_by=st.session_state.current_task, 
+                created_for=st.session_state.current_task
+                )
 
 
 def post_llm_processes():
@@ -424,6 +450,7 @@ def post_llm_processes():
     next_task = tg.get_next_task()
     if next_task:
         run_next_task(tg, next_task)
+        pass
     else:
         show_templates(tg)
     return None
@@ -438,7 +465,7 @@ def run_next_task(tg, next_task):
         st.session_state.current_task = next_task
         the_task = tg.graph.nodes[next_task]['task']
         si = the_task.get_system_instruction()
-        if st.session_state.show_developer_options:
+        if st.session_state.developer_options:
             st.code(si)
         st.markdown(the_task.task_description)
         st.rerun()
@@ -463,9 +490,9 @@ def show_templates(tg):
             # json version
             new_old = st.radio("Create new task or view old task", ['Create new task', 'View old task'], horizontal=True)
             if new_old == 'Create new task':
+                st.info("The templates below will make it easier to create certain types of tasks.  For a generic task, just start typing below.")
                 load_templates()
             else:
-                st.info("The templates below will make it easier to create certain types of tasks.  For a generic task, just start typing below.")
                 tg._load_from_json()
             if tg.templates:
                 st.sidebar.info(f"{len(tg.templates)} templates loaded.")

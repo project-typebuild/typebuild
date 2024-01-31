@@ -6,10 +6,11 @@ import pandas as pd
 import streamlit as st
 # from test_llm import get_openai_output as get_llm_output
 from plugins.llms import get_llm_output
+import os
 
-def chunk_text(text, max_chars):
+def chunk_text_by_words(text, max_words):
     """
-    Chunk text into chunks of max_chars.
+    Chunk text into chunks of max_words.
     It makes sure that sentences are not split across chunks.
     Also, adds the last sentence of the previous chunk to the next chunk.
     """
@@ -19,16 +20,22 @@ def chunk_text(text, max_chars):
     # Split the text into sentences
     sentences = text.split('.')
     # Remove empty sentences
-    sentences = [s for s in sentences if s.strip()]
+    sentences = [s.strip() for s in sentences if s.strip()]
     # Chunk the sentences
     for s in sentences:
-        if len(chunk) + len(s) < max_chars:
-            chunk += f"{s}."
+        words_in_chunk = len(chunk.split())
+        words_in_sentence = len(s.split())
+
+        if words_in_chunk + words_in_sentence <= max_words:
+            chunk += f"{s}. " if s else ""
         else:
             chunks.append(chunk)
-            chunk = f"{s}."
-    chunks.append(chunk)
-    return [c for c in chunks if c.strip()]
+            chunk = f"{s}. " if s else ""
+
+    if chunk:
+        chunks.append(chunk)
+    
+    return [c.strip() for c in chunks if c.strip()]
 
 class LLMForTables:
     """
@@ -40,20 +47,23 @@ class LLMForTables:
     - file_name (str): file name.
     - input_column (str): The input column.
     - output_column (str): The output column.
-    - max_tokens (int): Maximum number of tokens to generate.
-    - row_by_row (bool): Whether to generate one row at a time or consolidate all rows into one output.
+    - max_words (int): Maximum number of words in the input.
+    - input_format (str): 'row_by_row' generates one row at a time or 'consolidated' all rows into one input.
     """
     
-    def __init__(self, system_instruction, file_name, input_column, output_column, max_tokens=750, row_by_row=True):
+    def __init__(self, system_instruction, file_name, input_column, output_column, max_words=10000, input_format="row_by_row"):
         self.system_instruction = system_instruction
         self.file_name = file_name
         self.input_column = input_column
         self.output_column = output_column
-        self.max_tokens = max_tokens
-        self.row_by_row = row_by_row
+        self.max_words = max_words
+        if input_format == "row_by_row":
+            self.row_by_row = True
+        else:
+            self.row_by_row = False
         self._load_data()
         self.check_restart()
-        self.model = "gpt-3.5-turbo"
+        self.model = "gpt-3.5-turbo-1106"
 
     def _save_data(self, data):
         """
@@ -90,7 +100,7 @@ class LLMForTables:
         if self.row_by_row:
             self.process_row_by_row()
         else:
-            if st.developer_options:
+            if st.session_state.developer_options:
                 st.warning("Processing chunks")
             self.process_chunks()
         content = f"LLM run successfully on {self.file_name} and created the output column {self.output_column}."
@@ -113,12 +123,10 @@ class LLMForTables:
             # If input text is none or null, go to the next row
             if not input_text:
                 continue
-            # Set chunk size to be twice the max tokens.  
-            # since chunks are inputs while max tokens is the output
-            # Each token is approximately 3 characters long.
-            chunks = chunk_text(
+            
+            chunks = chunk_text_by_words(
                 input_text, 
-                max_chars=int(self.max_tokens * 2 * 2.7)
+                max_words=self.max_words
                 )
             fin_output = ""
             for c in chunks:
@@ -126,8 +134,7 @@ class LLMForTables:
                     {"role": "system", "content": self.system_instruction},
                     {"role": "user", "content": c},
                 ]
-                # output = get_llm_output(messages, self.max_tokens)
-                output = get_llm_output(messages, self.max_tokens, model=self.model)
+                output = get_llm_output(messages, model=self.model)
                 fin_output += output + "\n"
             self.data.at[row.Index, self.output_column] = fin_output
             self._save_data(self.data)  # Save after each row
@@ -141,8 +148,8 @@ class LLMForTables:
         full_text = "\n\n".join(self.data[self.input_column].tolist())
         
         # Chunk the text but skip the rows that have already been processed
-        chunks = chunk_text(full_text, self.max_tokens * 2)[self.restart_row:]
-        print(f"Number of chunks: {len(chunks)}")
+        chunks = chunk_text_by_words(full_text, self.max_words)[self.restart_row:]
+
 
         for i, chunk in enumerate(chunks, start=self.restart_row):
             # Create progress bar
@@ -150,24 +157,51 @@ class LLMForTables:
                 {"role": "system", "content": self.system_instruction},
                 {"role": "user", "content": chunk},
             ]
-            output = get_llm_output(messages, self.max_tokens, model=self.model)
+            output = get_llm_output(messages, model=self.model)
             # Add the output to the correct row
             self.data.at[i, self.output_column] = output
             self._save_data(self.data)
         return None
 
-def tool_main(system_instruction, file_name, input_column, output_column, auto_rerun=False):
+def tool_main(system_instruction, file_name, input_column, output_column, input_format='row_by_row', auto_rerun=True):
     """
-    This tool will run the LLM on the given data and populate the output column.
-    Uses GPT-3.5-turbo model.
-    """
+    This tool will run the LLM on the given data and populate the output column using GPT-3.5-turbo model.
+
+    parameters:
+    ----------
+    system_instruction: str
+        The system instruction for the LLM.
+    file_name: str
+        The name of the file to process.
+    input_column: str
+        The name of the input column.
+    output_column: str
+        The name of the output column.
+    input_format: str
+        The format of the input.  It can be row_by_row or consolidated.
     
+    returns:    
+    --------
+    res_dict: dict
+        A dictionary containing the results of the tool.    
+    """
+
+    # Each word is approximately 1.3 tokens
+    # The input context for 3.5-1106 model 16,385 tokens
+    # Let's make sure that the input is less than 15,000 tokens by all means
+    max_words = int(15000/1.5)
+    # If the data path is not there in the file, add it
+    if '/data/' not in file_name:
+        file_name = os.path.join(st.session_state.data_folder, file_name)
+        st.success(f"File modified to: {file_name}")
+
     llm_for_tables = LLMForTables(
         system_instruction=system_instruction,
         file_name=file_name,
         input_column=input_column,
         output_column=output_column,
-        max_tokens=700,
+        max_words=max_words,
+        input_format=input_format
     )
     res_dict = llm_for_tables.run()
     res_dict['ask_llm'] = False

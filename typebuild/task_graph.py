@@ -407,19 +407,23 @@ class TaskGraph:
         if not os.path.exists(path):
             os.makedirs(path)
         files = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
+        # Sort the files from most recent to oldest
+        files.sort(key=lambda x: os.path.getmtime(os.path.join(path, x)), reverse=True)
+        
         # Filter out files that don't end with .json
-        files = [f for f in files if f.endswith('.json')]
+        files = [f.replace('.json', '') for f in files if f.endswith('.json')]
+
         if files:
             st.header("Load task graph")
             # Add a blank option to the list
             files.insert(0, 'SELECT')
             # Display a selectbox to choose the file
-            file_name = st.selectbox("Select to load", files)
+            file_name = st.selectbox("Select conversation to load", files)
             if file_name == 'SELECT':
-                st.warning("Please select a file to load.")
+                st.info("Please select a file to load.")
                 return None
             else:
-                file_name = os.path.join(path, file_name)
+                file_name = os.path.join(path, file_name, '.json')
                 if st.button("Load"):
                     # Load with json
                     self.json_to_graph(file_name)

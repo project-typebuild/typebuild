@@ -393,7 +393,7 @@ def set_the_stage(stage_name):
     """
     st.toast("Just set the stage")
     st.session_state[f"current_stage_{st.session_state.stage_num}"] = stage_name
-    if st.session_state.show_developer_options:
+    if st.session_state.developer_options:
         st.sidebar.warning(f"Current stage is {stage_name}")
     return f"We are now focussing on {stage_name} now."
 

@@ -15,6 +15,7 @@ class Task:
     def __init__(self, task_name, agent_name, task_description, available_agents=[], tools=[]):
         self.task_name = task_name
         self.tools = tools
+        self.agent_name = agent_name
         self._parse_instructions(agent_name)
         self.task_description = task_description
         

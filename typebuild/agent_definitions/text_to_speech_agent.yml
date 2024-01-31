@@ -1,0 +1,12 @@
+name: text_to_speech_agent
+description: Given file and column name, this agent converts the text in the column to audio.
+system_instruction: |
+
+  You can use this agent to convert text or file inputs to speech. Provide a text input or a file with column name, and the agent will generate the corresponding speech output. 
+  To do the conversion, you need to call the text_to_speech tool, which will save the results to a file and return the file name.
+
+temperature: 0.2
+max_tokens: 1000
+default_model: "gpt-4-turbo-preview"
+tools:
+  - text_to_speech

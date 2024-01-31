@@ -25,7 +25,7 @@ class DataSelector:
         else:
             return None
 
-    def _get_all_available_tabular_data(self):
+    def _get_all_available_tabular_data_from_model(self):
         """
         Returns a list of all available tabular data files.
         """
@@ -36,6 +36,16 @@ class DataSelector:
         data_model_df = data_model_df[data_model_df['file_name'].notnull()]
         if data_model_df is not None:
             return list(data_model_df['file_name'].unique())
+        else:
+            return []
+        
+    def _get_all_available_tabular_data(self):
+        """
+        Returns a list of all available parquet files.
+        """
+        data_folder = st.session_state.data_folder
+        if os.path.exists(data_folder):
+            return [os.path.join(data_folder, file_name) for file_name in os.listdir(data_folder) if file_name.endswith('.parquet')]
         else:
             return []
 
@@ -142,6 +152,7 @@ class DataSelector:
         data_type = st.radio('Select data type', ['Tabular', 'Document'], horizontal=True)
         if data_type == 'Tabular':
             tabular_file_paths = self._get_all_available_tabular_data()
+            
             # Create a mappping dict of file_name to full path to avoid displaying the full path
             tabular_files = [os.path.splitext(os.path.basename(file_name))[0] for file_name in tabular_file_paths]
             mappping_dict = dict(zip(tabular_files, tabular_file_paths))
@@ -150,22 +161,26 @@ class DataSelector:
                 tabular_files.insert(0, 'Select file')
             file_path = st.selectbox('Select file',tabular_files)
             if file_path == 'Select file':
-                st.stop()
-            file_name = mappping_dict[file_path]
+                return {}
+            else:
+                
+                # Add data folder path to the file name
+                file_name = mappping_dict[file_path]
+                
+                # df_data_model = self._get_data_model()
+                # df_data_model_file = df_data_model[df_data_model['file_name'] == file_name].drop(columns=['file_name'])
 
-            st.markdown('### Select input column')
-            df_data_model = self._get_data_model()
-            df_data_model_file = df_data_model[df_data_model['file_name'] == file_name].drop(columns=['file_name'])
+                # # Get the columns
+                # columns = df_data_model_file.column_name.unique().tolist()
+                df = pd.read_parquet(file_name)
+                columns = df.columns.tolist()
+                if 'Select Column' not in columns:
+                    columns.insert(0, 'Select Column')
+                input_column = st.selectbox('Select input column', columns)
 
-            # Get the columns
-            columns = df_data_model_file.column_name.unique().tolist()
-            if 'Select Column' not in columns:
-                columns.insert(0, 'Select Column')
-            input_column = st.selectbox('Select input column', columns)
-
-            if input_column == 'Select Column':
-                st.stop()
-            return file_name, input_column
+                if input_column == 'Select Column':
+                    st.stop()
+                return file_name, input_column
         else:
             # Read the file and get the columns
             df_document = self._read_parquet_file(os.path.join(self.data_folder, 'documents.parquet'))
