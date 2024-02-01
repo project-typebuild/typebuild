@@ -2,33 +2,39 @@ import pandas as pd
 import streamlit as st
 import re
 import os
+import random
 class Display():
 
-    def __init__(self):
-        pass
+    def __init__(self, file_name, columns=[]):
+        self.file_name = file_name
+        self.columns = columns
 
-    def dataframe(self, file_name, columns=[]):
+    def dataframe(self):
         # TODO: How do we display the data as nicely formatted text
         # given that column names can be different in different files?
         # Use an LLM to create the streamlit output?        
-        df = pd.read_parquet(file_name)
-        
+        df = pd.read_parquet(self.file_name)
+        columns = self.columns        
         # Give the user the option to view as text or as a dataframe
-        if columns is None:
-            columns = []
+        if not columns:
+            columns = df.columns.tolist()
         if len(columns) == 1:
             view_text = True
         else:
-            view_text = st.checkbox('View as text')
+            # Create a random integer
+            random_int = random.randint(0, 1000000)
+
+            view_text = st.checkbox('View as text', key=f'view_text-{random_int}')
         
+        # Select columns in the order you want to display them
+        selected_cols = st.multiselect(
+            'Select columns to display', 
+            df.columns.tolist(),
+            default=columns
+            )
             
         if view_text:
-            # Select columns in the order you want to display them
-            selected_cols = st.multiselect(
-                'Select columns to display', 
-                df.columns.tolist(),
-                default=columns
-                )
+            
 
             text_dict = df[selected_cols].dropna(how='all').to_dict('records')
             all_text = []
@@ -54,7 +60,7 @@ class Display():
                     show_row = st.number_input('Show row', min_value=0, max_value=len(all_text)-1, value=0)
                     st.markdown(all_text[show_row])
         else:
-            st.dataframe(df)
+            st.dataframe(df[selected_cols])
 
         return None
 
@@ -73,13 +79,14 @@ def tool_main(file_name, columns=None, auto_rerun=True):
     if "/data/" not in file_name:
         file_name = os.path.join(st.session_state.data_folder, file_name)
 
-    display = Display()
+    display = Display(file_name=file_name, columns=columns)
 
-    display.dataframe(file_name, columns=columns)
+    display.dataframe()
 
     res_dict = {
-        'content': "The dataframe has been displayed.",
-        'task_finished': True,
-        'ask_llm': False
+        'content': "Here's the table.  Let me know if you want to change anything",
+        'task_finished': False,
+        'ask_llm': False,
+        'ask_human': True
     }
     return res_dict

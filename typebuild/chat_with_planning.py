@@ -94,7 +94,7 @@ def display_messages(expanded=True):
     messages = tg.messages.get_all_messages()
         
     for i, msg in enumerate(messages):
-        st.code(msg)
+        # st.code(msg)
         content = ""
         # Some tools return a key called res_dict.  Parse it here.
         if 'res_dict' in msg:
@@ -435,7 +435,7 @@ def select_data():
     from data_management.data_selection_ui import interface
     res = interface()
     # Add the content to the messages for planning
-    if res and st.session_state.current_task == 'planning':
+    if res:
         if st.button("Set data source"):
             st.session_state.task_graph.messages.set_message(
                 role='user', 

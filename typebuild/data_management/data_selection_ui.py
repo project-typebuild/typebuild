@@ -57,10 +57,10 @@ def interface():
     else:
         file_name = os.path.join(st.session_state.data_folder, 'documents.parquet')
     if not file_name:
-        return {}
+        return None
     input_column = select_column(file_name)
     if not input_column:
-        return {}
+        return f"Selected file: {file_name}"
     # Return a string with file name and column name
     return f"""This data has been selected for analysis:\nSelected File: {file_name}\nSelected Column: {input_column}.\nThe file and column name will be give to the agent for analysis."""
     
