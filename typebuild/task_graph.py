@@ -519,6 +519,9 @@ class TaskGraph:
                 output = task_info.get('content')
                 if output:
                     md_line += f"Output: {output}\n"
+                # Get task status
+                task_status = task_info.get('task_finished', False)
+                md_line += f"Task status: {'Completed' if task_status else 'Not completed'}\n"
                 md_line += "\n"
             for child in sorted(self.graph.successors(node), key=lambda x: self.graph.nodes[x]['sequence']):
                 md_line += format_task(child, level + 1)

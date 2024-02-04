@@ -321,8 +321,8 @@ def manage_tool_interaction(res_dict, from_llm=False, run_tool=False):
             # Add the error to the content to see if the LLM fixes it.
             # TODO Setting task finished to True since LLM will not be able to fix it for now.
             # Change this when we have a way to fix errors.
-            tool_result = {'content': f"Error: {e}", 'task_finished': True}
-            st.sidebar.error(f"Error: {e}")
+            tool_result = {'content': f"Error: {e}", 'task_finished': False, 'ask_human': True}
+            st.error(f"We ran into this error while running {tool_name}: {e}")
 
         # Check if the the task is done and can be transferred to orchestration.
 
