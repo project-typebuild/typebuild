@@ -59,13 +59,15 @@ def manage_length(text, output_file, max_chars=4000):
         temp_folder = output_file.replace(".mp3", "")
         if not os.path.exists(temp_folder):
             os.makedirs(temp_folder)
+        progress_bar = st.empty()
         for i, chunk in enumerate(chunks):
-            st.progress(i/len(chunks), f"Creating audio for chunk {i+1}/{len(chunks)}")
+            progress_bar.progress(i/len(chunks), f"Creating audio for chunk {i+1}/{len(chunks)}")
             file_name = os.path.join(temp_folder, f"{i}.mp3")
             convert_text_to_speech(chunk, file_name)
             audio_files.append(file_name)
         # Join the audio files
         join_audio_files(audio_files, output_file)
+        progress_bar.success("Audio created.")
     return None
 
 def join_audio_files(audio_files, output_file):
@@ -120,6 +122,8 @@ def tool_main(file_name=None, column_name=None, text=None, auto_rerun=True):
     file_name = file_name.replace("-", "")
     # Create full path
     output_file = os.path.join(graph_folder, file_name)
+    st.info(output_file)
+    st.write(os.path.exists(output_file))
     # Get the audio if it does not exist
     if not os.path.exists(output_file):
         with st.spinner("Creating audio..."):

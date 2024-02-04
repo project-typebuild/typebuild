@@ -1,7 +1,8 @@
 """
 ***Current objective:***
-
-- [ ] If a graph exists, allow the user to add tasks to it. Right now, planner is creating new graphs.  Current task should be the planner, when needed as well.
+- [ ] Vivek: Provide the planner with metadata and access to the last few messages.
+- [ ] Vivek: Give planner the ability to query an task for information.
+- [x] If a graph exists, allow the user to add tasks to it. Right now, planner is creating new graphs.  Current task should be the planner, when needed as well.
 - [ ] Vivek: How to use metadata in files while executing tasks.  We need this to get system instruction from 
     prompt agent to the llm for tables agent.
 - [x] Vivek: User should be able to go back to a task anytime.
@@ -63,17 +64,14 @@
 """
 
 
-import time
 import streamlit as st
 from plugins.llms import get_llm_output
-import os
-from glob import glob
-from task import Task
+
 from task_graph import TaskGraph
+from master_planner import create_master_planner, get_planner_instructions
 import importlib
 import json
 import inspect
-from extractors import Extractors
 import yaml
 
 def display_messages(expanded=True):
@@ -94,7 +92,8 @@ def display_messages(expanded=True):
     messages = tg.messages.get_all_messages()
         
     for i, msg in enumerate(messages):
-        # st.code(msg)
+        if st.session_state.developer_options:
+            st.code(msg)
         content = ""
         # Some tools return a key called res_dict.  Parse it here.
         if 'res_dict' in msg:
@@ -118,7 +117,8 @@ def display_messages(expanded=True):
             if msg['role'] == 'system':
                 st.info(content)        
         else:
-            st.code(res_dict)
+            # st.code(res_dict)
+            pass
         
         if "tool_name" in res_dict:
             # st.success(f"Tool name: {res_dict['tool_name']}")
@@ -126,116 +126,59 @@ def display_messages(expanded=True):
                 manage_tool_interaction(res_dict, from_llm=False)
     return None
 
-def manage_llm_interaction():
+def what_task_now():
+    """
+    Determines what the next task is and sets it as the current task.
+    """
 
-    planning = st.session_state.planning
     tg = st.session_state.task_graph
-    m = tg.messages
-    model = planning.default_model
-    if st.session_state.current_task == 'planning':
-        system_instruction = planning.get_system_instruction()
-        # If there are templates, use it.
-        if tg.templates:
-            template_info = "The user has selected a canned template that can help with planning.  See the details below."
-            for template_name, template in tg.templates.items():
-                template_info += f"\n\nTemplate name: {template_name}"
-                template_info += f"\nTemplate description: {template}\n\n"
-            template_info += "Please use the information above to help with planning."
-            system_instruction += f"\n\n{template_info}"
-        # Store the system instruction in the session state for us to understand what 
-        # information the planner was given
-        st.session_state.planner_instructions = system_instruction
-
-        messages = tg.messages.get_all_messages()
-    else:
+    
+    # Current task will be set to planning by default
+    current_task_name = 'planning'
+    task_object = None
+    # If the current task in session state is not planning 
+    # Check if there is a follow up task
+    if st.session_state.current_task != 'planning':
         next_task_name = tg.get_next_task()
-        st.session_state.current_task = next_task_name
         next_task = tg.get_next_task_node()
-        # Check if there are tasks, else send to planning
+        
+        # If a follow up task exists, make that the current task
         if next_task:
-            system_instruction = next_task['task'].get_system_instruction()
-            messages = tg.get_messages_for_task_family(st.session_state.current_task)
+            st.session_state.current_task = next_task_name
+            current_task_name = next_task_name
+            task_object = next_task['task']
+    return current_task_name, task_object
 
-            if 'default_model' in next_task['task'].__dict__:
-                model = next_task['task'].default_model
-        else:
-            system_instruction = planning.get_system_instruction()
-            messages = tg.messages.get_all_messages()
+
+def manage_llm_interaction():
+    """
+    This functions gets a response from the LLM by providing 
+    it with system instructions and messages appropriate for the current task.
+    """
+    # Get a few key variables needed for the task    
+    planning = st.session_state.planning
+    model = planning.default_model
+    tg = st.session_state.task_graph
+    current_task, task_object = what_task_now()    
+
+    if current_task == 'planning':
+        system_instruction = get_planner_instructions()
+        messages = tg.messages.get_all_messages()
+    
+    # If there is a next task
+    else:
+        system_instruction = task_object.get_system_instruction()
+        messages = tg.get_messages_for_task_family(st.session_state.current_task)
+
+        if 'default_model' in task_object.__dict__:
+            model = task_object.default_model
+
     
     messages.insert(0, {"role": "system", "content": system_instruction})
     res = get_llm_output(messages, model=model)
-    m.set_message(role="assistant", content=res, created_by=st.session_state.current_task, created_for=st.session_state.current_task)
+    tg.messages.set_message(role="assistant", content=res, created_by=st.session_state.current_task, created_for=st.session_state.current_task)
     return res
 
-def get_task_graph_details():
-    """
-    Get the name of the task, the description, and the markdown of subtasks
-    from the task graph as a string
-    """
-    tg = st.session_state.task_graph
-    task_name = tg.name
-    task_objective = tg.objective
-    task_md = tg.generate_markdown()
-    
-    task_info = f"""
-    
-    HERE IS THE INFORMATION ABOUT THE TASK GRAPH:
-    TASK GRAPH NAME: {task_name}
-    OBJECTIVE: {task_objective}
-    LIST OF SUBTASKS:
-    {task_md}
-    """
-    extractors = Extractors()
-    return extractors.remove_indents_in_lines(task_info)
-
-def add_planning_to_session_state():
-    """
-    Add the planner to the session state
-    """
-    if 'planning' not in st.session_state:
-        
-        # Get all the agents from the agent_definitions folder, in os independent way
-        # Current directory plus agent_definitions
-        agent_definitions = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'agent_definitions')
-        # Get all the files in the agent_definitions folder
-        agent_files = glob(os.path.join(agent_definitions, '*.yml'))
-        # Get the agent names
-        agent_names = [os.path.basename(i).replace('.yml', '') for i in agent_files]
-        # TODO: Remove agent manager until we remove it from the definitions
-        agent_names.remove('agent_manager')
-        # Provide agent names to Planning task
-        
-        
-        task_graph = st.session_state.task_graph
-        # Get task graph details if the graph has a name.
-        # No name means that the user has not yet defined the task graph
-        if task_graph.name:
-            planning_task_desc = get_task_graph_details()
-
-        else:
-            planning_task_desc = "\nWe do not know the user's objective yet and the task graph has not been created.\n"
-        
-        planning = Task(
-            task_name='planning', 
-            task_description=planning_task_desc,
-            agent_name='master_planner',
-            available_agents=agent_names,
-            )
-        st.session_state.planning = planning
-        
-        st.session_state.current_task = 'planning'
-    # If planning is in session state, update the task description
-    else:
-        planning = st.session_state.planning
-        desc = get_task_graph_details()
-        # Update the template information
-        template_info = "The user has selected a canned template that can help with planning.  Follow these instructions very carefully:\n"  
-        for template_name, template in st.session_state.task_graph.templates.items():
-            template_info += f"\nINSTRUCTIONS FOR PLANNING: {template}\n\n"
-
-        planning.task_description = desc + template_info
-
-    return None
 
 def set_next_actions(res_dict):
     """
@@ -256,9 +199,12 @@ def set_next_actions(res_dict):
 
     for task_res in res_dict.get('task_list', []):
         tg.add_task(**task_res)
+    
         # If ask human is in the response, set ask_llm to the opposite
         if "ask_human" in res_dict:
             st.session_state.ask_llm = not res_dict['ask_human']
+    # Draw the graph
+    
     if res_dict.get("task_finished", False):
         finish_tasks(res_dict)
     return None
@@ -365,8 +311,8 @@ def manage_tool_interaction(res_dict, from_llm=False, run_tool=False):
             if 'task_for_tool' in st.session_state:
                 del st.session_state['task_for_tool']
 
-            if st.session_state.developer_options:
-                st.code(f'Tool result: {tool_result}')
+            # if st.session_state.developer_options:
+            #     st.code(f'Tool result: {tool_result}')
             
             
             if isinstance(tool_result, str):
@@ -419,7 +365,7 @@ def init_chat():
         st.session_state.ask_llm = False
     if 'task_graph' not in st.session_state:
         st.session_state.task_graph = TaskGraph()
-    add_planning_to_session_state()
+    create_master_planner()
     tg = st.session_state.task_graph
     tg.messages.chat_input_method(task_name=st.session_state.current_task)
     try:

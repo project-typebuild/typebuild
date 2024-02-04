@@ -35,7 +35,13 @@ else:
 please_stop = False
 with st.sidebar.expander("Admin"):
     st.checkbox("Show developer options", key='developer_options')
-    
+    # Show task graph if it exists
+    if 'task_graph' in st.session_state:
+        show_task_graph = st.checkbox('Show task graph')
+        if show_task_graph:
+            from task_graph import draw_graph
+            tg = st.session_state.task_graph
+            draw_graph(G=tg.graph)
     if 'last_request' in st.session_state:
         show_request = st.checkbox('Show latest request')
         if show_request:

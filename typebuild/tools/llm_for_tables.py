@@ -84,8 +84,9 @@ class LLMForTables:
         if self.output_column in self.data.columns:
             # Find the last non-empty row in the output column
             non_empty_rows = self.data[self.output_column].notnull()
+            
             if non_empty_rows.any():
-                self.restart_row = non_empty_rows.idxmax() + 1
+                self.restart_row = len(non_empty_rows)
             else:
                 self.restart_row = 0
         else:
@@ -115,7 +116,9 @@ class LLMForTables:
         """
         Processes the data row by row.
         """
-        for i, row in enumerate(self.data.itertuples(), start=1):
+        st.warning("Processing row by row")
+        
+        for i, row in enumerate(self.data.itertuples(), start=0):
             st.progress(i / len(self.data), f"Processing row {i+1} of {len(self.data)}")
             if i < self.restart_row:
                 continue
@@ -149,9 +152,11 @@ class LLMForTables:
         
         # Chunk the text but skip the rows that have already been processed
         chunks = chunk_text_by_words(full_text, self.max_words)[self.restart_row:]
+        # Show what has been completed so far
 
-
-        for i, chunk in enumerate(chunks, start=self.restart_row):
+        for i, chunk in enumerate(chunks, start=0):
+            if i < self.restart_row:
+                continue
             # Create progress bar
             messages = [
                 {"role": "system", "content": self.system_instruction},

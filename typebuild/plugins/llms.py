@@ -29,11 +29,13 @@ def last_few_messages(messages):
     Returns:
         list: The last few messages from the given list.
     """
+    if not messages:
+        messages = []
     last_messages = []
-    if messages:
-        # Get the first message
-        last_messages.append(messages[0])
-    # Get the last 3 user or assistant messages
+    # Get all system messages
+    system_messages = [i for i in messages if i['role'] == 'system']
+    last_messages.extend(system_messages)
+    # Get the last 7 user or assistant messages
     user_assistant_messages = [i for i in messages if i['role'] in ['user', 'assistant']]
     last_messages.extend(user_assistant_messages[-7:])
     return last_messages

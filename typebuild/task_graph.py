@@ -83,7 +83,7 @@ class TaskGraph:
         # Add a parent task. If there's no parent, add a root node.
         self.add_parent(task_name, parent_task)
         # Provide confirmation
-        st.success(f"Added task '{task_name}' to the graph.")
+        # st.success(f"Added task '{task_name}' to the graph.")
         return None
 
     def calculate_sequence_number(self, parent_task, before_node=None, after_node=None):
@@ -423,7 +423,8 @@ class TaskGraph:
                 st.info("Please select a file to load.")
                 return None
             else:
-                file_name = os.path.join(path, file_name, '.json')
+                file_name = os.path.join(path, file_name) + '.json'
+                st.warning(file_name)
                 if st.button("Load"):
                     # Load with json
                     self.json_to_graph(file_name)
@@ -509,10 +510,17 @@ class TaskGraph:
         """
         Generates a markdown text from the task graph with hierarchical tasks.
         """
-        md_text = f'# {self.name}\n\n'
+        md_text = f'# List of tasks and subtasks\n\nProject Name: {self.name}\nObjective: {self.objective}\n\n'
         def format_task(node, level=0):
+            md_line = ""
             task_info = self.graph.nodes[node]
-            md_line = f"{'  ' * level}- **{node}**: {task_info.get('task', {})}\n"
+            if node != 'root':
+                md_line += f"{'#' * level} {node}\n"
+                md_line += f"Task given: {task_info['task'].system_instruction.strip()}\n"
+                output = task_info.get('content')
+                if output:
+                    md_line += f"Output: {output}\n"
+                md_line += "\n"
             for child in sorted(self.graph.successors(node), key=lambda x: self.graph.nodes[x]['sequence']):
                 md_line += format_task(child, level + 1)
             return md_line
@@ -534,32 +542,33 @@ class TaskGraph:
             attributes.update(self.graph.nodes[ancestor])
         return attributes
     
-    @staticmethod
-    def draw_graph(self, G, wrap_width=10):
-        """
-        Draws a family tree from a NetworkX graph with wrapped labels.
+    
+def draw_graph(G, wrap_width=10):
+    """
+    Draws a family tree from a NetworkX graph with wrapped labels.
 
-        Parameters:
-        G (networkx.Graph): A NetworkX graph object representing a family tree.
-        wrap_width (int): The maximum line width for wrapped labels.
-        """
-        # Increase figure size
-        plt.figure(figsize=(8, 4))
+    Parameters:
+    G (networkx.Graph): A NetworkX graph object representing a family tree.
+    wrap_width (int): The maximum line width for wrapped labels.
+    """
+    # Increase figure size
+    plt.figure(figsize=(8, 4))
 
-        # Position nodes using a hierarchical layout
-        pos = nx.spring_layout(G, iterations=100)
+    # Position nodes using a hierarchical layout
+    pos = nx.spring_layout(G, iterations=100)
 
-        # Draw the graph
-        nx.draw(G, pos, with_labels=False, node_color='lightblue', node_size=3000, edge_color='gray', linewidths=1)
+    # Draw the graph
+    nx.draw(G, pos, with_labels=False, node_color='lightblue', node_size=3000, edge_color='gray', linewidths=1)
 
-        # Draw labels with wrapped text
-        for node, (x, y) in pos.items():
-            label = node.replace('_', ' ')  # Escape underscores
-            wrapped_label = textwrap.fill(label, width=wrap_width)
-            plt.text(x, y, wrapped_label, fontsize=10, ha='center', va='center', multialignment='center')
+    # Draw labels with wrapped text
+    for node, (x, y) in pos.items():
+        label = node.replace('_', ' ')  # Escape underscores
+        wrapped_label = textwrap.fill(label, width=wrap_width)
+        plt.text(x, y, wrapped_label, fontsize=10, ha='center', va='center', multialignment='center')
 
-        # Adjust layout to avoid clipping of labels
-        plt.tight_layout()
+    # Adjust layout to avoid clipping of labels
+    plt.tight_layout()
 
-        # Show the plot
-        plt.show()
+    # Show the plot on streamlit
+    st.pyplot(plt.gcf())
+
