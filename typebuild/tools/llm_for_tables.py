@@ -148,7 +148,7 @@ class LLMForTables:
         Processes the data in chunks.
         """
         # Get the full input text
-        full_text = "\n\n".join(self.data[self.input_column].tolist())
+        full_text = "\n\n".join(self.data[self.input_column].dropna().tolist())
         
         # Chunk the text but skip the rows that have already been processed
         chunks = chunk_text_by_words(full_text, self.max_words)[self.restart_row:]

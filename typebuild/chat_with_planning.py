@@ -303,7 +303,7 @@ def manage_tool_interaction(res_dict, from_llm=False, run_tool=False):
         try:
             # Show the args being sent to the tool
             if st.session_state.developer_options:
-                st.error(f"Args for tools: {args_for_tool}")
+                st.code(f"Args for tools: {args_for_tool}")
 
             tool_result = tool_function(**kwargs)
             

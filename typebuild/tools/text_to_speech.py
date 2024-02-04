@@ -79,7 +79,7 @@ def join_audio_files(audio_files, output_file):
 
 def extract_text_from_parquet(file_name, column_name):
     df = pd.read_parquet(file_name)
-    text = "\n".join(df[column_name].to_list())
+    text = "\n".join(df[column_name].dropna().to_list())
     return text
 
 def tool_main(file_name=None, column_name=None, text=None, auto_rerun=True):
@@ -117,13 +117,12 @@ def tool_main(file_name=None, column_name=None, text=None, auto_rerun=True):
     if st.checkbox("Show text being converted", key=f"{file_name}-{column_name}", value=False, help="Check to show the text being converted to speech."):
         st.markdown(text)
     # File name is hash of text without a minus + .mp3 
-    file_name = str(hash(text)) + ".mp3"
+    file_name = column_name.strip() + ".mp3"
     # Remove minus sign
     file_name = file_name.replace("-", "")
     # Create full path
     output_file = os.path.join(graph_folder, file_name)
-    st.info(output_file)
-    st.write(os.path.exists(output_file))
+
     # Get the audio if it does not exist
     if not os.path.exists(output_file):
         with st.spinner("Creating audio..."):

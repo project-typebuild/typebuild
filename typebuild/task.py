@@ -84,7 +84,7 @@ class Task:
             
             return instructions
         else:
-            raise FileNotFoundError(f'There is no agent by name: {agent_name}.  Please check the agent name.')
+            st.warning(f"{agent_name} must have been removed from the system.")
 
 
     def get_instance_vars(self):

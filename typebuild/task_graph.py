@@ -424,7 +424,6 @@ class TaskGraph:
                 return None
             else:
                 file_name = os.path.join(path, file_name) + '.json'
-                st.warning(file_name)
                 if st.button("Load"):
                     # Load with json
                     self.json_to_graph(file_name)

@@ -14,6 +14,7 @@ class Display():
         # given that column names can be different in different files?
         # Use an LLM to create the streamlit output?        
         df = pd.read_parquet(self.file_name)
+        random_int = random.randint(0, 1000000)
         columns = self.columns        
         # Give the user the option to view as text or as a dataframe
         if not columns:
@@ -22,15 +23,16 @@ class Display():
             view_text = True
         else:
             # Create a random integer
-            random_int = random.randint(0, 1000000)
 
             view_text = st.checkbox('View as text', key=f'view_text-{random_int}')
-        
+        multiselect_key = f'selected_cols-{random_int}'
+        if multiselect_key not in st.session_state:
+            st.session_state[multiselect_key] = columns
         # Select columns in the order you want to display them
         selected_cols = st.multiselect(
             'Select columns to display', 
             df.columns.tolist(),
-            default=columns
+            key=f'selected_cols-{random_int}'
             )
             
         if view_text:
