@@ -510,25 +510,25 @@ class TaskGraph:
         Generates a markdown text from the task graph with hierarchical tasks.
         """
         md_text = f'# List of tasks and subtasks\n\nProject Name: {self.name}\nObjective: {self.objective}\n\n'
-        def format_task(node, level=0):
+        def format_task(node_name, level=0):
             md_line = ""
-            task_info = self.graph.nodes[node]
-            if node != 'root':
-                md_line += f"{'#' * level} {node}\n"
-                md_line += f"Task given: {task_info['task'].system_instruction.strip()}\n"
-                output = task_info.get('content')
+            node = self.graph.nodes[node_name]
+            if node_name != 'root':
+                md_line += f"{'#' * level} Task name: {node_name}\n"
+                md_line += f"Task given: {node['task'].system_instruction.strip()}\n"
+                output = node.get('content')
                 if output:
                     md_line += f"Output: {output}\n"
                 # Get task status
-                task_status = task_info.get('task_finished', False)
+                task_status = node.get('completed', False)
                 md_line += f"Task status: {'Completed' if task_status else 'Not completed'}\n"
                 md_line += "\n"
-            for child in sorted(self.graph.successors(node), key=lambda x: self.graph.nodes[x]['sequence']):
+            for child in sorted(self.graph.successors(node_name), key=lambda x: self.graph.nodes[x]['sequence']):
                 md_line += format_task(child, level + 1)
             return md_line
 
-        for node in [n for n, d in self.graph.in_degree() if d == 0]:  # Root nodes
-            md_text += format_task(node)
+        for node_name in [n for n, d in self.graph.in_degree() if d == 0]:  # Root nodes
+            md_text += format_task(node_name)
         return md_text
 
     def get_attributes_of_ancestors(self, current_task):
