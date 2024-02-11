@@ -163,19 +163,33 @@ class TaskGraph:
             st.warning("The child task must exist in the graph to add a parent.")
         return None
 
-    def update_task(self, task_name, sequence=None, completed=None, other_attributes={}):
+    def update_task(self, task_name, task_description=None, sequence=None, task_finished=None, completed=None, other_attributes={}):
+        """
+        This updates the task with the given name.  It can update the sequence, task_finished, task_description, and other attributes.
+        the current code uses completed and task_finished interchangeably.  We should standardize on one.
+        Until then, this function allows both keywords.
+        
+        """
         if task_name in self.graph:
             if sequence is not None:
                 self.graph.nodes[task_name]['sequence'] = sequence
+            if task_finished is not None:
+                self.graph.nodes[task_name]['completed'] = task_finished
             if completed is not None:
                 self.graph.nodes[task_name]['completed'] = completed
+
+
+            if task_description:
+                self.graph.nodes[task_name]['task'].task_description = task_description
+                self.graph.nodes[task_name]['task_description'] = task_description
             for key in other_attributes:
                 self.graph.nodes[task_name][key] = other_attributes[key]
         else:
-            st.warning("Task not found in the graph.")
+            st.error(f"Unable to update {task_name}. Task not found in the graph.")
+            time.sleep(3)
 
     # TODO: Document why we need this and get_next_task.
-    def _find_next_task(self, node):
+    def _find_next_incomplete_task(self, node):
         """
         Helper method to recursively find the next task to complete.
         """
@@ -183,7 +197,7 @@ class TaskGraph:
         if not self.graph.nodes[node]['completed']:
             children = sorted(self.graph.neighbors(node), key=lambda x: self.graph.nodes[x]['sequence'])
             for child in children:
-                next_task = self._find_next_task(child)
+                next_task = self._find_next_incomplete_task(child)
                 # If a child or its descendant is incomplete, return it
                 if next_task:
                     # Return the first incomplete child that is found
@@ -193,20 +207,43 @@ class TaskGraph:
         # If the current node is completed, return None
         return None
 
-    def _find_next_task(self, node):
+    def _find_next_incomplete_task(self, node):
         if not self.graph.nodes[node]['completed']:
             if self.graph.nodes[node].get('decision', None):
                 condition = self.graph.nodes[node]['condition']
                 outcome = condition()
                 next_branch = self.graph.nodes[node]['branches'][outcome]
-                return self._find_next_task(next_branch)
+                return self._find_next_incomplete_task(next_branch)
             else:
                 for neighbor in sorted(self.graph.neighbors(node), key=lambda x: self.graph.nodes[x]['sequence']):
-                    next_task = self._find_next_task(neighbor)
+                    next_task = self._find_next_incomplete_task(neighbor)
                     if next_task:
                         return next_task
                 return node
         return None
+
+    def _get_task_sequence(self):
+        """
+        Get the sequence of the tasks in the graph
+        starting with the root.
+        """
+        sequence = []
+        for node in nx.topological_sort(self.graph):
+            sequence.append(node)
+        return sequence
+
+
+    def set_following_tasks_as_incomplete(self, task_name):
+        """
+        Sets all the following tasks as incomplete.
+        """
+        sequence = self._get_task_sequence()
+        for node in sequence:
+            if node == task_name:
+                continue
+            self.graph.nodes[node]['completed'] = False
+        return None
+
 
     def _find_next_incomplete_child(self, current_node=None):
         """
@@ -254,7 +291,7 @@ class TaskGraph:
             start_node = 'root'
 
         if start_node and start_node in self.graph:
-            # next_task = self._find_next_task(start_node)
+            # next_task = self._find_next_incomplete_task(start_node)
             next_task = self._find_next_incomplete_child(start_node)
             if next_task:
                 return next_task
@@ -293,7 +330,7 @@ class TaskGraph:
             if 'task' in g:
                 task_dict = g['task']
                 if 'description' in task_dict:
-                    task_dict['task_description'] = task_dict['description']
+                    task_dict['agent_description'] = task_dict['description']
                 if 'name' in task_dict:
                     task_dict['agent_name'] = task_dict['name']
                 agent_name = task_dict.pop('agent_name')
@@ -401,6 +438,7 @@ class TaskGraph:
         """
         Loads a graph from a json file.
         """
+        
         # Get a list of files in the objectives folder
         path = os.path.join(st.session_state.user_folder, 'objectives')
         # check if the folder exists and create it if it doesn't
@@ -412,7 +450,6 @@ class TaskGraph:
         
         # Filter out files that don't end with .json
         files = [f.replace('.json', '') for f in files if f.endswith('.json')]
-
         if files:
             st.header("Load task graph")
             # Add a blank option to the list
@@ -429,6 +466,10 @@ class TaskGraph:
                     self.json_to_graph(file_name)
                     st.success(f"Loaded graph from '{file_name}'.")
                     st.rerun()
+        # If there is no file, inform the user.
+        else:
+            st.warning("There is no previous work to load.  Please create a new task.")
+
         return None
     
     def json_to_graph(self, file_name):
@@ -515,7 +556,8 @@ class TaskGraph:
             node = self.graph.nodes[node_name]
             if node_name != 'root':
                 md_line += f"{'#' * level} Task name: {node_name}\n"
-                md_line += f"Task given: {node['task'].system_instruction.strip()}\n"
+                # md_line += f"System instruction: {node['task'].system_instruction.strip()}\n"
+                md_line += f"Task description: {node['task'].task_description.strip()}\n"
                 output = node.get('content')
                 if output:
                     md_line += f"Output: {output}\n"

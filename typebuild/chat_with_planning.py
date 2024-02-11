@@ -1,12 +1,22 @@
 """
+# Think about things
+- [ ] Master planner should not be the default.  Let the user have a conversation naturally.  If there's a project, then we can call the master planner. 
+
+# Tasks to do
 ***Current objective:***
-- [ ] Vivek: Provide the planner with metadata and access to the last few messages.
+- [x] Vivek: Provide the planner with metadata and access to the last few messages.
 - [ ] Vivek: Give planner the ability to query an task for information.
 - [x] If a graph exists, allow the user to add tasks to it. Right now, planner is creating new graphs.  Current task should be the planner, when needed as well.
 - [ ] Vivek: How to use metadata in files while executing tasks.  We need this to get system instruction from 
     prompt agent to the llm for tables agent.
 - [x] Vivek: User should be able to go back to a task anytime.
 - [ ] Vivek: Start task button should not appear after a task is done.
+
+# TODO: Vivek: Self-fixing errors
+- [] When a task is updated, it sends a new instruction to the tool.  But the previous response from the tool is still there, and that's what we display.  How do we change that?
+- [] Record if tool was run, if not run it when the error is fixed
+- [] In case of an error, send back to the previous node or the relevant node to get the input fixed.
+
 
 # Usability
 - [ ] Vivek: Previous conversations in the order generated (sort by created date).
@@ -25,9 +35,6 @@
 - [ ] Create "subscription" based access to the apis. 
 - [ ] How to store credentials securely.
 
-# TODO: Vivek: Self-fixing errors
-- [] Record if tool was run, if not run it when the error is fixed
-- [] In case of an error, send back to the previous node or the relevant node to get the input fixed.
 
 # TODO: Ranu: Task graph management
 - If the graph exists, do not overwrite.  Ask the user if the old one should be used.
@@ -64,6 +71,7 @@
 """
 
 
+import time
 import streamlit as st
 from plugins.llms import get_llm_output
 
@@ -89,8 +97,8 @@ def display_messages(expanded=True):
     tg = st.session_state.task_graph
     if tg.name:
         st.header(tg.name)
+
     messages = tg.messages.get_all_messages()
-        
     for i, msg in enumerate(messages):
         if st.session_state.developer_options:
             st.code(msg)
@@ -99,8 +107,13 @@ def display_messages(expanded=True):
         if 'res_dict' in msg:
             res_dict = msg['res_dict']
             content = res_dict.get('content', res_dict.get('user_message', ''))
+        
+        # If content is a dict, look for user message
+        elif isinstance(msg.get('content', ''), dict):
+            res_dict = msg['content']
+            content = res_dict.get('content', res_dict.get('user_message', ''))
         # LLMs return a dict, but the content is typically json
-        # Parse the content key, which is the json.
+        # Parse the content key, which is the json.        
         elif msg.get('content', '').strip().startswith('{'):
             res_dict = json.loads(msg['content'])
             content = res_dict.get('content', res_dict.get('user_message', ''))
@@ -124,6 +137,8 @@ def display_messages(expanded=True):
             # st.success(f"Tool name: {res_dict['tool_name']}")
             with st.spinner("Running tool..."):
                 manage_tool_interaction(res_dict, from_llm=False)
+        
+        
     return None
 
 def what_task_now():
@@ -203,10 +218,74 @@ def set_next_actions(res_dict):
         # If ask human is in the response, set ask_llm to the opposite
         if "ask_human" in res_dict:
             st.session_state.ask_llm = not res_dict['ask_human']
-    # Draw the graph
     
     if res_dict.get("task_finished", False):
         finish_tasks(res_dict)
+    return None
+
+def loop_through_message_to_update_task():
+    """
+    Loop through the messages to see if any task needs to be updated.
+    If yes, update existing task, and mark it as updated.
+    """
+    
+    
+    tg = st.session_state.task_graph
+    messages = tg.messages.get_all_messages()
+    
+    for i,msg in enumerate(messages):
+        # Get just the content key and load it
+        # TODO: I have to look for update task in the content.
+        content = msg.get('content', {})
+
+        if 'update_task' in content:
+            # If the key 'update_task' is there, it must contain a dict.
+            # Convert content to dict if it is a string
+            if isinstance(content, str):
+                content = json.loads(content)
+            st.snow()
+            time.sleep(3)
+            update_existing_task(content)
+            # Mark the message as updated
+            # Take update task out of the message and make it updated task
+            updated_task = content.pop('update_task')
+            content['updated_task'] = updated_task
+            tg.messages.update_message_content(i, content)
+    return None
+
+
+def update_existing_task(res_dict):
+    """
+    Extract relevant information and update the task graph
+    """
+    tg = st.session_state.task_graph
+    params_to_update = res_dict['update_task']
+    # Get the task name, task description, and task_finished variables.  Remove them from the dict.
+    task_name = params_to_update.pop('task_name', None)
+    task_description = params_to_update.pop('task_description', None)
+    task_finished = params_to_update.pop('task_finished', None)
+
+    # Get the value for update_dependent_tasks, if it exists.
+    update_dependent_tasks = params_to_update.pop('update_dependent_tasks', False)
+
+    # Update the task
+    tg.update_task(
+        task_name=task_name,
+        task_description=task_description,
+        task_finished=task_finished,
+        other_attributes=params_to_update
+        )
+    
+    # Update the dependent tasks, if relevant
+    if update_dependent_tasks:
+        tg.update_dependent_tasks(task_name)
+    st.success(f"Updated {task_name}")
+    st.balloons()
+    time.sleep(3)
+
+
+    # Now set the current task to task graph, not planning
+    st.session_state.current_task = 'task_graph'
     return None
 
 def finish_tasks(res_dict):
@@ -375,6 +454,7 @@ def init_chat():
     st.sidebar.info(f"Ask llm: {st.session_state.ask_llm}\n\nCurrent task: {st.session_state.current_task}\n\nCurrent agent: {current_agent}")
     with st.sidebar.expander("Select data"):
         select_data()
+    loop_through_message_to_update_task()
     display_messages()
 
 def select_data():
@@ -509,10 +589,6 @@ def chat():
         # Save the graph to file, if it has a name
         # TODO: Make sure that we don't create a name that overwrites an existing one.
         if tg.name:
-            # Save the graph to file
-            # as .DL
-            # tg._save_to_file()
-            # as .json
             tg._save_to_json()
         st.rerun()
     # Display the agent name

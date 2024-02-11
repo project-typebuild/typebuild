@@ -40,7 +40,7 @@ Use this format:
 task dicts should be in this format:
 {
 "task_name": "name of the task",
-"task_description": "description of the task",
+"task_description": "Instruction to the agent on what it should do.",
 "agent_name": "name of the agent that will perform the task",
 "parent_task": "Set a parent if this task depends on the completion of another task, and needs its input.  Else, set to null",
 "add_before": "name of the task that this task should be added before.  If this is the first task, set this to null",
@@ -58,12 +58,29 @@ instruction_first_tasks = """The task graph contains no task yet. You should cre
 instruction_first_tasks += create_task_general_instruction
 
 # Instructions to add tasks
-instruction_additonal_tasks = """The task graph already contains tasks given above.
+instruction_additional_tasks = """The task graph already contains tasks given above.
 Based on the conversation, if you assess that more tasks are needed, add them to the task graph."""
 
-instruction_additonal_tasks += create_task_general_instruction
+instruction_additional_tasks += create_task_general_instruction
 
 
+instructions_to_update_tasks = """Sometimes you have to update a task by giving it additional instructions or by modifying the task description.
+In that case:
+- Update the task description clearly.
+- Set the task_finished to false, so that it is run again
+- If other tasks depended on this, you have to set all the following tasks to incomplete as well.
+
+Use this format and return a valid json:
+{
+"update_task": 
+    {
+    "task_name": "name of the task to update, verbatim",
+    "task_description": "new instructions for the task",
+    "task_finished": bool,
+    "update_dependent_tasks": bool
+    }
+}
+"""
 
 
 def get_task_graph_details():
@@ -158,7 +175,7 @@ def update_master_planner():
         # Get all the tasks that exist
         desc = get_task_graph_details()
         planning.task_description = desc
-        planning.system_instruction = instruction_additonal_tasks
+        planning.system_instruction = instruction_additional_tasks + "\n\n" + instructions_to_update_tasks
     return None
 
 def create_master_planner():

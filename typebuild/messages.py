@@ -18,7 +18,16 @@ class Messages:
     def set_message(self, content, role, created_by, created_for):
         self.messages.append(self.message_tuple(content, role, created_by, created_for, time.time()))
         return None
-    
+
+    def update_message_content(self, index, new_content):
+        """
+        Updates the content of a message at the given index.
+        If the index is out of range, it does nothing.
+        """
+        if index < len(self.messages):
+            self.messages[index] = self.messages[index]._replace(content=new_content)
+        return None
+
     def get_messages_for_task(self, task_name):
         return [{'role': m.role, 'content': m.content} for m in self.messages if m.created_for == task_name]
     
