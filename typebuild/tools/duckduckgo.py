@@ -131,12 +131,13 @@ class DuckDuckGo:
         return None
 
 
-def tool_main(search_term, num_results=1, full_text=False, auto_rerun=False):
+def tool_main(key, search_term, num_results=1, full_text=False, auto_rerun=False):
     """
     This tool performs a DuckDukGo search and returns the
     content of the results.  All results are concatenated and returned as one string.
 
     Parameters:
+    - key (str): A unique key for this task, which can be used to update the output of this tool.
     - search_term (str): The search term or search_term to search with.
     - num_results (int): The number of results to return.  Default is 1.
     - full_text (bool): Whether to retrieve the full text of the page. Default is False.
@@ -152,6 +153,8 @@ def tool_main(search_term, num_results=1, full_text=False, auto_rerun=False):
             'content': output,
             'ask_llm': True,
             'task_finished': False,
+            'task_name': st.session_state.current_task,
+            'key': key,
         }
         st.sidebar.warning(res)
         time.sleep(5)

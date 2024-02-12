@@ -253,13 +253,14 @@ class ArxivSearch:
                     self.store_to_db(df_results, project_folder=st.session_state.project_folder, file_name=file_name)
 
 
-def tool_main(search_term, num_results=5, auto_rerun=False):
+def tool_main(key, search_term, task_name=st.session_state.current_task, num_results=5, auto_rerun=False):
     """
     Given the search term, this function will search and fetch results from Arxiv. 
     the results will be saved to disk as a parquet file with the following columns:
     title, author, summary, link, date_of_publication, full_text, search_term, search_date
     
     Parameters:
+        key: A unique key for this task, which can be used to update the output of this tool.
         search_term (str): The search query.
         num_results (int): Maximum number of results to return. Default is 5.
 
@@ -274,13 +275,16 @@ def tool_main(search_term, num_results=5, auto_rerun=False):
     df = arxiv_search.get_results(search_term, max_results=num_results)
     arxiv_search.display_results(df)
     file_name = arxiv_search.store_to_db(df, search_term= search_term)
-
+    
     res_dict = {
         'content': f"The arxiv search results can be found in {file_name} file.  It includes title, summary, author, and full_text columns.",
         'file_name': file_name,
         'ask_llm': True,
         'task_finished': True,
+        'task_name': task_name,
+        'tool_result': True
     }
     st.success(f"Data saved to {file_name}")
+    st.session_state.dynamic_variables[key] = {"file_name": file_name}
 
     return res_dict

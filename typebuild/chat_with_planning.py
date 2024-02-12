@@ -12,8 +12,13 @@
 - [x] Vivek: User should be able to go back to a task anytime.
 - [ ] Vivek: Start task button should not appear after a task is done.
 
-# TODO: Vivek: Self-fixing errors
-- [] When a task is updated, it sends a new instruction to the tool.  But the previous response from the tool is still there, and that's what we display.  How do we change that?
+# TODO: Self-fixing errors
+- [x] When a task is updated, it sends a new instruction to the tool.  But the previous response from the tool is still there, and that's what we display.  How do we change that?
+- [ ] Ranu: Make task name as the key.  See if the agent needs to do it, or if we can do it using code.  
+- [ ] Ranu: Modify all the tools to take the task name as the key.
+- [ ] Ranu: Tools should add functions to dynamic functions where we need to display something. 
+- [ ] Ranu: We will have access to the task name.  Pass this info to the tool whenever we call it in manage_tool_interaction function.  
+
 - [] Record if tool was run, if not run it when the error is fixed
 - [] In case of an error, send back to the previous node or the relevant node to get the input fixed.
 
@@ -550,6 +555,10 @@ def load_templates():
 
 def chat():
 
+
+    from object_management import test
+
+    test()
     init_chat()
     tg = st.session_state.task_graph
     

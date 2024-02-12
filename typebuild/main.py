@@ -75,27 +75,27 @@ if please_stop:
 # menu options down below are a list of lists, 
 # the first element of which is the parent node, the second element is the node name, 
 # the third element is the function name, and the fourth element is the module name (python file name)
-menu_bar_options = [
-    ['HOME', 'Search', 'search_placeholder', 'helpers'], # search_placeholder is a placeholder function because when Search is clicked, it should not do anything and should just show the children of Search
-    ['Search', 'Google Search', 'google_search_interface_for_menu', 'helpers'],
-    ['Search', 'YouTube Search', 'youtube_search_interface_for_menu', 'helpers'],
-    ['Search', 'Arxiv Search', 'arxiv_search_interface_for_menu', 'helpers'],
-    ['HOME','Data','search_placeholder','helpers'],
-    ['Data','Upload Data','data_management_interface','helpers'],
-    ['Data','Upload Documents','data_management_interface','helpers'],
-    # ['Data', 'Select Data', 'data_management_interface', 'helpers'],
-    ['Data','Delete Data','data_management_interface','helpers'],
-    ['Data', 'Data Model', 'data_management_interface', 'helpers'],
-    ['HOME', 'Nodes', 'show_node_properties', 'graphical_menu'],
-    ['HOME','LLM Research','llm_research_interface','helpers'],
-    ]
+# menu_bar_options = [
+#     ['HOME', 'Search', 'search_placeholder', 'helpers'], # search_placeholder is a placeholder function because when Search is clicked, it should not do anything and should just show the children of Search
+#     ['Search', 'Google Search', 'google_search_interface_for_menu', 'helpers'],
+#     ['Search', 'YouTube Search', 'youtube_search_interface_for_menu', 'helpers'],
+#     ['Search', 'Arxiv Search', 'arxiv_search_interface_for_menu', 'helpers'],
+#     ['HOME','Data','search_placeholder','helpers'],
+#     ['Data','Upload Data','data_management_interface','helpers'],
+#     ['Data','Upload Documents','data_management_interface','helpers'],
+#     # ['Data', 'Select Data', 'data_management_interface', 'helpers'],
+#     ['Data','Delete Data','data_management_interface','helpers'],
+#     ['Data', 'Data Model', 'data_management_interface', 'helpers'],
+#     ['HOME', 'Nodes', 'show_node_properties', 'graphical_menu'],
+#     ['HOME','LLM Research','llm_research_interface','helpers'],
+#     ]
 
-if not 'openai_key' in st.session_state:
-    llm_access_settings() # LLM access settings
+# if not 'openai_key' in st.session_state:
+#     llm_access_settings() # LLM access settings
 
-menu.add_edges(menu_bar_options) # add the edges to the menu in the GraphicalMenu class
-menu.create_menu() # create the meu bar
-run_current_functions() # run the current functions in the session state
+# menu.add_edges(menu_bar_options) # add the edges to the menu in the GraphicalMenu class
+# menu.create_menu() # create the meu bar
+# run_current_functions() # run the current functions in the session state
 # st.sidebar.warning(st.session_state.selected_node)
 
 chat() # chat interface

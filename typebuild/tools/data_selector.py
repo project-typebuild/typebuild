@@ -36,15 +36,15 @@ class DataSelectorTool:
         return file_name, input_column
         
         
-def tool_main(auto_rerun=False):
+def tool_main(key, auto_rerun=False):
 
     """
     This tool will help the user select the data file and column name that they want to use for the task.
 
     parameters
     ----------
-    auto_rerun: bool
-        If True, the tool will automatically rerun itself.
+    key: str
+        A unique key for this task, which can be used to update the output of this tool.
     
     returns
     -------
@@ -67,6 +67,8 @@ def tool_main(auto_rerun=False):
             'input_column': input_column,
             'ask_llm': True,
             'task_finished': True,
+            'task_name': st.session_state.current_task,
+            'key': key,
         }
 
         return res_dict

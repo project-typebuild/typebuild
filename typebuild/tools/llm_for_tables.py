@@ -168,12 +168,14 @@ class LLMForTables:
             self._save_data(self.data)
         return None
 
-def tool_main(system_instruction, file_name, input_column, output_column, input_format='row_by_row', auto_rerun=True):
+def tool_main(key, system_instruction, file_name, input_column, output_column, task_name=st.session_state.current_task, input_format='row_by_row', auto_rerun=True):
     """
     This tool will run the LLM on the given data and populate the output column using GPT-3.5-turbo model.
-
+    TODO: TASK NAME HAS TO BE GIVEN IN WHILE CALLING THE UI IN THE FIRST PLACE.  IF WE USE CURRENT TASK, IT WILL OVERWRITE EACH TIME THE TOOL IS RUN.
     parameters:
     ----------
+    key: str
+        A unique key for this task, which can be used to update the output of this tool.
     system_instruction: str
         The system instruction for the LLM.
     file_name: str
@@ -184,6 +186,8 @@ def tool_main(system_instruction, file_name, input_column, output_column, input_
         The name of the output column.
     input_format: str
         The format of the input.  It can be row_by_row or consolidated.
+    task_name: str
+        The name of the task that is running this tool.
     
     returns:    
     --------
@@ -211,5 +215,6 @@ def tool_main(system_instruction, file_name, input_column, output_column, input_
     res_dict = llm_for_tables.run()
     res_dict['ask_llm'] = False
     res_dict['task_finished'] = True
-
+    res_dict['key'] = key
+    res_dict['task_name'] = task_name
     return res_dict

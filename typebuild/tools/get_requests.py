@@ -1,6 +1,6 @@
 import requests
 import time
-
+import streamlit as st
 
 class Requests:
     """
@@ -108,11 +108,28 @@ class Requests:
         return response
 
 
-def tool_main(url):
+def tool_main(key, url):
+    """
+    Given the url, this function sends an HTTP GET request to the url and returns the response content.
+
+    Parameters:
+        url (str): The URL to send the GET request to.
+        key (str): A unique key that can be used to update the task, if needed.
+    """
     
     # Initialize the class
     get_requests = Requests()
 
     response = get_requests.get_request_with_retry_timeout(url)
 
-    return response.content
+    res_dict = {
+        'content': response.content,
+        'task_finished': True,
+        'ask_llm': False,
+        'ask_human': False,
+        'key': key,
+        'task_name': st.session_state.current_task
+        
+    }
+
+    return res_dict

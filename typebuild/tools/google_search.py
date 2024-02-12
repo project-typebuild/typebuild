@@ -137,12 +137,13 @@ class GoogleSearcher:
                 st.write(f"Data saved to {file_name}")
         return None
 
-def tool_main(search_term="", num_results=1):
+def tool_main(key, search_term="", num_results=1):
     """
     This tool performs a Google search and returns the
     content of the results.  All results are concatenated and returned as one string.
 
     Parameters:
+    - key (str): A unique key for this task, which can be used to update the output of this tool.
     - search_term (str): The search term or search_term to search with.
     - num_results (int): The number of results to return.  Default is 1.
     
@@ -152,6 +153,15 @@ def tool_main(search_term="", num_results=1):
     with st.spinner(f"Searching for {search_term}..."):
         google_searcher = GoogleSearcher()
         google_searcher.get_google_search_results(search_term, num_results=num_results)
-        return google_searcher.result_text
+        
+        res_dict = {
+            "content": google_searcher.result_text,
+            "task_finished": False,
+            "ask_llm": True,
+            "key": key,
+            "task_name": st.session_state.current_task,
+        }
+
+        return res_dict
     
 

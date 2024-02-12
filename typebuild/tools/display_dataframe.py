@@ -10,6 +10,7 @@ class Display():
         self.columns = columns
 
     def dataframe(self):
+        print("Invoking dataframe")
         # TODO: How do we display the data as nicely formatted text
         # given that column names can be different in different files?
         # Use an LLM to create the streamlit output?        
@@ -68,11 +69,12 @@ class Display():
 
 
 
-def tool_main(file_name, columns=None, auto_rerun=True):
+def tool_main(key, file_name, columns=[], task_name=st.session_state.current_task, auto_rerun=True):
     """
     Given a file name, this tool will display the dataframe.
 
     Args:
+        key (str): A unique key for this function, which can be used to update the function later.
         file_name (str): The name of the file to display.
         columns (list, optional): The columns to display. If None, all columns will be displayed. Defaults to None.
     Returns:
@@ -81,14 +83,23 @@ def tool_main(file_name, columns=None, auto_rerun=True):
     if "/data/" not in file_name:
         file_name = os.path.join(st.session_state.data_folder, file_name)
 
+    # dynamic_vars = st.session_state.dynamic_variables[dynamic_variable_key]
+    # file_name = dynamic_vars.get('file_name')
+    # columns = dynamic_vars.get('columns', [])
+
     display = Display(file_name=file_name, columns=columns)
 
-    display.dataframe()
+    # display.dataframe()
 
     res_dict = {
         'content': "Here's the table.  Let me know if you want to change anything",
         'task_finished': False,
         'ask_llm': False,
-        'ask_human': True
+        'ask_human': True,
+        'task_name': task_name,
+        'key': key,
+
     }
+
+    st.session_state.dynamic_functions[key] = {"func": display.dataframe}
     return res_dict
