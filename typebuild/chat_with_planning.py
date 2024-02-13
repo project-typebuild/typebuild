@@ -125,7 +125,8 @@ def display_messages(expanded=True):
         else:
             res_dict = {}
             content = msg.get('content', '')
-        
+
+        res_dict['created_by'] = msg.get('created_by', None)
         if content:
             if msg['role'] in ['user', 'assistant']:
 
@@ -360,7 +361,7 @@ def manage_tool_interaction(res_dict, from_llm=False, run_tool=False):
 
     # Get the arguments needed by the function
     tool_args = inspect.getfullargspec(tool_function).args
-
+    st.success(tool_args)
     # Sometimes the required arguments are not within the kwargs key
     for a in tool_args:
         if a not in args_for_tool:
