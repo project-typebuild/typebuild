@@ -26,8 +26,7 @@ def add_default_session_states():
         "developer_options": False,
         "activeStep": "Home",
         "dynamic_functions": {},
-        "dynamic_variables": {},
-        
+        "dynamic_variables": {},        
         }
 
     for key in ss_vars:
