@@ -355,6 +355,8 @@ def manage_tool_interaction(res_dict, from_llm=False, run_tool=False):
 
     # Get the keyword arguments for the function by the LLM
     args_for_tool = res_dict.get('kwargs', res_dict)
+    args_for_tool['key'] = res_dict['created_by']
+    args_for_tool['task_name'] = res_dict['created_by']
 
     tool_module = importlib.import_module(f'tools.{tool_name}')
     tool_function = getattr(tool_module, 'tool_main')
