@@ -90,8 +90,8 @@ if please_stop:
 #     ['HOME','LLM Research','llm_research_interface','helpers'],
 #     ]
 
-# if not 'openai_key' in st.session_state:
-#     llm_access_settings() # LLM access settings
+if not 'openai_key' in st.session_state:
+    llm_access_settings() # LLM access settings
 
 # menu.add_edges(menu_bar_options) # add the edges to the menu in the GraphicalMenu class
 # menu.create_menu() # create the meu bar

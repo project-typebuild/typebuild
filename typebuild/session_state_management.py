@@ -18,6 +18,7 @@ def add_default_session_states():
         'user_folder': os.path.join(os.path.expanduser("~"), '.typebuild', 'users', st.session_state.token),
         'project_folder': os.path.join(os.path.expanduser("~"), '.typebuild', 'users', st.session_state.token),
         'data_folder': os.path.join(os.path.expanduser("~"), '.typebuild', 'users', st.session_state.token, 'data'),
+        'audio_folder': os.path.join(os.path.expanduser("~"), '.typebuild', 'users', st.session_state.token, 'audio'),
         'secrets_file_path' : os.path.join(os.path.expanduser("~"), '.typebuild', 'users', st.session_state.token, 'secrets.toml'),
         'profile_dict_path': os.path.join(os.path.expanduser("~"), '.typebuild', 'users', 'admin', 'profile_dict.pk'),
         'should_rerun': False,
@@ -28,6 +29,12 @@ def add_default_session_states():
         "dynamic_functions": {},
         "dynamic_variables": {},        
         }
+
+    # check if data_folder and audio_folder exists
+    if not os.path.exists(ss_vars['data_folder']):
+        os.makedirs(ss_vars['data_folder'])
+    if not os.path.exists(ss_vars['audio_folder']):
+        os.makedirs(ss_vars['audio_folder'])
 
     for key in ss_vars:
         if key not in st.session_state:
