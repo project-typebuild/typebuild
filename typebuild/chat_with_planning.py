@@ -12,6 +12,10 @@
 - [x] Vivek: User should be able to go back to a task anytime.
 - [ ] Vivek: Start task button should not appear after a task is done.
 
+# TODO: Delete things
+- [ ] Ranu: User should be able to delete UI manually.  When they do it, we have to delete the corresponding message & task.
+- [ ] Ranu: User should be able to delete a task.  When they do it, we have to delete the corresponding message & task.  They should be able to do it via chat.
+
 # TODO: Self-fixing errors
 - [x] When a task is updated, it sends a new instruction to the tool.  But the previous response from the tool is still there, and that's what we display.  How do we change that?
 - [ ] Ranu: Make task name as the key.  See if the agent needs to do it, or if we can do it using code.  
@@ -184,13 +188,14 @@ def manage_llm_interaction():
 
     if current_task == 'planning':
         system_instruction = get_planner_instructions()
-        messages = tg.messages.get_all_messages()
+        messages = tg.messages.get_all_messages(add_task_name=False)
     
     # If there is a next task
     else:
         system_instruction = task_object.get_system_instruction()
         messages = tg.get_messages_for_task_family(st.session_state.current_task)
-
+    
+    
         if 'default_model' in task_object.__dict__:
             model = task_object.default_model
 
@@ -363,7 +368,6 @@ def manage_tool_interaction(res_dict, from_llm=False, run_tool=False):
 
     # Get the arguments needed by the function
     tool_args = inspect.getfullargspec(tool_function).args
-    st.success(tool_args)
     # Sometimes the required arguments are not within the kwargs key
     for a in tool_args:
         if a not in args_for_tool:
@@ -446,8 +450,12 @@ def init_chat():
         st.session_state.task_graph = TaskGraph()
         st.session_state.current_task = 'planning'
         st.session_state.ask_llm = False
+        # Make dynamic functions and dynamic variables in session state empty dicts
+        st.session_state.dynamic_functions = {}
+        st.session_state.dynamic_variables = {}
         if 'task_for_tool' in st.session_state:
             del st.session_state['task_for_tool']
+        st.rerun()
     if st.sidebar.button("Stop LLM"):
         st.session_state.ask_llm = False
     if 'task_graph' not in st.session_state:
@@ -570,17 +578,32 @@ def chat():
     # If yes, run it before we get to the ask llm loop.
     if 'task_for_tool' in st.session_state:
         res_dict = st.session_state.task_for_tool
+        res_dict['created_by'] = st.session_state.current_task
         with st.spinner("Running tool..."):
             manage_tool_interaction(res_dict, from_llm=True, run_tool=True)
 
     # Show the system instruction for the current task if it exists
-    if st.session_state.current_task == 'planning':
-        si = st.session_state.planning.get_system_instruction()
+    # if st.session_state.current_task == 'planning':
+        # si = st.session_state.planning.get_system_instruction()
         # st.sidebar.warning(si)
 
     if st.session_state.ask_llm:
         res = manage_llm_interaction()
         res_dict = json.loads(res)
+        
+        # If there is 'message_to_planner' key, it means that an agent is 
+        # trying to send a message to the planner.
+        # Set ask_llm to True and current task to planning.
+        if 'message_to_planner' in res_dict:
+            st.session_state.task_graph.messages.set_message(
+                role='user', 
+                content=res_dict['message_to_planner'], 
+                created_by=st.session_state.current_task, 
+                created_for="planning"
+                )
+            st.session_state.ask_llm = True
+            st.session_state.current_task = 'planning'
+            st.rerun()
         # Find if LLM should be invoked automatically
         # and next action if task is finished
         try:

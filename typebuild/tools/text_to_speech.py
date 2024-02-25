@@ -82,7 +82,7 @@ def extract_text_from_parquet(file_name, column_name):
     text = "\n".join(df[column_name].dropna().to_list())
     return text
 
-def tool_main(file_name=None, column_name=None, text=None, auto_rerun=True):
+def tool_main(key, file_name=None, column_name=None, text=None, auto_rerun=True):
     """
     This tool converts the given text to speech, saves it to the output file, and plays it.
     It requires source text which can either be a column in a parquet file or a text string.
@@ -114,8 +114,8 @@ def tool_main(file_name=None, column_name=None, text=None, auto_rerun=True):
     # Get the text
     if text is None:
         text = extract_text_from_parquet(file_name, column_name)
-    if st.checkbox("Show text being converted", key=f"{file_name}-{column_name}", value=False, help="Check to show the text being converted to speech."):
-        st.markdown(text)
+    # if st.checkbox("Show text being converted", key=f"{key}{file_name}-{column_name}", value=False, help="Check to show the text being converted to speech."):
+    #     st.markdown(text)
     # File name is hash of text without a minus + .mp3 
     file_name = column_name.strip() + ".mp3"
     # Remove minus sign

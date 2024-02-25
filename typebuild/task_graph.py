@@ -233,7 +233,7 @@ class TaskGraph:
         return sequence
 
 
-    def set_following_tasks_as_incomplete(self, task_name):
+    def update_dependent_tasks(self, task_name):
         """
         Sets all the following tasks as incomplete.
         """

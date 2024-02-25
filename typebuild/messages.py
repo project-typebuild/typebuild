@@ -37,8 +37,11 @@ class Messages:
     def get_messages_by_task(self, task_name):
         return [m for m in self.messages if m.created_by == task_name]
     
-    def get_all_messages(self):
-        return [{'role': m.role, 'content': m.content, 'created_by': m.created_by} for m in self.messages]
+    def get_all_messages(self, add_task_name=True):
+        if add_task_name:
+            return [{'role': m.role, 'content': m.content, 'created_by': m.created_by} for m in self.messages]
+        else:
+            return [{'role': m.role, 'content': m.content} for m in self.messages]
     
     def export_all_messages(self):
         return [m._asdict() for m in self.messages]

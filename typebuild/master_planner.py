@@ -82,6 +82,16 @@ Use this format and return a valid json:
 }
 """
 
+# Instruction to be added to agents on getting back to planning.
+back_to_planning_instructions = """As you work, if you do not have required details, or if the user asked you about a task that you 
+are not working on, send a message to the master planner, who will help you with the next steps.  The message should have enough
+details for the planner to understand the situation and help you with the next steps.  Use the format below to send a message to the planner:
+
+{
+"message_to_planner": "Your message to the master planner"
+}
+
+"""
 
 def get_task_graph_details():
     """

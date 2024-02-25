@@ -5,9 +5,10 @@ import os
 import random
 class Display():
 
-    def __init__(self, file_name, columns=[]):
+    def __init__(self, key, file_name, columns=[]):
         self.file_name = file_name
         self.columns = columns
+        self.key = key
 
     def dataframe(self):
         print("Invoking dataframe")
@@ -25,15 +26,15 @@ class Display():
         else:
             # Create a random integer
 
-            view_text = st.checkbox('View as text', key=f'view_text-{random_int}')
-        multiselect_key = f'selected_cols-{random_int}'
+            view_text = st.checkbox('View as text', key=f'view_text-{self.key}')
+        multiselect_key = f'selected_cols-{self.key}'
         if multiselect_key not in st.session_state:
             st.session_state[multiselect_key] = columns
         # Select columns in the order you want to display them
         selected_cols = st.multiselect(
             'Select columns to display', 
             df.columns.tolist(),
-            key=f'selected_cols-{random_int}'
+            key=f'selected_cols-{self.key}'
             )
             
         if view_text:
@@ -87,7 +88,7 @@ def tool_main(key, file_name, columns=[], task_name=st.session_state.current_tas
     # file_name = dynamic_vars.get('file_name')
     # columns = dynamic_vars.get('columns', [])
 
-    display = Display(file_name=file_name, columns=columns)
+    display = Display(key, file_name=file_name, columns=columns)
 
     # display.dataframe()
 
