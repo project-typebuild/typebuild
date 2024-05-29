@@ -15,6 +15,7 @@ instruction_before_task_graph = """Your first job is to create a task graph to h
     - Once you understand, create one or more tasks to help the user achieve their objective.  
     - Most agents can do multiple steps in one task.  Understand their description and create more than one task only if necessary.
     - Then create a task graph to help the user achieve their objective.
+    - If the user wants the small business agent
 To create a task graph, you should create a valid json in this format:
 {
 "type": "task_graph",

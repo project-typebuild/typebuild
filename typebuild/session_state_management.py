@@ -5,6 +5,7 @@ def add_default_session_states():
     # Add a dict with session state variables
     ss_vars = {
         'messages': [],
+        'conversations': [],
         'ss_num': 0,
         'menu_id': 0,
         'developer_options': False,

@@ -71,31 +71,6 @@ class Extractors:
             return {}
 
 
-    def extract_json_from_response(self, response):
-        """
-        Returns the JSON from the response from LLM.
-        In the prompt to JSON, we have asked the LLM to return the JSON inside triple backticks.
-
-        Args:
-        - response (str): The response from LLM
-
-        Returns:
-        - json_dict (dict): A dictionary containing the parsed JSON
-        """
-
-        pattern = r"```json([\s\S]*?)```"
-        matches = re.findall(pattern, response)
-        if len(matches) > 0:
-            json_str = '\n'.join(matches)
-            try:
-                json_dict = json.loads(json_str)
-                return json_dict
-            except json.JSONDecodeError:
-                # Handle JSON decoding error
-                return None
-        else:
-            return None
-
     def extract_list_of_dicts_from_string(self, response):
         """
         Extracts a list of dictionaries from a string.
@@ -319,3 +294,31 @@ class Extractors:
             file = os.path.join(os.path.dirname(__file__), 'tools', f"{tool}.py")
             tools[tool] = self.get_docstring_of_tool(tool)
         return tools
+
+    def extract_json_from_text(self, text):
+        # Regular expression to find JSON-like structures, possibly enclosed in triple backticks
+        # This pattern looks for an optional triple backtick, followed by optional non-critical characters (like the word "json"),
+        # followed by either a curly brace (indicating a JSON object) or a square bracket (indicating a JSON array),
+        # and then continues until it finds a closing brace or bracket, potentially followed by triple backticks.
+        json_patterns = [
+            r"```.*?({.*?})```",  # Pattern for JSON objects within triple backticks
+            r"```.*?(\[.*?\])```",  # Pattern for JSON arrays within triple backticks
+            r"({.*})",  # Pattern for JSON objects not within backticks
+            r"(\[.*\])"  # Pattern for JSON arrays not within backticks
+        ]
+
+        extracted_jsons = []
+
+        for pattern in json_patterns:
+            potential_jsons = re.findall(pattern, text, re.DOTALL)
+            for json_str in potential_jsons:
+                try:
+                    # Attempt to parse the string as JSON
+                    parsed_json = json.loads(json_str)
+                    extracted_jsons.append(parsed_json)
+                except json.JSONDecodeError:
+                    # If parsing fails, it's not valid JSON; ignore it
+                    continue
+
+        return extracted_jsons
+

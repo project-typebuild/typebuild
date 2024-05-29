@@ -13,10 +13,10 @@ class Messages:
     def __init__(self, task_name):
         self.task_name = task_name
         self.messages = []
-        self.message_tuple = namedtuple('message_tuple', ['content', 'role', 'created_by', 'created_for', 'ts'])
+        self.message_tuple = namedtuple('message_tuple', ['content', 'tool_calls', 'role', 'created_by', 'created_for', 'ts'])
 
-    def set_message(self, content, role, created_by, created_for):
-        self.messages.append(self.message_tuple(content, role, created_by, created_for, time.time()))
+    def set_message(self, content, role, created_by, created_for, tool_calls=None):
+        self.messages.append(self.message_tuple(content, tool_calls, role, created_by, created_for, time.time()))
         return None
 
     def update_message_content(self, index, new_content):
@@ -39,7 +39,7 @@ class Messages:
     
     def get_all_messages(self, add_task_name=True):
         if add_task_name:
-            return [{'role': m.role, 'content': m.content, 'created_by': m.created_by} for m in self.messages]
+            return [{'role': m.role, 'content': m.content, 'tool_calls': m.tool_calls, 'created_by': m.created_by} for m in self.messages]
         else:
             return [{'role': m.role, 'content': m.content} for m in self.messages]
     

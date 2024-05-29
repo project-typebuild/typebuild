@@ -17,7 +17,8 @@ from helpers import starter_code
 starter_code()
 
 # from chat import chat
-from chat_with_planning import chat
+# from chat_with_planning import chat
+from simple_cf import chat
 from graphical_menu import GraphicalMenu
 from tb_settings import settings_main, llm_access_settings
 from function_management import run_current_functions
@@ -30,6 +31,11 @@ if 'menu' not in st.session_state:
 else:
     menu = st.session_state['menu']
     settings_main()
+
+# Show tool_result in session state, if it exists
+if 'tool_result' in st.session_state:
+    st.header("Tool Result")
+    st.write(st.session_state.tool_result)
 
 # If latest request or response are there, show checkbox to show them
 please_stop = False
@@ -69,26 +75,6 @@ with st.sidebar.expander("Admin"):
             st.success(st.session_state.agent_messages)
 if please_stop:
     st.stop()
-# test_main()
-
-
-# menu options down below are a list of lists, 
-# the first element of which is the parent node, the second element is the node name, 
-# the third element is the function name, and the fourth element is the module name (python file name)
-# menu_bar_options = [
-#     ['HOME', 'Search', 'search_placeholder', 'helpers'], # search_placeholder is a placeholder function because when Search is clicked, it should not do anything and should just show the children of Search
-#     ['Search', 'Google Search', 'google_search_interface_for_menu', 'helpers'],
-#     ['Search', 'YouTube Search', 'youtube_search_interface_for_menu', 'helpers'],
-#     ['Search', 'Arxiv Search', 'arxiv_search_interface_for_menu', 'helpers'],
-#     ['HOME','Data','search_placeholder','helpers'],
-#     ['Data','Upload Data','data_management_interface','helpers'],
-#     ['Data','Upload Documents','data_management_interface','helpers'],
-#     # ['Data', 'Select Data', 'data_management_interface', 'helpers'],
-#     ['Data','Delete Data','data_management_interface','helpers'],
-#     ['Data', 'Data Model', 'data_management_interface', 'helpers'],
-#     ['HOME', 'Nodes', 'show_node_properties', 'graphical_menu'],
-#     ['HOME','LLM Research','llm_research_interface','helpers'],
-#     ]
 
 if not 'openai_key' in st.session_state:
     llm_access_settings() # LLM access settings
@@ -106,5 +92,4 @@ chat() # chat interface
 # for some reason.  Without it, chat is not opening menus. 
 from tools.navigator import get_available_destinations
 nodes = get_available_destinations()
-# st.json(f'{nodes}')
 

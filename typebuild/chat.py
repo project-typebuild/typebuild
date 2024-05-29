@@ -38,17 +38,6 @@ def display_messages(messages, expanded=True):
     return None
 
 
-
-def test_main():
-    # Add a test menu
-    # Get menu object
-    menu = st.session_state.menu
-    test_menu_items = [
-        ['HOME', 'Chat', 'chat', 'test']
-    ]    
-    menu.add_edges(test_menu_items)
-    return None
-
 def add_agent_manager_to_session_state():
     if 'agent_manager' not in st.session_state:
         # Get all the agents from the agent_definitions folder, in os independent way

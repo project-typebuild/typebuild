@@ -1,0 +1,109 @@
+[
+  {
+    "type": "function",
+    "name": "endpoint_get_data",
+    "description": "Given a python file name, this runs the report and returns the data.  Also provides available_data that could be run",
+    "parameters": {
+      "type": "object",
+      "required": [],
+      "properties": {
+        "file_name": {
+          "description": "Name of the python file that needs to be run.  Name of the file should be exactly as in available_data",
+          "type": "string"
+        },
+        "available_reports": {
+          "description": "Returns a list of reports and their descriptions.  Reports can combine one or more available_data with required transformations.",
+          "type": "string"
+        },
+        "raw_data_schema": {
+          "description": "Get a list of data file names and their schema.  All files are a folder called data that is in the app root",
+          "type": "string"
+        },
+        "get_current_time": {
+          "description": "Returns the current time in pacific time",
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "name": "endpoint_transactions",
+    "description": "Create or update transactions with valid schema",
+    "parameters": {
+      "type": "object",
+      "required": ["data", "table_name"],
+      "properties": {
+        "data": {
+          "description": "Create or update data with valid schema to this endpoint.  No code.  Just data.  To update data, the id column should be present in the data.  If not, it will create a new row.",
+          "type": "string"
+        },
+        "table_name": {
+          "description": "What table are you posting to (e.g. tasks, timer, etc)",
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "name": "endpoint_funcs",
+    "description": "Use this endpoint to send functions to be executed on the server.  Requires code, description, and file_name",
+    "parameters": {
+      "type": "object",
+      "required": ["code", "description", "file_name"],
+      "properties": {
+        "code": {
+          "description": "Python code with a function called main that takes no arguments and returns the desired result as a pandas datafarme.  It should only use the pandas library, nothing else.",
+          "type": "string"
+        },
+        "description": {
+          "description": "Describe what the code returns in detail.",
+          "type": "string"
+        },
+        "file_name": {
+          "description": "File name ending in .py where the code will be saved.\n        If you are updating code, it has to be exactly the file_name that is being replaced.  \n        Do not create new files when correcting code.  Use the same file_name.\n        For a new report, make sure that the file_name is not already available in the available_data",
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "name": "endpoint_delete_funcs",
+    "description": "Delete a function based on user request or due to errors",
+    "parameters": {
+      "type": "object",
+      "required": ["file_name"],
+      "properties": {
+        "file_name": {
+          "description": "Name of the file that needs to be deleted",
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "name": "agent_code_creator",
+    "description": "This uses a high quality LLM to create code.  Requires a detailed description of what you want the code to do.",
+    "parameters": {
+      "type": "object",
+      "required": ["objective", "file_name", "description"],
+      "properties": {
+        "objective": {
+          "description": "What is the objective that the code is supposed to achieve?  Be as detailed as possible.  The more detailed the better the code will be.",
+          "type": "string"
+        },
+        "file_name": {
+          "description": "Name of the file that will be created.  It should end in .py",
+          "type": "string"
+        },
+        "description": {
+          "description": "Describe what the code does in detail.",
+          "type": "string"
+        }
+      }
+    }
+  }
+]

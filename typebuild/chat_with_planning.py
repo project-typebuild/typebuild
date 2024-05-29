@@ -1,6 +1,7 @@
 """
 # Think about things
 - [ ] Master planner should not be the default.  Let the user have a conversation naturally.  If there's a project, then we can call the master planner. 
+- [ ] Based on the template, I could set the agent directly.  Try this.
 
 # Tasks to do
 ***Current objective:***
@@ -112,18 +113,22 @@ def display_messages(expanded=True):
         if st.session_state.developer_options:
             st.code(msg)
         content = ""
+        if msg.get('content', None) is None:
+            pass
         # Some tools return a key called res_dict.  Parse it here.
-        if 'res_dict' in msg:
+        elif 'res_dict' in msg:
             res_dict = msg['res_dict']
             content = res_dict.get('content', res_dict.get('user_message', ''))
         
         # If content is a dict, look for user message
         elif isinstance(msg.get('content', ''), dict):
+            
             res_dict = msg['content']
             content = res_dict.get('content', res_dict.get('user_message', ''))
         # LLMs return a dict, but the content is typically json
         # Parse the content key, which is the json.        
         elif msg.get('content', '').strip().startswith('{'):
+            st.code(msg['content'])
             res_dict = json.loads(msg['content'])
             content = res_dict.get('content', res_dict.get('user_message', ''))
         else:
@@ -145,9 +150,14 @@ def display_messages(expanded=True):
         
         if "tool_name" in res_dict:
             # st.success(f"Tool name: {res_dict['tool_name']}")
-            with st.spinner("Running tool..."):
+            manage_tool_interaction(res_dict, from_llm=False)
+
+        tool_calls = msg.get('tool_calls', None)
+        if tool_calls:
+            for res_dict in tool_calls:
+                # Add created by
+                res_dict['created_by'] = msg.get('created_by', None)
                 manage_tool_interaction(res_dict, from_llm=False)
-        
         
     return None
 
@@ -199,11 +209,18 @@ def manage_llm_interaction():
         if 'default_model' in task_object.__dict__:
             model = task_object.default_model
 
-    
+    # Remove messages with no content, which happens with function calling
+    messages = [m for m in messages if m.get('content', None)]
+
+    # Open tools
+    with open('tools/tools.json', 'r') as f:
+        tools = json.load(f)
     messages.insert(0, {"role": "system", "content": system_instruction})
-    res = get_llm_output(messages, model=model)
-    tg.messages.set_message(role="assistant", content=res, created_by=st.session_state.current_task, created_for=st.session_state.current_task)
-    return res
+
+    res, tool_calls = get_llm_output(messages, model=model, functions=tools)
+    
+    tg.messages.set_message(role="assistant", content=res, tool_calls=tool_calls, created_by=st.session_state.current_task, created_for=st.session_state.current_task)
+    return res, tool_calls
 
 
 def set_next_actions(res_dict):
@@ -239,8 +256,6 @@ def loop_through_message_to_update_task():
     Loop through the messages to see if any task needs to be updated.
     If yes, update existing task, and mark it as updated.
     """
-    
-    
     tg = st.session_state.task_graph
     messages = tg.messages.get_all_messages()
     
@@ -248,14 +263,15 @@ def loop_through_message_to_update_task():
         # Get just the content key and load it
         # TODO: I have to look for update task in the content.
         content = msg.get('content', {})
+        if content is None:
+            continue
 
         if 'update_task' in content:
             # If the key 'update_task' is there, it must contain a dict.
             # Convert content to dict if it is a string
             if isinstance(content, str):
                 content = json.loads(content)
-            st.snow()
-            time.sleep(3)
+            
             update_existing_task(content)
             # Mark the message as updated
             # Take update task out of the message and make it updated task
@@ -263,7 +279,6 @@ def loop_through_message_to_update_task():
             content['updated_task'] = updated_task
             tg.messages.update_message_content(i, content)
     return None
-
 
 def update_existing_task(res_dict):
     """
@@ -291,8 +306,7 @@ def update_existing_task(res_dict):
     if update_dependent_tasks:
         tg.update_dependent_tasks(task_name)
     st.success(f"Updated {task_name}")
-    st.balloons()
-    time.sleep(3)
+    
 
 
     # Now set the current task to task graph, not planning
@@ -338,7 +352,6 @@ def check_for_auto_rerun(func):
 
     # Check if the function has an auto_rerun argument
     return args_and_defaults.get('auto_rerun', False)
-
  
 
 def manage_tool_interaction(res_dict, from_llm=False, run_tool=False):
@@ -360,6 +373,9 @@ def manage_tool_interaction(res_dict, from_llm=False, run_tool=False):
 
     # Get the keyword arguments for the function by the LLM
     args_for_tool = res_dict.get('kwargs', res_dict)
+    # If there is a key called 'arguments', add that to the args_for_tool
+    if 'arguments' in res_dict:
+        args_for_tool.update(res_dict['arguments'])
     args_for_tool['key'] = res_dict['created_by']
     args_for_tool['task_name'] = res_dict['created_by']
 
@@ -368,6 +384,8 @@ def manage_tool_interaction(res_dict, from_llm=False, run_tool=False):
 
     # Get the arguments needed by the function
     tool_args = inspect.getfullargspec(tool_function).args
+    st.warning(f"These are the tool args: {tool_args}")
+    
     # Sometimes the required arguments are not within the kwargs key
     for a in tool_args:
         if a not in args_for_tool:
@@ -377,6 +395,10 @@ def manage_tool_interaction(res_dict, from_llm=False, run_tool=False):
     # Make sure the keyword args are only the ones needed by the tool
     kwargs = {k: v for k, v in args_for_tool.items() if k in tool_args}
     
+    # If the tool_args contains kwargs, put all the other arguments in kwargs
+    if 'kwargs' in tool_args and 'kwargs' not in args_for_tool:
+        kwargs['kwargs'] = {k: v for k, v in args_for_tool.items() if k not in tool_args}
+        st.info(f"Adding kwargs {kwargs['kwargs']} to the tool args.")
     if not run_tool:
         # When the LLM creates a tool, it will create a 'task_for_tool' key in the session state.
         # If this key exists, it means that the tool has not been run yet.
@@ -394,9 +416,10 @@ def manage_tool_interaction(res_dict, from_llm=False, run_tool=False):
         try:
             # Show the args being sent to the tool
             if st.session_state.developer_options:
-                st.code(f"Args for tools: {args_for_tool}")
-
-            tool_result = tool_function(**kwargs)
+                st.code(f"Args for the tool {tool_name}:")
+                st.json(kwargs)
+            with st.spinner(f"Running {tool_name}..."):
+                tool_result = tool_function(**kwargs)
             
             # When we get the tool result, delete task for tool in session state
             if 'task_for_tool' in st.session_state:
@@ -560,6 +583,12 @@ def load_templates():
         for template_name in template_names:
             template = templates[template_name]
             tg.templates[template_name] = template
+            # If template_name is small_business, make that the current task.
+            if template_name == 'small_business_assistant':
+                st.session_state.current_task = 'small_business'
+                st.success("Set current task to small_business.")
+                
+                
         st.success("Loaded the template.  You can start typing below now.")
     
     return None
@@ -577,9 +606,11 @@ def chat():
     # Check if any task has been allocated for a tool.
     # If yes, run it before we get to the ask llm loop.
     if 'task_for_tool' in st.session_state:
-        res_dict = st.session_state.task_for_tool
-        res_dict['created_by'] = st.session_state.current_task
-        with st.spinner("Running tool..."):
+        tasks = st.session_state.task_for_tool
+        if not isinstance(tasks, list):
+            tasks = [tasks]
+        for res_dict in tasks:
+            res_dict['created_by'] = st.session_state.current_task
             manage_tool_interaction(res_dict, from_llm=True, run_tool=True)
 
     # Show the system instruction for the current task if it exists
@@ -588,8 +619,13 @@ def chat():
         # st.sidebar.warning(si)
 
     if st.session_state.ask_llm:
-        res = manage_llm_interaction()
-        res_dict = json.loads(res)
+        res, tool_calls = manage_llm_interaction()
+        
+        if res:
+            res_dict = json.loads(res)
+        else:
+            res_dict = {}
+    
         
         # If there is 'message_to_planner' key, it means that an agent is 
         # trying to send a message to the planner.
@@ -620,6 +656,10 @@ def chat():
 
         if 'tool_name' in res_dict:
             st.session_state.task_for_tool = res_dict
+        
+        # If there is a tool_call, add that to the task_for_tool
+        if tool_calls:
+            st.session_state.task_for_tool = tool_calls
 
         # Save the graph to file, if it has a name
         # TODO: Make sure that we don't create a name that overwrites an existing one.

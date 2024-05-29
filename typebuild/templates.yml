@@ -31,3 +31,13 @@ text_to_speech:
   template: |
     The planner should find out what text the user wants to convert to speech.  Create the following tasks based on the need:
     - Create a child task with text_to_speech_agent and provide it with a file and column name as input.
+
+create_ui:
+  description: Create a UI for the user based on the given need
+  template: |
+    If the user mentions that they need a UI, create one task for the ui_builder agent.  The agent will ask the user for more details and then create a UI based on the user's requirements.
+
+small_business_assistant:
+  description: Assistance with small business needs such as invoices, estimates, timesheets, and other small business functions.
+  template: |
+    Create one task alone with the small_business agent.  The agent will ask the user for more details and then provide the user with the required information.

@@ -1,0 +1,91 @@
+[
+    {
+      "type": "function",
+      "name": "endpoint_get_data",
+      "description": "Given a python file name, this runs the report and returns the data.  Also provides available_data that could be run",
+      "parameters": {
+        "type": "object",
+        "required": [],
+        "properties": {
+          "file_name": {
+            "description": "Name of the python file that needs to be run.  Name of the file should be exactly as in available_data",
+            "type": "string"
+          },
+          "available_reports": {
+            "description": "Returns a list of reports and their descriptions.  Reports can combine one or more available_data with required transformations.",
+            "type": "string"
+          },
+          "raw_data_schema": {
+            "description": "Get a list of data file names and their schema.  All files are a folder called data that is in the app root",
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "name": "endpoint_transactions",
+      "description": "Get schemas requred for transactions, and create transactions with valid schema",
+      "parameters": {
+        "type": "object",
+        "required": [
+          "post_transaction",
+          "table_name"
+        ],
+        "properties": {
+          "post_transaction": {
+            "description": "Post any transaction with valid schema to this endpoint.  No code.  Just data",
+            "type": "string"
+          },
+          "table_name": {
+            "description": "What table are you posting to (e.g. customer, invoice, etc)",
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "name": "endpoint_funcs",
+      "description": "Use this endpoint to send functions to be executed on the server.  Requires code, description, and file_name",
+      "parameters": {
+        "type": "object",
+        "required": [
+          "code",
+          "description",
+          "file_name"
+        ],
+        "properties": {
+          "code": {
+            "description": "Python code with a function called main that takes no arguments and returns the desired result as a pandas datafarme.  It should only use the pandas library, nothing else.",
+            "type": "string"
+          },
+          "description": {
+            "description": "Describe what the code returns in detail.",
+            "type": "string"
+          },
+          "file_name": {
+            "description": "File name ending in .py where the code will be saved.\n        If you are updating code, it has to be exactly the file_name that is being replaced.  \n        Do not create new files when correcting code.  Use the same file_name.\n        For a new report, make sure that the file_name is not already available in the available_data",
+            "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "name": "endpoint_delete_funcs",
+      "description": "Delete a function based on user request or due to errors",
+      "parameters": {
+        "type": "object",
+        "required": [
+          "file_name"
+        ],
+        "properties": {
+          "file_name": {
+            "description": "Name of the file that needs to be deleted",
+            "type": "string"
+          }
+        }
+      }
+    }
+  ]

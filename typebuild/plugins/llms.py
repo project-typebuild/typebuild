@@ -1,5 +1,6 @@
 import os
 import re
+import time
 import streamlit as st
 from openai import OpenAI
 from anthropic import Anthropic, HUMAN_PROMPT, AI_PROMPT
@@ -37,12 +38,13 @@ def last_few_messages(messages):
     last_messages.extend(system_messages)
     # Get the last 7 user or assistant messages
     user_assistant_messages = [i for i in messages if i['role'] in ['user', 'assistant']]
-    last_messages.extend(user_assistant_messages[-7:])
+    last_messages.extend(user_assistant_messages[-20:])
     return last_messages
 
-def get_llm_output(messages, max_tokens=2500, temperature=0.4, model='gpt-4', functions=[]):
+def get_llm_output(messages, max_tokens=2500, temperature=0.4, model='gpt-4', functions=[], json_mode=False):
 
     """
+
     This function retrieves the output from the Language Model (LLM) based on the given messages.
 
     Args:
@@ -73,15 +75,19 @@ def get_llm_output(messages, max_tokens=2500, temperature=0.4, model='gpt-4', fu
     # st.session_state.all_messages.extend(messages)
     st.session_state.last_request = messages
     typebuild_root = st.session_state.typebuild_root
+
+    # Make default tool calls as None
+    tool_calls = None
+    # TODO: ADD JSON MODEL IN CUSTOM LLM
     if os.path.exists(os.path.join(typebuild_root, 'custom_llm.py')):
         from custom_llm import custom_llm_output
-
+        # TODO: ADD TOOL CALLS
         content = custom_llm_output(messages, max_tokens=max_tokens, temperature=temperature, model=model, functions=functions)
     # If claude is requested and available, use claude
     elif model == 'claude-2' and 'claude_key' in st.session_state:
         content = get_claude_response(messages, max_tokens=max_tokens)
     else:
-        content = get_openai_output(messages, max_tokens=max_tokens, temperature=temperature, model=model, functions=functions)
+        content, tool_calls = get_openai_output(messages, max_tokens=max_tokens, temperature=temperature, model=model, functions=functions, json_mode=json_mode)
         # content = msg.get('content', None)
         # if 'function_call' in msg:
         #     func_call = msg.get('function_call', None)
@@ -95,24 +101,15 @@ def get_llm_output(messages, max_tokens=2500, temperature=0.4, model='gpt-4', fu
     # We can get back code or requirements in multiple forms
     # Look for each form and extract the code or requirements
 
-    # Recent GPT models return function_call as a separate json object
-    # Look for that first.
-    # If there are triple backticks, we expect code    
-    extractors = Extractors()
-    if '```' in str(content) or '|||' in str(content):
-        # NOTE: THERE IS AN ASSUMPTION THAT WE CAN'T GET BOTH CODE AND REQUIREMENTS
-        extracted, function_name = extractors.extract_func_call_info(content)
-        func_call = {'name': function_name, 'arguments': {'content':extracted}}
-        st.session_state.last_function_call = func_call
 
     import time
     st.success(f"Response from LLM: {content}")
     st.session_state.all_messages.append({'role': 'assistant', 'content': content})
     # st.balloons()
-    return content
+    return content, tool_calls
 
 
-def get_openai_output(messages, max_tokens=3000, temperature=0.4, model='gpt-4', functions=[]):
+def get_openai_output(messages, max_tokens=3000, temperature=0.4, model='gpt-4', functions=[], json_mode=False):
     """
     Gets the output from GPT models. default is gpt-4. 
 
@@ -142,22 +139,48 @@ def get_openai_output(messages, max_tokens=3000, temperature=0.4, model='gpt-4',
     }
     if functions:
         params['functions'] = functions
-    
-    # If the word "json" is found in the content, ask for a json object as response
-    json_found = False
-    for i in messages:
-        if "json" in i['content'].lower():
-            json_found = True
-            break
-    if json_found:
+
+    if not json_mode:
+        # Look for the word "json" in the messages
+        for i in messages:
+            if "json" in i['content'].lower():
+                json_mode = True
+                break
+    if json_mode:
         params['response_format'] = {"type": "json_object"}
 
     response = client.chat.completions.create(**params)
-    msg = response.choices[0].message.content
     
-    return msg
+    msg = response.choices[0].message.content
+    tool_calls = response.choices[0].message.function_call
+    # If tool_calls is not a list, make it a list
+    # This will allow us to make multiple tools calls in one go, if needed
+    
+    # We are assuming one call at a time
+    st.header("Tool calls")
+    st.write(tool_calls)
+    time.sleep(2)
+    tool_call_list = []
+    if tool_calls:
+        if not isinstance(tool_calls, list):
+            tool_calls = [tool_calls]
+        for t in tool_calls:
+            tool_call = {}
+            name = t.name
+            arguments = json.loads(t.arguments)
+            tool_call['tool_name'] = name
+            if 'endpoint_' in name:
+                endpoint = name.replace('endpoint_', '/')
+                arguments['endpoint'] = endpoint
+                tool_call['tool_name'] = 'endpoint'
+            tool_call['arguments'] = arguments
+                        
+            tool_call_list.append(tool_call)
+        
+        st.session_state.tool_result = tool_calls
+    return msg, tool_call_list
 
-def get_claude_response(messages, max_tokens=2000):
+def get_claude_response(messages, max_tokens=2000, model='haiku'):
     """
     Generates a response from the Claude model based on the given messages.
 
@@ -171,10 +194,16 @@ def get_claude_response(messages, max_tokens=2000):
     Returns:
         str: The generated response from the Claude model.
     """
-
-    anthropic = Anthropic(
-        api_key=st.session_state.claude_key,
-    )
+    opus = "claude-3-opus-20240229"
+    haiku = "claude-3-haiku-20240307"
+    if model == 'opus':
+        model = opus
+    else:
+        model = haiku
+    ant = Anthropic(
+           api_key=st.session_state.claude_key,
+        )
+    
     # Since claude has a higher max_tokens, let's increase the limit
     max_tokens = int(max_tokens * 2)
     prompt = ""
@@ -185,11 +214,10 @@ def get_claude_response(messages, max_tokens=2000):
             prompt += f"{HUMAN_PROMPT} {i['content']}\n\n"
 
     prompt += AI_PROMPT
-    response = anthropic.completions.create(
+    response = ant.completions.create(
         prompt=prompt,
-        stop_sequences = [anthropic.HUMAN_PROMPT],
-        model="claude-2",
+        model=model,
         temperature=0.4,
         max_tokens_to_sample=max_tokens,
     )
-    return response.completion
+    return response.content[0].text
