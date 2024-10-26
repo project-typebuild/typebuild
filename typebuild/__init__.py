@@ -1,1 +1,0 @@
-from typebuild.app import run
